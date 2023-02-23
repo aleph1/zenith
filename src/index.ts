@@ -15,8 +15,8 @@ interface VnodeAttributes {
 
 interface VnodeElem {
   tag: string;
-  children: array;
   attrs: VnodeAttributes;
+  children: Array;
 }
 
 declare function elem(selector: string): VnodeElem;
