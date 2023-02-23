@@ -8,7 +8,8 @@ export default [
     output: {
       file: 'dist/zenith.debug.js',
       format: 'iife',
-      name: 'z'
+      name: 'z',
+      preferConst: true
     },
     plugins: [
       replace({
@@ -24,7 +25,8 @@ export default [
     output: {
       file: 'dist/zenith.js',
       format: 'iife',
-      name: 'z'
+      name: 'z',
+      preferConst: true
     },
     plugins: [
       replace({
