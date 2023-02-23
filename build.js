@@ -1,5 +1,5 @@
 const rollup = require('rollup').rollup;
-const replace = require('rollup-plugin-replace');
+const replace = require('@rollup/plugin-replace');
 
 // DEBUG BUILD
 rollup({
