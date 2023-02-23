@@ -4,6 +4,15 @@ declare global {
 }
 const DEBUG = window.DEBUG;
 
+interface VnodeAttributes {
+    /** The class name(s) for this virtual element, as a space-separated list. */
+    class?: string;
+    /** A key to optionally associate with this element. */
+    key?: string | number;
+    /** Any virtual element properties (attributes and event handlers). */
+    [property: string]: any;
+  }
+
 interface VnodeElem {
   tag: string;
   attrs: object;
