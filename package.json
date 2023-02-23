@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/aleph1/Zenith#readme",
   "dependencies": {
+    "@rollup/plugin-replace": "^4.0.0",
     "rollup": "^2.74.1"
   }
 }
