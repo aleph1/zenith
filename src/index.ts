@@ -19,8 +19,8 @@ interface VnodeElem {
   children: Array<any>;
 }
 
-declare function elem(selector: string): VnodeElem;
-
+function elem(selector: string): VnodeElem;
+function elem(selector: string, attrs?:VnodeAttributes, ...children:Array<any>): VnodeElem;
 function elem(selector: string): VnodeElem {
   const children = [];
   let attrs = {};
