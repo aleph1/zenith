@@ -3,11 +3,12 @@ declare global {
   var DEBUG: boolean;
 }
 const DEBUG = window.DEBUG;
-function elem( selector: string ) {
+
 interface VnodeElem {
   tag: string;
 }
 
+function elem( selector: string ): VnodeElem {
   return {
     tag: selector
   }
