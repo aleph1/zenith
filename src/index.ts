@@ -10,10 +10,5 @@ function elem( selector: string ) {
 }
 
 export default {
-	test: () => {
-		if( DEBUG ) {
-			console.log( 'DEBUG' );
-		}
-		return true;
-	}
+  elem
 };
