@@ -15,9 +15,11 @@ interface VnodeAttributes {
 
 interface VnodeElem {
   tag: string;
-  attrs: object;
   children: array;
+  attrs: VnodeAttributes;
 }
+
+declare function elem(selector: string): VnodeElem;
 
 function elem(selector: string): VnodeElem {
   const children = [];
