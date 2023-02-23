@@ -6,6 +6,7 @@ const DEBUG = window.DEBUG;
 
 interface VnodeElem {
   tag: string;
+  children: array;
 }
 
 function elem( selector: string ): VnodeElem {
