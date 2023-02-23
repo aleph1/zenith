@@ -9,9 +9,11 @@ interface VnodeElem {
   children: array;
 }
 
-function elem( selector: string ): VnodeElem {
+function elem(selector: string): VnodeElem {
+  const children = [];
   return {
     tag: selector
+    children
   }
 }
 
