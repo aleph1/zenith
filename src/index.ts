@@ -3,7 +3,11 @@ declare global {
   var DEBUG: boolean;
 }
 const DEBUG = window.DEBUG;
-
+function elem( selector: string ) {
+  return {
+    tag: selector
+  }
+}
 
 export default {
 	test: () => {
