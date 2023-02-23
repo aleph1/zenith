@@ -6,6 +6,7 @@ rollup({
   input: 'src/index.js',
   plugins: [
     replace({
+      preventAssignment: true,
       DEBUG: 'true'
     })
   ]
@@ -22,6 +23,7 @@ rollup({
   input: 'src/index.js',
   plugins: [
     replace({
+    	preventAssignment: true,
       DEBUG: 'false'
     })
   ]
