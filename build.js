@@ -7,7 +7,7 @@ rollup({
   plugins: [
     replace({
       preventAssignment: true,
-      DEBUG: 'true'
+      DEBUG: true
     })
   ]
 }).then( bundle => {
@@ -24,7 +24,7 @@ rollup({
   plugins: [
     replace({
     	preventAssignment: true,
-      DEBUG: 'false'
+      DEBUG: false
     })
   ]
 }).then( bundle => {
