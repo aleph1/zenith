@@ -4,6 +4,10 @@ declare global {
 }
 const DEBUG = window.DEBUG;
 
+// ----------------------------------------
+// INTERFACES
+// ----------------------------------------
+
 interface VnodeAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
   class?: string;
@@ -18,6 +22,10 @@ interface VnodeElem {
   attrs: VnodeAttributes;
   children: Array<any>;
 }
+
+// ----------------------------------------
+// VNODES
+// ----------------------------------------
 
 function elem(selector: string): VnodeElem;
 function elem(selector: string, attrs:VnodeAttributes, ...children:Array<any>): VnodeElem;
@@ -40,6 +48,10 @@ function elem(selector: string): VnodeElem {
     children
   }
 }
+
+// ----------------------------------------
+// EXPORT
+// ----------------------------------------
 
 export default {
   elem
