@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/aleph1/Zenith/issues"
   },
-  "homepage": "https://github.com/aleph1/Zenith#readme"
+  "homepage": "https://github.com/aleph1/Zenith#readme",
+  "dependencies": {
+    "rollup": "^2.74.1"
+  }
 }
