@@ -12,8 +12,9 @@ interface VnodeElem {
 
 function elem(selector: string): VnodeElem {
   const children = [];
+  let attrs = {};
   return {
-    tag: selector
+    tag: selector,
     children
   }
 }
