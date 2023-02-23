@@ -1,5 +1,6 @@
 import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
+import { terser } from 'rollup-plugin-terser';
 
 export default [
   // debug build
@@ -35,5 +36,23 @@ export default [
       }),
       typescript()
     ]
-  }
+  },
+  // production build minified
+  {
+    input: 'src/index.ts',
+    output: {
+      file: 'dist/zenith.min.js',
+      format: 'iife',
+      name: 'z',
+      preferConst: true
+    },
+    plugins: [
+      replace({
+        preventAssignment: true,
+        DEBUG: false
+      }),
+      typescript(),
+      terser()
+    ]
+  },
 ];
