@@ -102,7 +102,7 @@ function text(value: string): VnodeText {
 //   - create: called once upon creation
 //   - view: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
 //   - destroy: called once upon destruction
-function comp( componentDefinition: Function, attrs: ComponentAttrs): VnodeComp {
+function comp( componentDefinition: Function, attrs: VnodeCompAttributes): VnodeComp {
   return {
     _z_: NODE_TYPE_COMP,
     tag: componentDefinition
