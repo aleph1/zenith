@@ -1,10 +1,16 @@
+// ----------------------------------------
+// GLOBALS
+// ----------------------------------------
+
 declare global {
   // used to specify debug or production build
   var DEBUG: boolean;
 }
 const DEBUG = window.DEBUG;
 
-// virtual node types 
+// ----------------------------------------
+// VNODE TYPES
+// ----------------------------------------
 
 type NodeTypeNone = 0;
 type NodeTypeElem = 1;
