@@ -91,6 +91,19 @@ function text(value: string): VnodeText {
   }
 };
 
+// A component should include:
+// - has state (ideally reactive)
+// - has lifecycle hooks
+//   - create: called once upon creation
+//   - view: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
+//   - destroy: called once upon destruction
+function comp( componentDefinition: Function, attrs: ComponentAttrs): VnodeComp {
+  return {
+    _z_: NODE_TYPE_COMP,
+    tag: componentDefinition
+  }
+}
+
 // ----------------------------------------
 // EXPORT
 // ----------------------------------------
