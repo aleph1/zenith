@@ -76,6 +76,7 @@ type VnodeComp = Omit<VnodeBase, '_z_'> & {
 type VNodeHTML = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeHTML;
   tag: "<";
+  dom: DocumentFragment;
 };
 
 // ----------------------------------------
