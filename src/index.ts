@@ -4,6 +4,16 @@ declare global {
 }
 const DEBUG = window.DEBUG;
 
+// virtual node types 
+
+type NodeTypeNone = 0;
+type NodeTypeElem = 1;
+type NodeTypeText = 2;
+
+const NODE_TYPE_NONE: NodeTypeNone = 0;
+const NODE_TYPE_ELEM: NodeTypeElem = 1;
+const NODE_TYPE_TEXT: NodeTypeText = 2;
+
 // ----------------------------------------
 // INTERFACES
 // ----------------------------------------
