@@ -77,6 +77,7 @@ type VNodeHTML = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeHTML;
   tag: "<";
   dom: DocumentFragment;
+  domLength: number;
 };
 
 // ----------------------------------------
