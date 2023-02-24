@@ -12,6 +12,10 @@ const DEBUG = window.DEBUG;
 // TYPE DEFINITIONS
 // ----------------------------------------
 
+// definition types and values
+type DefTypeComp = 1;
+const DEF_TYPE_COMP: DefTypeComp = 1;
+
 // node types and values
 type NodeTypeNone = 0;
 type NodeTypeElem = 1;
