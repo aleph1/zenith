@@ -50,6 +50,10 @@ type VnodeText = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeText;
   tag: string;
 };
+
+type VnodeComp = Omit<VnodeBase, '_z_'> & {
+  _z_: NodeTypeComp;
+  tag: Function;
 };
 
 // ----------------------------------------
