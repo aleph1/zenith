@@ -73,6 +73,11 @@ type VnodeComp = Omit<VnodeBase, '_z_'> & {
   tag: Function;
 };
 
+type VNodeHTML = Omit<VnodeBase, '_z_'> & {
+  _z_: NodeTypeHTML;
+  tag: "<";
+};
+
 // ----------------------------------------
 // VNODES
 // ----------------------------------------
