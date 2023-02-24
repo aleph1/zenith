@@ -1,4 +1,9 @@
 // ----------------------------------------
+// WORKFLOW
+// ----------------------------------------
+// Creating vnodes:
+
+// ----------------------------------------
 // GLOBALS
 // ----------------------------------------
 
@@ -36,7 +41,7 @@ interface VnodeElemAttributes {
 }
 
 interface VnodeCompAttributes {
-  /** Any virtual element properties (attributes and event handlers). */
+  /** Any virtual element properties (e.g., attributes and event handlers). */
   [property: string]: any;
 }
 
