@@ -23,6 +23,10 @@ interface VnodeElem {
   children: Array<any>;
 }
 
+interface VnodeText {
+  tag: string;
+}
+
 // ----------------------------------------
 // VNODES
 // ----------------------------------------
