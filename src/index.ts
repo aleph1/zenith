@@ -38,9 +38,9 @@ type VnodeElem = Omit<VnodeBase, '_z_'> & {
   children: Array<any>;
 };
 
-interface VnodeText {
-  tag: string;
-}
+type VnodeText = Omit<VnodeBase, '_z_'> & {
+  _z_: NodeTypeText;
+};
 
 // ----------------------------------------
 // VNODES
