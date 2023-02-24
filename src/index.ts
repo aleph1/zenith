@@ -40,6 +40,11 @@ interface VnodeCompAttributes {
   [property: string]: any;
 }
 
+interface VnodeCompDefinition {
+  init?: Function;
+  view: Function;
+}
+
 interface VnodeBase {
   _z_: NodeTypeNone;
 }
