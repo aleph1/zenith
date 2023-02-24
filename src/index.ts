@@ -69,6 +69,9 @@ type VnodeComp = Omit<VnodeBase, '_z_'> & {
 // ----------------------------------------
 // VNODES
 // ----------------------------------------
+// All of the following functions are
+// designed to create one of more vnodes.
+// ----------------------------------------
 
 function elem(selector: string): VnodeElem;
 function elem(selector: string, attrs:VnodeElemAttributes, ...children:Array<any>): VnodeElem;
