@@ -26,7 +26,7 @@ const NODE_TYPE_COMP: NodeTypeComp = 3;
 // INTERFACES
 // ----------------------------------------
 
-interface VnodeAttributes {
+interface VnodeElemAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
   class?: string;
   /** A key to optionally associate with this element. */
@@ -61,7 +61,7 @@ type VnodeComp = Omit<VnodeBase, '_z_'> & {
 // ----------------------------------------
 
 function elem(selector: string): VnodeElem;
-function elem(selector: string, attrs:VnodeAttributes, ...children:Array<any>): VnodeElem;
+function elem(selector: string, attrs:VnodeElemAttributes, ...children:Array<any>): VnodeElem;
 function elem(selector: string, ...children:Array<any>): VnodeElem;
 function elem(selector: string): VnodeElem {
   const children = [];
