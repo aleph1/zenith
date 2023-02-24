@@ -9,22 +9,18 @@ declare global {
 const DEBUG = window.DEBUG;
 
 // ----------------------------------------
-// VNODE TYPES
+// TYPE DEFINITIONS
 // ----------------------------------------
 
+// node types and values
 type NodeTypeNone = 0;
 type NodeTypeElem = 1;
 type NodeTypeText = 2;
 type NodeTypeComp = 3;
-
 const NODE_TYPE_NONE: NodeTypeNone = 0;
 const NODE_TYPE_ELEM: NodeTypeElem = 1;
 const NODE_TYPE_TEXT: NodeTypeText = 2;
 const NODE_TYPE_COMP: NodeTypeComp = 3;
-
-// ----------------------------------------
-// TYPE DEFINITIONS
-// ----------------------------------------
 
 interface VnodeElemAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
