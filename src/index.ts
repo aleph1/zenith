@@ -99,7 +99,7 @@ function text(value: string): VnodeText {
     _z_: NODE_TYPE_TEXT,
     tag: value && value.toString() || '',
   }
-};
+}
 
 // A component should include:
 // - has state (ideally reactive)
