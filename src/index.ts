@@ -110,5 +110,6 @@ function comp( componentDefinition: Function, attrs: ComponentAttrs): VnodeComp 
 
 export default {
   elem,
-  text
+  text,
+  comp
 };
