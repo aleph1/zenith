@@ -27,11 +27,16 @@ interface VnodeAttributes {
   [property: string]: any;
 }
 
-interface VnodeElem {
+interface VnodeBase {
+  _z_: NodeTypeNone;
   tag: string;
+}
+
+type VnodeElem = Omit<VnodeBase, '_z_'> & {
+  _z_: NodeTypeElem;
   attrs: VnodeAttributes;
   children: Array<any>;
-}
+};
 
 interface VnodeText {
   tag: string;
