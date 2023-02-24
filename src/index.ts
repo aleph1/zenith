@@ -116,6 +116,15 @@ function text(value: string): VnodeText {
   }
 }
 
+function compDef( def: VnodeCompDefinition): VnodeCompDefinition {
+  if( DEBUG ) {
+    if( typeof def.view !== 'function' ) throw new Error( 'component requires view function' );
+  }
+  return Object.assign( {}, def, {
+    _z_: DEF_TYPE_COMP
+  } );
+}
+
 // A component should include:
 // - has state (ideally reactive)
 // - has lifecycle hooks
