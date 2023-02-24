@@ -53,6 +53,13 @@ function elem(selector: string): VnodeElem {
   }
 }
 
+function text(value: string): VnodeText {
+  //console.log( 'text()' );
+  return {
+    tag: value && value.toString() || '',
+  }
+};
+
 // ----------------------------------------
 // EXPORT
 // ----------------------------------------
