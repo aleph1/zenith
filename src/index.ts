@@ -56,6 +56,8 @@ interface VnodeBase {
   _z_: NodeTypeNone;
 }
 
+type VNodeArray = Array<VnodeElem | VnodeText | VnodeComp | VNodeHTML | VNodeArray>;
+
 type VnodeElem = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeElem;
   tag: string;
