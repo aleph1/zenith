@@ -35,6 +35,11 @@ interface VnodeElemAttributes {
   [property: string]: any;
 }
 
+interface VnodeCompAttributes {
+  /** Any virtual element properties (attributes and event handlers). */
+  [property: string]: any;
+}
+
 interface VnodeBase {
   _z_: NodeTypeNone;
 }
