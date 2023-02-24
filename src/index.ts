@@ -72,6 +72,7 @@ function elem(selector: string): VnodeElem {
 function text(value: string): VnodeText {
   //console.log( 'text()' );
   return {
+    _z_: NODE_TYPE_TEXT,
     tag: value && value.toString() || '',
   }
 };
