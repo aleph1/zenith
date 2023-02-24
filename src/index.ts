@@ -26,10 +26,12 @@ type NodeTypeNone = 0;
 type NodeTypeElem = 1;
 type NodeTypeText = 2;
 type NodeTypeComp = 3;
+type NodeTypeHTML = 4;
 const NODE_TYPE_NONE: NodeTypeNone = 0;
 const NODE_TYPE_ELEM: NodeTypeElem = 1;
 const NODE_TYPE_TEXT: NodeTypeText = 2;
 const NODE_TYPE_COMP: NodeTypeComp = 3;
+const NODE_TYPE_HTML: NodeTypeHTML = 4;
 
 interface VnodeElemAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
