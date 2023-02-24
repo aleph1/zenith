@@ -1,4 +1,4 @@
-2022-05-23: 4.5 hours
+2022-05-23: 5 hours
 - intial project structure
 - initialized git
 - initialized npm
@@ -7,5 +7,9 @@
 - added rollup typescript plugin
 - added rollup terser plugin
 - defined elem and text node types
-- elem and text node functions
+- elem and text vnode functions
+- signature for comp vnode function
 
+2022-05-24: 2.5 hours
+- validation of component definitions
+- 
