@@ -62,7 +62,7 @@ type VnodeElem = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeElem;
   tag: string;
   attrs: VnodeElemAttributes;
-  children: Array<VnodeElem | VnodeText | VnodeComp | VNodeHTML>;
+  children: VNodeArray;
 };
 
 type VnodeText = Omit<VnodeBase, '_z_'> & {
