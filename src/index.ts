@@ -22,18 +22,18 @@ type DefTypeComp = 1;
 const DEF_TYPE_COMP: DefTypeComp = 1;
 
 // node types and values
-type NodeTypeNone = 0;
-type NodeTypeElem = 1;
-type NodeTypeText = 2;
-type NodeTypeComp = 3;
-type NodeTypeHTML = 4;
-const NODE_TYPE_NONE: NodeTypeNone = 0;
-const NODE_TYPE_ELEM: NodeTypeElem = 1;
-const NODE_TYPE_TEXT: NodeTypeText = 2;
-const NODE_TYPE_COMP: NodeTypeComp = 3;
-const NODE_TYPE_HTML: NodeTypeHTML = 4;
+type VNodeTypeNone = 0;
+type VNodeTypeElem = 1;
+type VNodeTypeText = 2;
+type VNodeTypeComp = 3;
+type VNodeTypeHTML = 4;
+const VNODE_TYPE_NONE: VNodeTypeNone = 0;
+const VNODE_TYPE_ELEM: VNodeTypeElem = 1;
+const VNODE_TYPE_TEXT: VNodeTypeText = 2;
+const VNODE_TYPE_COMP: VNodeTypeComp = 3;
+const VNODE_TYPE_HTML: VNodeTypeHTML = 4;
 
-interface VnodeElemAttributes {
+interface VNodeElemAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
   class?: string;
   /** A key to optionally associate with this element. */
@@ -42,12 +42,12 @@ interface VnodeElemAttributes {
   [property: string]: any;
 }
 
-interface VnodeCompAttributes {
+interface VNodeCompAttributes {
   /** Any virtual element properties (e.g., attributes and event handlers). */
   [property: string]: any;
 }
 
-interface VnodeCompDefinition {
+interface VNodeCompDefinition {
   init?: Function;
   view: Function;
 }
@@ -58,19 +58,19 @@ interface VnodeBase {
 
 type VNodeArray = Array<VnodeElem | VnodeText | VnodeComp | VNodeHTML | VNodeArray>;
 
-type VnodeElem = Omit<VnodeBase, '_z_'> & {
+type VNodeElem = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeElem;
   tag: string;
   attrs: VnodeElemAttributes;
   children: VNodeArray;
 };
 
-type VnodeText = Omit<VnodeBase, '_z_'> & {
+type VNodeText = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeText;
   tag: string;
 };
 
-type VnodeComp = Omit<VnodeBase, '_z_'> & {
+type VNodeComp = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeComp;
   tag: Function;
 };
@@ -172,4 +172,7 @@ export default {
   text,
   comp,
   compDef
+  draw( dom, vnode ) {
+    drawNode( vnode.parent, vnode );
+  }
 };
