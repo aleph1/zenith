@@ -62,6 +62,7 @@ function elem(selector: string): VnodeElem {
     attrs = Object.assign( {}, attrs );
   }
   return {
+    _z_: NODE_TYPE_ELEM,
     tag: selector,
     attrs,
     children
