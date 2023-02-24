@@ -47,7 +47,7 @@ interface VnodeBase {
 type VnodeElem = Omit<VnodeBase, '_z_'> & {
   _z_: NodeTypeElem;
   tag: string;
-  attrs: VnodeAttributes;
+  attrs: VnodeElemAttributes;
   children: Array<any>;
 };
 
