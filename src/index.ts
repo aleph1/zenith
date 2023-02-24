@@ -138,6 +138,27 @@ function comp( componentDefinition: Function, attrs: VnodeCompAttributes): Vnode
   }
 }
 
+function html( value: string ): VNodeHTML {
+  // create a fragment from the passed string
+  const dom = new DocumentFragment();
+  // create an HTML container element 
+  const containerEl = document.createElement( 'div' );
+  // copy the value to the inner html of the container elements
+  containerEl.innerHTML = value;
+  // iterate through container element while it has a firstChild
+  while( containerEl.firstChild ) {
+    // copy firstChild from container element to fragment
+    dom.appendChild( containerEl.firstChild );
+  //
+  }
+  return {
+    _z_: NODE_TYPE_HTML,
+    tag: '<',
+    dom,
+    domLength: dom.children.length
+  };
+}
+
 // ----------------------------------------
 // EXPORT
 // ----------------------------------------
