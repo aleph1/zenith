@@ -82,5 +82,6 @@ function text(value: string): VnodeText {
 // ----------------------------------------
 
 export default {
-  elem
+  elem,
+  text
 };
