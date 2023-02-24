@@ -166,5 +166,6 @@ function html( value: string ): VNodeHTML {
 export default {
   elem,
   text,
-  comp
+  comp,
+  compDef
 };
