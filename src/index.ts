@@ -23,7 +23,7 @@ const NODE_TYPE_TEXT: NodeTypeText = 2;
 const NODE_TYPE_COMP: NodeTypeComp = 3;
 
 // ----------------------------------------
-// INTERFACES
+// TYPE DEFINITIONS
 // ----------------------------------------
 
 interface VnodeElemAttributes {
