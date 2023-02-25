@@ -52,31 +52,32 @@ interface VNodeCompDefinition {
   view: Function;
 }
 
-interface VnodeBase {
-  _z_: NodeTypeNone;
+interface VNodeAbstract {
+  _z_: VNodeTypeNone;
 }
 
-type VNodeArray = Array<VnodeElem | VnodeText | VnodeComp | VNodeHTML | VNodeArray>;
+type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
+type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray>;
 
-type VNodeElem = Omit<VnodeBase, '_z_'> & {
-  _z_: NodeTypeElem;
+type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
+  _z_: VNodeTypeElem;
   tag: string;
-  attrs: VnodeElemAttributes;
+  attrs: VNodeElemAttributes;
   children: VNodeArray;
 };
 
-type VNodeText = Omit<VnodeBase, '_z_'> & {
-  _z_: NodeTypeText;
+type VNodeText = Omit<VNodeAbstract, '_z_'> & {
+  _z_: VNodeTypeText;
   tag: string;
 };
 
-type VNodeComp = Omit<VnodeBase, '_z_'> & {
-  _z_: NodeTypeComp;
+type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
+  _z_: VNodeTypeComp;
   tag: Function;
 };
 
-type VNodeHTML = Omit<VnodeBase, '_z_'> & {
-  _z_: NodeTypeHTML;
+type VNodeHTML = Omit<VNodeAbstract, '_z_'> & {
+  _z_: VNodeTypeHTML;
   tag: "<";
   dom: DocumentFragment;
   domLength: number;
@@ -89,10 +90,10 @@ type VNodeHTML = Omit<VnodeBase, '_z_'> & {
 // designed to create one of more vnodes.
 // ----------------------------------------
 
-function elem(selector: string): VnodeElem;
-function elem(selector: string, attrs:VnodeElemAttributes, ...children:Array<any>): VnodeElem;
-function elem(selector: string, ...children:Array<any>): VnodeElem;
-function elem(selector: string): VnodeElem {
+function elem(selector: string): VNodeElem;
+function elem(selector: string, attrs:VNodeElemAttributes, ...children:Array<any>): VNodeElem;
+function elem(selector: string, ...children:Array<any>): VNodeElem;
+function elem(selector: string): VNodeElem {
   const children = [];
   let start = 1;
   let attrs = arguments[1];
@@ -105,22 +106,22 @@ function elem(selector: string): VnodeElem {
     attrs = Object.assign( {}, attrs );
   }
   return {
-    _z_: NODE_TYPE_ELEM,
+    _z_: VNODE_TYPE_ELEM,
     tag: selector,
     attrs,
     children
   }
 }
 
-function text(value: string): VnodeText {
+function text(value: string): VNodeText {
   //console.log( 'text()' );
   return {
-    _z_: NODE_TYPE_TEXT,
+    _z_: VNODE_TYPE_TEXT,
     tag: value && value.toString() || '',
   }
 }
 
-function compDef( def: VnodeCompDefinition): VnodeCompDefinition {
+function compDef( def: VNodeCompDefinition): VNodeCompDefinition {
   if( DEBUG ) {
     if( typeof def.view !== 'function' ) throw new Error( 'component requires view function' );
   }
@@ -135,9 +136,9 @@ function compDef( def: VnodeCompDefinition): VnodeCompDefinition {
 //   - create: called once upon creation
 //   - view: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
 //   - destroy: called once upon destruction
-function comp( componentDefinition: Function, attrs: VnodeCompAttributes): VnodeComp {
+function comp(componentDefinition: Function, attrs: VNodeCompAttributes): VNodeComp {
   return {
-    _z_: NODE_TYPE_COMP,
+    _z_: VNODE_TYPE_COMP,
     tag: componentDefinition
   }
 }
@@ -156,7 +157,7 @@ function html( value: string ): VNodeHTML {
   //
   }
   return {
-    _z_: NODE_TYPE_HTML,
+    _z_: VNODE_TYPE_HTML,
     tag: '<',
     dom,
     domLength: dom.children.length
