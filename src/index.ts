@@ -146,7 +146,7 @@ function comp(componentDefinition: Function, attrs: VNodeCompAttributes): VNodeC
   }
 }
 
-function html( value: string ): VNodeHTML {
+function html(value: string): VNodeHTML {
   // create a fragment from the passed string
   const dom = new DocumentFragment();
   // create an HTML container element 
