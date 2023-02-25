@@ -168,6 +168,38 @@ function html(value: string): VNodeHTML {
 }
 
 // ----------------------------------------
+// RENDERING
+// ----------------------------------------
+
+// Initial implementation of drawNode just to get something displaying
+// there is so much to do here, including correcty rendering components
+function drawNode(dom: Node, vnode: VNodeAny, vnodeOld?: VNodeAny) {
+  let vnodeChildren:VNodeArray;
+  // if the current vnode has no dom it hasn't been drawn before
+  if(!vnode.dom) {
+    // create dom based on vnode._z_
+    switch(vnode._z_) {
+      case VNODE_TYPE_ELEM:
+        vnode.dom = document.createElement(vnode.tag);
+        vnodeChildren = vnode.children;
+        break;
+      case VNODE_TYPE_COMP:
+        vnode.dom = document.createDocumentFragment();
+        break;
+      case VNODE_TYPE_TEXT:
+        vnode.dom = document.createTextNode(vnode.tag);
+        break;
+    }
+  }
+  // if the vnode has children then draw them
+  if(vnodeChildren) {
+    vnodeChildren.forEach((childVnode: VNodeAny) => {
+      drawNode(vnode.dom, childVnode);
+    } );
+  }
+}
+
+// ----------------------------------------
 // EXPORT
 // ----------------------------------------
 
