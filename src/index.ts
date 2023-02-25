@@ -197,6 +197,7 @@ function drawNode(dom: Node, vnode: VNodeAny, vnodeOld?: VNodeAny) {
       drawNode(vnode.dom, childVnode);
     } );
   }
+  dom.appendChild(vnode.dom);
 }
 
 // ----------------------------------------
