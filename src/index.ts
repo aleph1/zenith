@@ -117,7 +117,6 @@ function elem(selector: string): VNodeElem {
 }
 
 function text(value: string): VNodeText {
-  //console.log( 'text()' );
   return {
     _z_: VNODE_TYPE_TEXT,
     tag: value && value.toString() || '',
