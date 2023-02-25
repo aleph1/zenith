@@ -207,8 +207,8 @@ export default {
   elem,
   text,
   comp,
-  compDef
-  draw( dom, vnode ) {
-    drawNode( vnode.parent, vnode );
+  compDef,
+  draw(dom: Node, vnode:VNodeAny) {
+    drawNode( dom, vnode );
   }
 };
