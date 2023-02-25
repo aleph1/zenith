@@ -8,7 +8,12 @@
 	<div id="app"></div>
 	<script src="../dist/zenith.js"></script>
 	<script>
-		z.draw(document.querySelector('#app'), z.text('Hello world!'));
+		let counter = 0;
+		function drawCounter() {
+			counter++;
+			z.draw(document.querySelector('#app'), z.text('Counter: ' + counter));
+		};
+		setInterval(drawCounter, 1000);
 	</script>
 </body>
 </html>
