@@ -9,7 +9,19 @@
 - defined elem and text node types
 - elem and text vnode functions
 - signature for comp vnode function
+- exposed vnode functions (elem, text)
 
-2022-05-24: 2.5 hours
+2022-05-24: 4 hours
 - validation of component definitions
-- 
+- improved comments
+- added component definition validator
+- added html node type and constant
+- added html vnode function
+- exposed additional vnode functions (comp, html)
+- fixed code style issues
+- created demo skeleton
+
+2022-05-25: 2 hours
+- improved coding consistency
+- node* types and constants are more correctly vnode*
+- initial and very temporart rendering code
