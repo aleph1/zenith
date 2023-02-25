@@ -133,8 +133,8 @@ function compDef( def: VNodeCompDefinition): VNodeCompDefinition {
 }
 
 // A component should include:
-// - has state (ideally reactive)
-// - has lifecycle hooks
+// - optional state (ideally reactive)
+// - lifecycle hooks
 //   - create: called once upon creation
 //   - view: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
 //   - destroy: called once upon destruction
