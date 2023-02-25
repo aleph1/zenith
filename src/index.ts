@@ -64,23 +64,26 @@ type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
   tag: string;
   attrs: VNodeElemAttributes;
   children: VNodeArray;
+  dom?: Node;
 };
 
 type VNodeText = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeText;
   tag: string;
+  dom?: Node;
 };
 
 type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeComp;
   tag: Function;
+  dom?: Node;
 };
 
 type VNodeHTML = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeHTML;
   tag: "<";
-  dom: DocumentFragment;
-  domLength: number;
+  dom?: Node;
+  domLength?: number;
 };
 
 // ----------------------------------------
