@@ -90,6 +90,8 @@ type VNodeHTML = Omit<VNodeAbstract, '_z_'> & {
 // CONSTANTS
 // ----------------------------------------
 
+const wrappedNodes = new Map();
+
 // ----------------------------------------
 // VNODES
 // ----------------------------------------
@@ -168,6 +170,16 @@ function html(value: string): VNodeHTML {
     dom,
     domLength: dom.children.length
   };
+}
+
+function wrap(dom:Node) {
+  if(DEBUG) {
+    // why do we need to cast dom as any to not get a Typescript compile error?
+    if(<any> dom instanceof Node) throw new Error( 'wrap requires DOM Node' );
+  }
+  return wrappedNodes.get(dom) || wrappedNodes.set(dom, Object.assign(elem(dom.nodeName.toLowerCase()), {
+    dom: dom
+  })).get(dom);
 }
 
 // ----------------------------------------
