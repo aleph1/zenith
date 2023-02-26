@@ -21,17 +21,18 @@ const DEBUG = window.DEBUG;
 type DefTypeComp = 1;
 const DEF_TYPE_COMP: DefTypeComp = 1;
 
-// node types and values
-type VNodeTypeNone = 0;
-type VNodeTypeElem = 1;
-type VNodeTypeText = 2;
-type VNodeTypeComp = 3;
-type VNodeTypeHTML = 4;
-const VNODE_TYPE_NONE: VNodeTypeNone = 0;
-const VNODE_TYPE_ELEM: VNodeTypeElem = 1;
-const VNODE_TYPE_TEXT: VNodeTypeText = 2;
-const VNODE_TYPE_COMP: VNodeTypeComp = 3;
-const VNODE_TYPE_HTML: VNodeTypeHTML = 4;
+import {
+  VNodeTypeNone,
+  VNodeTypeElem,
+  VNodeTypeText,
+  VNodeTypeComp,
+  VNodeTypeHTML,
+  VNODE_TYPE_NONE,
+  VNODE_TYPE_ELEM,
+  VNODE_TYPE_TEXT,
+  VNODE_TYPE_COMP,
+  VNODE_TYPE_HTML
+} from './vnode.defs';
 
 interface VNodeElemAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
