@@ -31,61 +31,17 @@ import {
   VNODE_TYPE_ELEM,
   VNODE_TYPE_TEXT,
   VNODE_TYPE_COMP,
-  VNODE_TYPE_HTML
+  VNODE_TYPE_HTML,
+  VNodeElem,
+  VNodeText,
+  VNodeComp,
+  VNodeHTML,
+  VNodeAny,
+  VNodeArray,
+  VNodeElemAttributes,
+  VNodeCompDefinition,
+  VNodeCompAttributes,
 } from './vnode.defs';
-
-interface VNodeElemAttributes {
-  /** The class name(s) for this virtual element, as a space-separated list. */
-  class?: string;
-  /** A key to optionally associate with this element. */
-  key?: string | number;
-  /** Any virtual element properties (attributes and event handlers). */
-  [property: string]: any;
-}
-
-interface VNodeCompAttributes {
-  /** Any virtual element properties (e.g., attributes and event handlers). */
-  [property: string]: any;
-}
-
-interface VNodeCompDefinition {
-  init?: Function;
-  view: Function;
-}
-
-interface VNodeAbstract {
-  _z_: VNodeTypeNone;
-}
-
-type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
-type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray>;
-
-type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeElem;
-  tag: string;
-  attrs: VNodeElemAttributes;
-  children: VNodeArray;
-  dom?: Node;
-};
-
-type VNodeText = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeText;
-  tag: string;
-  dom?: Node;
-};
-
-type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeComp;
-  tag: Function;
-  dom?: Node;
-};
-
-type VNodeHTML = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeHTML;
-  tag: "<";
-  dom?: Node;
-  domLength?: number;
-};
 
 // ----------------------------------------
 // CONSTANTS
