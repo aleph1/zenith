@@ -15,7 +15,7 @@ import {
 // vnode elem creation
 describe('Tests for z.elem()', () =>{
 
-  test('z.elem(div) returns an object with the expected properties', () =>{  
+  test('z.elem("div") returns an object with the expected properties', () =>{  
     const vnode = z.elem('div');
     expect(vnode).not.toBeNull();
     expect(typeof vnode).toBe('object');
@@ -25,5 +25,6 @@ describe('Tests for z.elem()', () =>{
       attrs: {},
       children: []
     });
+    expect(vnode).toHaveOnlyProperties(['_z_', 'tag', 'attrs', 'children']);
   });
 });
