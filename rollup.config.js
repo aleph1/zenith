@@ -17,7 +17,11 @@ export default [
         preventAssignment: true,
         DEBUG: true
       }),
-      typescript()
+      typescript({
+        compilerOptions: {
+          target: "es6"
+        }
+      })
     ]
   },
   // production build
@@ -34,7 +38,11 @@ export default [
         preventAssignment: true,
         DEBUG: false
       }),
-      typescript()
+      typescript({
+        compilerOptions: {
+          target: "es6"
+        }
+      })
     ]
   },
   // production build minified
@@ -51,7 +59,11 @@ export default [
         preventAssignment: true,
         DEBUG: false
       }),
-      typescript(),
+      typescript({
+        compilerOptions: {
+          target: "es6"
+        }
+      }),
       terser()
     ]
   },
