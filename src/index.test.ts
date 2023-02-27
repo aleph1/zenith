@@ -25,4 +25,18 @@ describe('Tests for z.elem()', () =>{
     expect(vnode).toHaveProperty('attrs', {});
     expect(vnode).toHaveProperty('children', []);
   });
+
+  test('z.elem("div", {id:"test"}) returns an object with the expected properties', () =>{  
+    const vnode = z.elem('div', {id:"test"});
+    expect(vnode).not.toBeNull();
+    expect(typeof vnode).toBe('object');
+    expect(vnode).toHaveOnlyProperties(['_z_', 'tag', 'attrs', 'children']);
+    expect(vnode).toHaveProperty('_z_', VNODE_TYPE_ELEM);
+    expect(vnode).toHaveProperty('tag', 'div');
+    expect(typeof vnode.attrs).toBe('object');
+    expect(vnode.attrs).toHaveOnlyProperties(['id']);
+    expect(vnode.attrs).toHaveProperty('id', 'test');
+    expect(vnode).toHaveProperty('children', []);
+  });
+
 });
