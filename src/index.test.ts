@@ -19,12 +19,10 @@ describe('Tests for z.elem()', () =>{
     const vnode = z.elem('div');
     expect(vnode).not.toBeNull();
     expect(typeof vnode).toBe('object');
-    expect(vnode).toStrictEqual({
-      _z_: VNODE_TYPE_ELEM,
-      tag: 'div',
-      attrs: {},
-      children: []
-    });
     expect(vnode).toHaveOnlyProperties(['_z_', 'tag', 'attrs', 'children']);
+    expect(vnode).toHaveProperty('_z_', VNODE_TYPE_ELEM);
+    expect(vnode).toHaveProperty('tag', 'div');
+    expect(vnode).toHaveProperty('attrs', {});
+    expect(vnode).toHaveProperty('children', []);
   });
 });
