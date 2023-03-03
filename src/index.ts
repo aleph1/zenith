@@ -143,6 +143,10 @@ function wrap(dom:Node) {
 // RENDERING
 // ----------------------------------------
 
+function emptyDom(dom:Node): Node {
+  while(dom.lastChild) dom.removeChild(dom.lastChild);
+  return dom;
+}
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
 function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
