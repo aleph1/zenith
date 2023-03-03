@@ -145,7 +145,7 @@ function wrap(dom:Node) {
 
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
-function drawNode(dom: Node, vnode: VNodeAny, vnodeOld?: VNodeAny) {
+function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
   // we have quote a few cases to address here:
   // - get node type
   // - if node is a component check for an instance
@@ -173,7 +173,7 @@ function drawNode(dom: Node, vnode: VNodeAny, vnodeOld?: VNodeAny) {
       drawNode(vnode.dom, childVnode);
     } );
   }
-  dom.appendChild(vnode.dom);
+  parent.dom.appendChild(vnode.dom);
 }
 
 // ----------------------------------------
@@ -186,6 +186,6 @@ export default {
   comp,
   compDef,
   draw(dom: Node, vnode:VNodeAny) {
-    drawNode(wrap(dom).dom, vnode);
+    drawNode(wrap(dom), vnode);
   }
 };
