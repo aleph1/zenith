@@ -29,7 +29,7 @@ export interface VNodeCompDefinition {
   view: Function;
 }
 
-export interface VNodeCompInstance = {
+export interface VNodeCompInstance {
   attrs: VNodeCompAttributes;
 };
 
