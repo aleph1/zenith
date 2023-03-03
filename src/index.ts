@@ -150,28 +150,32 @@ function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
   // - get node type
   // - if node is a component check for an instance
   // - otherwise check for its .dom property
-  let vnodeChildren:VNodeArray;
-  // if the current vnode has no dom it hasn't been drawn before
-  if(!vnode.dom) {
-    // create dom based on vnode._z_
-    switch(vnode._z_) {
-      case VNODE_TYPE_ELEM:
-        vnode.dom = document.createElement(vnode.tag);
-        vnodeChildren = vnode.children;
-        break;
-      case VNODE_TYPE_COMP:
-        vnode.dom = document.createDocumentFragment();
-        break;
-      case VNODE_TYPE_TEXT:
-        vnode.dom = document.createTextNode(vnode.tag);
-        break;
+  const nodeType:number = vnode.tag;
+  if(nodeType === VNodeTypeComp) {
+  } else {
+    let vnodeChildren:VNodeArray;
+    // if the current vnode has no dom it hasn't been drawn before
+    if(!vnode.dom) {
+      // create dom based on vnode._z_
+      switch(vnode._z_) {
+        case VNODE_TYPE_ELEM:
+          vnode.dom = document.createElement(vnode.tag);
+          vnodeChildren = vnode.children;
+          break;
+        case VNODE_TYPE_COMP:
+          vnode.dom = document.createDocumentFragment();
+          break;
+        case VNODE_TYPE_TEXT:
+          vnode.dom = document.createTextNode(vnode.tag);
+          break;
+      }
     }
-  }
-  // if the vnode has children then draw them
-  if(vnodeChildren) {
-    vnodeChildren.forEach((childVnode: VNodeAny) => {
-      drawNode(vnode.dom, childVnode);
-    } );
+    // if the vnode has children then draw them
+    if(vnodeChildren) {
+      vnodeChildren.forEach((childVnode: VNodeAny) => {
+        drawNode(vnode, childVnode);
+      } );
+    }
   }
   parent.dom.appendChild(vnode.dom);
 }
