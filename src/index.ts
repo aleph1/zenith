@@ -129,7 +129,7 @@ function html(value: string): VNodeHTML {
   };
 }
 
-function wrap(dom:Node) {
+function wrapDom(dom:Node): VNodeElem {
   if(DEBUG) {
     // why do we need to cast dom as any to not get a Typescript compile error?
     if(<any> dom instanceof Node) throw new Error( 'wrap requires DOM Node' );
@@ -193,7 +193,7 @@ export default {
   text,
   comp,
   compDef,
-  draw(dom: Node, vnode:VNodeAny) {
-    drawNode(wrap(dom), vnode);
+  draw(dom:Node, vnode:VNodeAny) {
+    drawNode(wrapDom(dom), vnode);
   }
 };
