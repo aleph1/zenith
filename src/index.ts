@@ -194,6 +194,6 @@ export default {
   comp,
   compDef,
   draw(dom:Node, vnode:VNodeAny) {
-    drawNode(wrapDom(dom), vnode);
+    drawNode(wrapDom(emptyDom(dom)), vnode);
   }
 };
