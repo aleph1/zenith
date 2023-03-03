@@ -146,6 +146,10 @@ function wrap(dom:Node) {
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
 function drawNode(dom: Node, vnode: VNodeAny, vnodeOld?: VNodeAny) {
+  // we have quote a few cases to address here:
+  // - get node type
+  // - if node is a component check for an instance
+  // - otherwise check for its .dom property
   let vnodeChildren:VNodeArray;
   // if the current vnode has no dom it hasn't been drawn before
   if(!vnode.dom) {
