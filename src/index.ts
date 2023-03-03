@@ -154,8 +154,8 @@ function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
   // - get node type
   // - if node is a component check for an instance
   // - otherwise check for its .dom property
-  if(nodeType === VNodeTypeComp) {
   const nodeType:number = vnode._z_;
+  if(nodeType === VNODE_TYPE_COMP) {
   } else {
     let vnodeChildren:VNodeArray;
     // if the current vnode has no dom it hasn't been drawn before
