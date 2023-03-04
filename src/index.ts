@@ -160,6 +160,16 @@ function renderViewable(instance:object, viewFn:Function): VNodeArray {
   const children:VNodeAnyOrArray = viewFn(instance);
   return Array.isArray(children) ? children.flat( Infinity ) : [children];
 }
+
+function createComponent(parent:VNodeAny, vnode:VNodeComp) {
+  //console.log('createComponent()');
+  const instance:VNodeCompInstance = {
+    attrs: {}
+  };
+  vnode.instance = instance;
+  vnode.children = renderViewable(instance, vnode.tag.view);
+  vnode.dom = document.createDocumentFragment();
+}
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
 function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
