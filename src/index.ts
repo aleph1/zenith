@@ -154,6 +154,12 @@ function emptyDom(dom:Node): Node {
   while(dom.lastChild) dom.removeChild(dom.lastChild);
   return dom;
 }
+
+function renderViewable(instance:object, viewFn:Function): VNodeArray {
+  //console.log('renderViewable()');
+  const children:VNodeAnyOrArray = viewFn(instance);
+  return Array.isArray(children) ? children.flat( Infinity ) : [children];
+}
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
 function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
