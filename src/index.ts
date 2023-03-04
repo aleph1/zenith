@@ -226,7 +226,7 @@ function drawVNode(parent: VNodeAny, vNode: VNodeAny, vnodeOld?: VNodeAny) {
     switch(nodeType) {
       case VNODE_TYPE_ELEM:
         vNode = vNode as VNodeElem;
-        vNode.dom = document.createElement(vNode.tag);
+        createElement(parent, vNode);
         vNodeChildren = vNode.children;
         break;
       case VNODE_TYPE_COMP:
