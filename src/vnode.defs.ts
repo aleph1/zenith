@@ -35,6 +35,7 @@ export interface VNodeCompInstance {
 
 export interface VNodeAbstract {
   _z_: VNodeTypeNone;
+  parent?: VNodeAny;
 }
 
 export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
