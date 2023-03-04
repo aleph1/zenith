@@ -62,7 +62,7 @@ function elem(selector: string): VNodeElem;
 function elem(selector: string, attrs:VNodeElemAttributes, ...vNodeChildren:VNodeArray): VNodeElem;
 function elem(selector: string, ...vNodeChildren:VNodeArray): VNodeElem;
 function elem(selector: string): VNodeElem {
-  const children = [];
+  const children:VNodeArray = [];
   let start = 1;
   let attrs = arguments[1];
 
