@@ -1,0 +1,15 @@
+html, body {
+	margin: 0;
+	padding: 0;
+}
+
+#app>header,
+#app>main,
+#app>footer {
+	padding: 0.5em 1em;
+}
+
+section {
+	border-top: 1px solid black;
+	padding: 1em 0;
+}
