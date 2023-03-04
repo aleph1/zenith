@@ -72,6 +72,11 @@ function elem(selector: string): VNodeElem {
   // otherwise, copy attributes
   } else {
     attrs = Object.assign( {}, attrs );
+    start++;
+  }
+  while( start < arguments.length ) {
+    const child:VNodeAny = arguments[ start++ ];
+    children.push( typeof child === 'object' ? child : text( child ) );
   }
   return {
     _z_: VNODE_TYPE_ELEM,
