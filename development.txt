@@ -21,7 +21,38 @@
 - fixed code style issues
 - created demo skeleton
 
-2022-05-25: 2 hours
+2022-05-25: 4.5 hours
 - improved coding consistency
 - node* types and constants are more correctly vnode*
-- initial and very temporart rendering code
+- initial and very temporary rendering code
+- vnode.dom is drawing into DOM
+- modified demo with simple hello world
+- we have a renderable vnode!
+- non-vnode elements can be wrapped as vnodes (useful for application containers like div#app)
+- z.draw wraps dom argument in a vnode (should be useful for better tracking its children)
+
+2022-05-26: 6 hours
+- evaluated testing frameworks (mocha, jest)
+- added jest, ts-jest, jest types, and jsdom
+- added tests for z.elem
+- added custom jest matcher for ensuring object has only specific properties
+- improved tests for z.elem
+
+2022-05-26: 2 hours
+- refactored tests for z.elem
+- typescript compiler targets es6
+
+2022-05-30: 2 hours?
+- draft of create and update node logic
+
+2022-05-31: 3 hours
+- initial implementation of creating and updating nodes
+- began implementation of component (improved typescript definitions and placeholder logic)
+
+2022-06-01: 5 hours
+- revised demo code to include components and nested elements
+- modified typescript definitions
+- improved logic for how vNodes are created and updated
+- vNodes of type component have init function called
+- vNodes of type element have attributes applied
+
