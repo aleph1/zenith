@@ -170,6 +170,11 @@ function createComponent(parent:VNodeAny, vnode:VNodeComp) {
   vnode.children = renderViewable(instance, vnode.tag.view);
   vnode.dom = document.createDocumentFragment();
 }
+
+function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
+  vnode.children = renderViewable(vnode.instance, vnode.tag.view);
+}
+
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
 function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
