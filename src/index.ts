@@ -161,6 +161,15 @@ function renderViewable(instance:object, viewFn:Function): VNodeArray {
   return Array.isArray(children) ? children.flat( Infinity ) : [children];
 }
 
+function createElement(parent:VNodeAny, vNode:VNodeElem) {
+   const dom: Element = document.createElement(vNode.tag);
+   vNode.dom = dom;
+   for(const attr in vNode.attrs) {
+     console.log(attr);
+     dom.setAttribute(attr, vNode.attrs[attr]);
+   }
+ }
+
 function createComponent(parent:VNodeAny, vnode:VNodeComp) {
   //console.log('createComponent()');
   const instance:VNodeCompInstance = {
