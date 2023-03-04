@@ -59,8 +59,8 @@ const wrappedNodes = new Map();
 // ----------------------------------------
 
 function elem(selector: string): VNodeElem;
-function elem(selector: string, attrs:VNodeElemAttributes, ...children:Array<any>): VNodeElem;
-function elem(selector: string, ...children:Array<any>): VNodeElem;
+function elem(selector: string, attrs:VNodeElemAttributes, ...vNodeChildren:VNodeArray): VNodeElem;
+function elem(selector: string, ...vNodeChildren:VNodeArray): VNodeElem;
 function elem(selector: string): VNodeElem {
   const children = [];
   let start = 1;
