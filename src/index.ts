@@ -177,7 +177,7 @@ function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
 
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
-function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
+function drawVNode(parent: VNodeAny, vNode: VNodeAny, vnodeOld?: VNodeAny) {
   // we have quote a few cases to address here:
   // - get node type
   // - if node is a component check for an instance
@@ -205,11 +205,11 @@ function drawNode(parent: VNodeAny, vnode: VNodeAny, vnodeOld?: VNodeAny) {
     // if the vnode has children then draw them
     if(vnodeChildren) {
       vnodeChildren.forEach((childVnode: VNodeAny) => {
-        drawNode(vnode, childVnode);
       } );
     }
   }
   parent.dom.appendChild(vnode.dom);
+      drawVNode(vNode, childVNode);
 }
 
 // ----------------------------------------
@@ -222,6 +222,6 @@ export default {
   comp,
   compDef,
   draw(dom:Node, vnode:VNodeAny) {
-    drawNode(wrapDom(emptyDom(dom)), vnode);
+    drawVNode(wrapDom(emptyDom(dom)), vnode);
   }
 };
