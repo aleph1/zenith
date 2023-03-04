@@ -11,11 +11,52 @@
 	<div id="app"></div>
 	<script src="../dist/zenith.js"></script>
 	<script>
+		function stateChanged() {
+			redrawApplication();
+		}
+		function redrawApplication() {
+			z.draw(document.querySelector('#app'), z.comp(Layout));
+		}
 		const Counter = z.compDef( {
-			view: instance => z.elem('article', z.text('counter demo'))
+			init: instance => {
+				instance.state.counter = 0;
+			},
+			view: instance => z.elem('article',
+				z.elem('h3', z.text('Counter Demo')),
+				z.elem('div', z.text('Counter: ' + instance.state.counter)),
+				z.elem('div',
+					z.elem('button', {
+						onclick() {
+							console.log('zero onclick()');
+						}
+					}, z.text('zero')),
+					z.elem('button', {
+						onclick() {
+							console.log('increment onclick()');
+						}
+					}, z.text('increment')),
+					z.elem('button', {
+						onclick() {
+							console.log('decrement onclick()');
+						}
+					}, z.text('decrement')),
+				)
+			)
 		} );
 		const Timer = z.compDef( {
-			view: instance => z.elem('article', z.text('timer demo'))
+			init: instance => {
+				instance.state.counter = 0;
+				instance.state.interval = setInterval(()=>{
+					instance.state.counter++;
+				}, 1000);
+			},
+			view: instance => z.elem('article',
+				z.elem('h3', z.text('Timer Demo')),
+				z.elem('div', z.text('Timer: ' + instance.state.counter)),
+			),
+			destroy: instance => {
+				clearInterval(instance.state.interval);
+			}
 		} );
 		const List = z.compDef( {
 			view: instance => z.elem('article', z.text('list demo'))
@@ -42,13 +83,7 @@
 				z.comp(Footer),
 			]
 		} );
-		//let counter = 0;
-		//function drawCounter() {
-		//	counter++;
-		//	z.draw(document.querySelector('#app'), z.text('Counter: ' + counter));
-		//};
-		//setInterval(drawCounter, 1000);
-		z.draw(document.querySelector('#app'), z.comp(Layout));
+		redrawApplication();
 	</script>
 </body>
 </html>

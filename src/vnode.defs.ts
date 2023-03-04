@@ -31,6 +31,8 @@ export interface VNodeCompDefinition {
 
 export interface VNodeCompInstance {
   attrs: VNodeCompAttributes;
+  // *** for now state is non-reactive
+  state: Object;
 };
 
 export interface VNodeAbstract {
