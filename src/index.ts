@@ -178,38 +178,67 @@ function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
 function drawVNode(parent: VNodeAny, vNode: VNodeAny, vnodeOld?: VNodeAny) {
+  //console.log('drawVNode()');
   // we have quote a few cases to address here:
   // - get node type
   // - if node is a component check for an instance
   // - otherwise check for its .dom property
-  const nodeType:number = vnode._z_;
-  if(nodeType === VNODE_TYPE_COMP) {
-  } else {
-    let vnodeChildren:VNodeArray;
+  const nodeType:number = vNode._z_;
+  let vNodeChildren:VNodeArray;
+  vNode.parent = parent;
+  //if(nodeType === VNODE_TYPE_COMP) {
+  //  vNode = vNode as VNodeComp;
+  //  if(vNode.instance) {
+  //    updateComponent(parent, vNode);
+  //  } else {
+  //    createComponent(parent, vNode);
+  //  }
+  //  vNodeChildren = vNode.children;
+  //} else {
     // if the current vnode has no dom it hasn't been drawn before
-    if(!vnode.dom) {
-      // create dom based on vnode._z_
-      switch(vnode._z_) {
-        case VNODE_TYPE_ELEM:
-          vnode.dom = document.createElement(vnode.tag);
-          vnodeChildren = vnode.children;
-          break;
-        case VNODE_TYPE_COMP:
-          vnode.dom = document.createDocumentFragment();
-          break;
-        case VNODE_TYPE_TEXT:
-          vnode.dom = document.createTextNode(vnode.tag);
-          break;
-      }
+  if(vNode.dom) {
+    // create dom based on vnode._z_
+    switch(nodeType) {
+      case VNODE_TYPE_ELEM:
+        vNode = vNode as VNodeElem;
+        vNodeChildren = vNode.children;
+        break;
+      case VNODE_TYPE_COMP:
+        vNode = vNode as VNodeComp;
+        updateComponent(parent, vNode);
+        vNodeChildren = vNode.children;
+        break;
+      //case VNODE_TYPE_TEXT:
+      //  vNode = vNode as VNodeText;
+      //  vNode.dom = document.createTextNode(vNode.tag);
+      //  break;
     }
-    // if the vnode has children then draw them
-    if(vnodeChildren) {
-      vnodeChildren.forEach((childVnode: VNodeAny) => {
-      } );
+  } else {
+    switch(nodeType) {
+      case VNODE_TYPE_ELEM:
+        vNode = vNode as VNodeElem;
+        vNode.dom = document.createElement(vNode.tag);
+        vNodeChildren = vNode.children;
+        break;
+      case VNODE_TYPE_COMP:
+        vNode = vNode as VNodeComp;
+        createComponent(parent, vNode);
+        vNodeChildren = vNode.children;
+        break;
+      case VNODE_TYPE_TEXT:
+        vNode = vNode as VNodeText;
+        vNode.dom = document.createTextNode(vNode.tag);
+        break;
     }
   }
-  parent.dom.appendChild(vnode.dom);
+  //}
+  // if the vnode has children then draw them
+  if(vNodeChildren) {
+    vNodeChildren.forEach((childVNode: VNodeAny) => {
       drawVNode(vNode, childVNode);
+    } );
+  }
+  parent.dom.appendChild(vNode.dom);
 }
 
 // ----------------------------------------
