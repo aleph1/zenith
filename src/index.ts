@@ -37,10 +37,12 @@ import {
   VNodeComp,
   VNodeHTML,
   VNodeAny,
+  VNodeAnyOrArray,
   VNodeArray,
   VNodeElemAttributes,
-  VNodeCompDefinition,
   VNodeCompAttributes,
+  VNodeCompDefinition,
+  VNodeCompInstance
 } from './vnode.defs';
 
 // ----------------------------------------
