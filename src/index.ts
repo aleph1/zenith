@@ -111,8 +111,7 @@ function compDef( def: VNodeCompDefinition): VNodeCompDefinition {
 function comp(componentDefinition: VNodeCompDefinition, attrs: VNodeCompAttributes): VNodeComp {
   return {
     _z_: VNODE_TYPE_COMP,
-    tag: componentDefinition,
-    attrs: attrs
+    tag: componentDefinition
   }
 }
 
@@ -162,30 +161,18 @@ function renderViewable(instance:object, viewFn:Function): VNodeArray {
   return Array.isArray(children) ? children.flat( Infinity ) : [children];
 }
 
-function createElement(parent:VNodeAny, vNode:VNodeElem) {
-  const dom: Element = document.createElement(vNode.tag);
-  vNode.dom = dom;
-  for(const attr in vNode.attrs) {
-    console.log(attr);
-    dom.setAttribute(attr, vNode.attrs[attr]);
-  }
-}
-
-function createComponent(parent:VNodeAny, vNode:VNodeComp) {
+function createComponent(parent:VNodeAny, vnode:VNodeComp) {
   //console.log('createComponent()');
-  // *** should we seal this object?
   const instance:VNodeCompInstance = {
-    attrs: vNode.attrs,
-    state: {}
+    attrs: {}
   };
-  if(vNode.tag.init) vNode.tag.init(instance);
-  vNode.instance = instance;
-  vNode.children = renderViewable(instance, vNode.tag.view);
-  vNode.dom = document.createDocumentFragment();
+  vnode.instance = instance;
+  vnode.children = renderViewable(instance, vnode.tag.view);
+  vnode.dom = document.createDocumentFragment();
 }
 
-function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
-  vNode.children = renderViewable(vNode.instance, vNode.tag.view);
+function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
+  vnode.children = renderViewable(vnode.instance, vnode.tag.view);
 }
 
 // Initial implementation of drawNode just to get something displaying
@@ -199,7 +186,16 @@ function drawVNode(parent: VNodeAny, vNode: VNodeAny, vnodeOld?: VNodeAny) {
   const nodeType:number = vNode._z_;
   let vNodeChildren:VNodeArray;
   vNode.parent = parent;
-  // if the current vnode has no dom it hasn't been drawn before
+  //if(nodeType === VNODE_TYPE_COMP) {
+  //  vNode = vNode as VNodeComp;
+  //  if(vNode.instance) {
+  //    updateComponent(parent, vNode);
+  //  } else {
+  //    createComponent(parent, vNode);
+  //  }
+  //  vNodeChildren = vNode.children;
+  //} else {
+    // if the current vnode has no dom it hasn't been drawn before
   if(vNode.dom) {
     // create dom based on vnode._z_
     switch(nodeType) {
@@ -221,7 +217,7 @@ function drawVNode(parent: VNodeAny, vNode: VNodeAny, vnodeOld?: VNodeAny) {
     switch(nodeType) {
       case VNODE_TYPE_ELEM:
         vNode = vNode as VNodeElem;
-        createElement(parent, vNode);
+        vNode.dom = document.createElement(vNode.tag);
         vNodeChildren = vNode.children;
         break;
       case VNODE_TYPE_COMP:
