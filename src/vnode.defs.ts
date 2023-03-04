@@ -57,7 +57,7 @@ export type VNodeText = Omit<VNodeAbstract, '_z_'> & {
 
 export type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeComp;
-  tag: Function;
+  tag: VNodeCompDefinition;
   dom?: Node;
   instance?: VNodeCompInstance;
 };
