@@ -44,6 +44,7 @@ export interface VNodeAbstract {
 export type VNodeContainer = VNodeElem | VNodeComp;
 export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
 export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray>;
+export type VNodeFlatArray = Array<VNodeAny>;
 export type VNodeAnyOrArray = VNodeAny | VNodeArray;
 
 export type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
