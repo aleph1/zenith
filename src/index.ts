@@ -250,67 +250,37 @@ function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
   vnode.children = renderViewable(vnode.instance, vnode.tag.view);
 }
 
-// Initial implementation of drawNode just to get something displaying
-// there is so much to do here, including correcty rendering components
-  //console.log('drawVNode()');
-  // we have quote a few cases to address here:
-  // - get node type
-  // - if node is a component check for an instance
-  // - otherwise check for its .dom property
+function createVNode(parent: VNodeAny, vNode: VNodeAny) {
+  //console.log('diffVNode()');
   const nodeType:number = vNode._z_;
-  let vNodeChildren:VNodeArray;
   vNode.parent = parent;
-  //if(nodeType === VNODE_TYPE_COMP) {
-  //  vNode = vNode as VNodeComp;
-  //  if(vNode.instance) {
-  //    updateComponent(parent, vNode);
-  //  } else {
-  //    createComponent(parent, vNode);
-  //  }
-  //  vNodeChildren = vNode.children;
-  //} else {
-    // if the current vnode has no dom it hasn't been drawn before
+  // if the current vnode has no dom it hasn't been drawn before
   if(vNode.dom) {
+    //console.log('updating component')
     // create dom based on vnode._z_
     switch(nodeType) {
-      case VNODE_TYPE_ELEM:
-        vNode = vNode as VNodeElem;
-        vNodeChildren = vNode.children;
-        break;
       case VNODE_TYPE_COMP:
         vNode = vNode as VNodeComp;
         updateComponent(parent, vNode);
-        vNodeChildren = vNode.children;
         break;
-      //case VNODE_TYPE_TEXT:
-      //  vNode = vNode as VNodeText;
-      //  vNode.dom = document.createTextNode(vNode.tag);
-      //  break;
     }
   } else {
     switch(nodeType) {
       case VNODE_TYPE_ELEM:
         vNode = vNode as VNodeElem;
         createElement(parent, vNode);
-        vNodeChildren = vNode.children;
         break;
       case VNODE_TYPE_COMP:
         vNode = vNode as VNodeComp;
         createComponent(parent, vNode);
-        vNodeChildren = vNode.children;
         break;
       case VNODE_TYPE_TEXT:
         vNode = vNode as VNodeText;
         vNode.dom = document.createTextNode(vNode.tag);
         break;
     }
+    parent.dom.appendChild(vNode.dom);
   }
-  //}
-  // if the vnode has children then draw them
-  if(vNodeChildren) {
-    vNodeChildren.forEach((childVNode: VNodeAny) => {
-      drawVNode(vNode, childVNode);
-    } );
 }
 
 function removeVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number, end: number) {
