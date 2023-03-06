@@ -189,10 +189,13 @@ function createElement(parent:VNodeAny, vNode:VNodeElem) {
    diffVNodeChildren(vNode as VNodeContainer, vNode.children);
  }
 
-function createComponent(parent:VNodeAny, vnode:VNodeComp) {
-  //console.log('createComponent()');
+function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   const instance:VNodeCompInstance = {
-    attrs: {}
+    attrs: {},
+    state: {},
+    redraw(){
+      diffVNode(parent, vNode);
+    }
   };
   vnode.instance = instance;
   vnode.children = renderViewable(instance, vnode.tag.view);
