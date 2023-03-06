@@ -195,6 +195,32 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   }
 }
 
+function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld?:VNodeFlatArray) {
+  // we need to do a diff
+  if(childrenOld) {
+    const childrenLength = children.length;
+    const childrenOldLength = childrenOld.length;
+    if(childrenLength < childrenOldLength) {
+      removeVNodes(vNode, childrenOld, childrenLength, childrenOldLength);
+    }
+    for(let i = 0; i < childrenLength; i++ ) {
+      diffVNode(vNode, children[i], childrenOld[i]);
+    }
+  // or we don't
+  } else {
+    createVNodes(vNode, children, 0, children.length);
+  }
+  // *** this works but it's not great
+  //if( children === childrenOld || children == null && childrenOld == null) return;
+  //const childrenLength = children.length;
+  //const childrenOldLength = childrenOld && childrenOld.length || 0;
+  //if (childrenOldLength === 0) createVNodes(vNode, children, 0, childrenLength);
+  //else if (childrenLength === 0) removeVNodes(vNode, childrenOld, 0, childrenOldLength);
+  //else {
+  //  // *** eventually implement keys and diffing
+  //  removeVNodes(vNode, childrenOld, 0, childrenOldLength);
+  //  createVNodes(vNode, children, 0, childrenLength);
+  //}
 }
 
 function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
