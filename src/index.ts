@@ -311,8 +311,25 @@ function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
     vNodeChildren.forEach((childVNode: VNodeAny) => {
       drawVNode(vNode, childVNode);
     } );
+}
+
+function removeVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number, end: number) {
+  //console.log('removeVNodes()');
+  while(start < end) {
+    removeVNode(parent, children[start++]);
   }
-  parent.dom.appendChild(vNode.dom);
+}
+
+function removeVNode(parent: VNodeAny, vNode: VNodeAny) {
+  //console.log('removeVNode()');
+  //console.log(vNode);
+  if(typeof vNode.tag === 'string') {
+    vNode = vNode as VNodeElem;
+    vNode.dom && vNode.dom.remove();
+  } else {
+    vNode = vNode as VNodeContainer;
+    removeVNodes(vNode, vNode.children, 0, vNode.children.length);
+  }
 }
 
 // ----------------------------------------
