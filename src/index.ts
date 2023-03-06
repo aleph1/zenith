@@ -192,7 +192,6 @@ function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
 
 // Initial implementation of drawNode just to get something displaying
 // there is so much to do here, including correcty rendering components
-function drawVNode(parent: VNodeAny, vNode: VNodeAny, vnodeOld?: VNodeAny) {
   //console.log('drawVNode()');
   // we have quote a few cases to address here:
   // - get node type
@@ -265,7 +264,7 @@ export default {
   text,
   comp,
   compDef,
-  draw(dom:Node, vnode:VNodeAny) {
-    drawVNode(wrapDom(emptyDom(dom)), vnode);
+  draw(dom:Element, vnode:VNodeAny) {
+    diffVNode(wrapDom(emptyDom(dom)), vnode);
   }
 };
