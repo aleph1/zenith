@@ -41,6 +41,7 @@ export interface VNodeAbstract {
   parent?: VNodeAny;
 }
 
+export type VNodeContainer = VNodeElem | VNodeComp;
 export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
 export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray>;
 export type VNodeAnyOrArray = VNodeAny | VNodeArray;
