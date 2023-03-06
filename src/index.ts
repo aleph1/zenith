@@ -168,26 +168,26 @@ function renderViewable(instance:object, viewFn:Function):VNodeFlatArray {
 }
 
 function createElement(parent:VNodeAny, vNode:VNodeElem) {
-   const dom: Element = document.createElement(vNode.tag);
-   vNode.dom = dom;
-   // Setting on* handlers using setAttribute does not work,
-   // benchmark to compare various approaches:
-   // https://www.measurethat.net/Benchmarks/Show/19171/0/compare-detecting-object-keys-starting-with-on
-   // Array access performs better in most current browsers,
-   // however, it might be worth considering a couple of other
-   // approaches:
-   // - nested object: attrs = { on:{ click(){}, etc. } };
-   // - object containing all on* attributes that has a property
-   //   added when a new match is made
-   for(const attr in vNode.attrs) {
+  const dom: Element = document.createElement(vNode.tag);
+  vNode.dom = dom;
+  // Setting on* handlers using setAttribute does not work,
+  // benchmark to compare various approaches:
+  // https://www.measurethat.net/Benchmarks/Show/19171/0/compare-detecting-object-keys-starting-with-on
+  // Array access performs better in most current browsers,
+  // however, it might be worth considering a couple of other
+  // approaches:
+  // - nested object: attrs = { on:{ click(){}, etc. } };
+  // - object containing all on* attributes that has a property
+  //   added when a new match is made
+  for(const attr in vNode.attrs) {
     if(attr[0] === 'o' && attr[1] === 'n') {
       dom[attr] = vNode.attrs[attr];
     } else {
       dom.setAttribute(attr, vNode.attrs[attr]);
     }
-   }
-   diffVNodeChildren(vNode as VNodeContainer, vNode.children);
- }
+  }
+  diffVNodeChildren(vNode as VNodeContainer, vNode.children);
+}
 
 function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   const instance:VNodeCompInstance = {
