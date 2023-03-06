@@ -203,6 +203,10 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   diffVNodeChildren(vNode, renderViewable(instance, vNode.tag.view));
 }
 
+function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
+  diffVNodeChildren(vNode, renderViewable(vNode.instance, vNode.tag.view), vNode.children);
+}
+
 // Partial implementation, thinking this should become our diff
 function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   //console.log('diffVNode()');
