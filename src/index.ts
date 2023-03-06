@@ -197,9 +197,12 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
       diffVNode(parent, vNode);
     }
   };
-  vnode.instance = instance;
-  vnode.children = renderViewable(instance, vnode.tag.view);
-  vnode.dom = document.createDocumentFragment();
+  if(vNode.tag.init) vNode.tag.init(instance);
+  vNode.instance = instance;
+  vNode.dom = document.createDocumentFragment();
+  diffVNodeChildren(vNode, renderViewable(instance, vNode.tag.view));
+}
+
 // Partial implementation, thinking this should become our diff
 function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   //console.log('diffVNode()');
