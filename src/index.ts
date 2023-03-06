@@ -246,8 +246,13 @@ function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld
   //}
 }
 
-function updateComponent(parent:VNodeAny, vnode:VNodeComp) {
-  vnode.children = renderViewable(vnode.instance, vnode.tag.view);
+function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number, end: number) {
+  //console.log('createVNodes()');
+  while(start < end) {
+    createVNode(parent, children[start++]);
+  }
+  parent = parent as VNodeContainer;
+  parent.children = children;
 }
 
 function createVNode(parent: VNodeAny, vNode: VNodeAny) {
