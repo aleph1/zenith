@@ -138,10 +138,10 @@ function html(value: string): VNodeHTML {
   };
 }
 
-function wrapDom(dom:Node): VNodeElem {
+function wrapDom(dom:Element): VNodeElem {
   if(DEBUG) {
     // why do we need to cast dom as any to not get a Typescript compile error?
-    if(<any> dom instanceof Node) throw new Error('wrap requires DOM Node');
+    if(<any> dom instanceof Element) throw new Error('wrap requires DOM Element');
   }
   return wrappedNodes.get(dom) || wrappedNodes.set(dom, Object.assign(elem(dom.nodeName.toLowerCase()), {
     dom: dom
