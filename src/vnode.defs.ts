@@ -51,8 +51,8 @@ export type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeElem;
   tag: string;
   attrs: VNodeElemAttributes;
-  dom?: Node;
   children: VNodeFlatArray;
+  dom?: Element;
 };
 
 export type VNodeText = Omit<VNodeAbstract, '_z_'> & {
