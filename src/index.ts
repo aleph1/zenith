@@ -157,14 +157,14 @@ function emptyDom(dom:Node): Node {
   return dom;
 }
 
-function renderViewable(instance:object, viewFn:Function): VNodeArray {
 function normalizeChildren(children:VNodeArray):VNodeFlatArray {
   return children.flat(Infinity) as VNodeFlatArray;
 }
 
+function renderViewable(instance:object, viewFn:Function):VNodeFlatArray {
   //console.log('renderViewable()');
   const children:VNodeAnyOrArray = viewFn(instance);
-  return Array.isArray(children) ? children.flat( Infinity ) : [children];
+  return Array.isArray(children) ? normalizeChildren(children) : [children];
 }
 
 function createElement(parent:VNodeAny, vNode:VNodeElem) {
