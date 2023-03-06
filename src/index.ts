@@ -152,7 +152,7 @@ function wrapDom(dom:Element): VNodeElem {
 // RENDERING
 // ----------------------------------------
 
-function emptyDom(dom:Node): Node {
+function emptyDom(dom:Element): Element {
   while(dom.lastChild) dom.removeChild(dom.lastChild);
   return dom;
 }
