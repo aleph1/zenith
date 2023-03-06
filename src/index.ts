@@ -84,7 +84,7 @@ function elem(selector: string): VNodeElem {
     _z_: VNODE_TYPE_ELEM,
     tag: selector,
     attrs,
-    children
+    children: normalizeChildren(children)
   }
 }
 
@@ -158,6 +158,10 @@ function emptyDom(dom:Node): Node {
 }
 
 function renderViewable(instance:object, viewFn:Function): VNodeArray {
+function normalizeChildren(children:VNodeArray):VNodeFlatArray {
+  return children.flat(Infinity) as VNodeFlatArray;
+}
+
   //console.log('renderViewable()');
   const children:VNodeAnyOrArray = viewFn(instance);
   return Array.isArray(children) ? children.flat( Infinity ) : [children];
