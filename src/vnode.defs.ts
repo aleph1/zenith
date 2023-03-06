@@ -33,6 +33,7 @@ export interface VNodeCompInstance {
   attrs: VNodeCompAttributes;
   // *** for now state is non-reactive
   state: Object;
+  redraw: Function;
 };
 
 export interface VNodeAbstract {
