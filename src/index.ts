@@ -206,6 +206,12 @@ function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
   diffVNodeChildren(vNode, renderViewable(vNode.instance, vNode.tag.view), vNode.children);
 }
 
+// *** partial implementation
+function destroyComponent(parent:VNodeAny, vNode:VNodeComp) {
+  // in cases of component, destroy them
+  if(vNode.tag.destroy) vNode.tag.destroy(vNode.instance);
+}
+
 // Partial implementation, thinking this should become our diff
 function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   //console.log('diffVNode()');
