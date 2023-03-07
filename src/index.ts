@@ -194,9 +194,7 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   const instance:VNodeCompInstance = {
     attrs: {},
     state: {},
-    redraw(){
-      diffVNode(parent, vNode);
-    }
+    redraw: () => updateComponent(parent, vNode)
   };
   if(vNode.tag.init) vNode.tag.init(instance);
   vNode.instance = instance;
