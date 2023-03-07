@@ -40,6 +40,7 @@ export interface VNodeCompInstance {
 export interface VNodeAbstract {
   _z_: VNodeTypeNone;
   parent?: VNodeAny;
+  children?: VNodeFlatArray;
 }
 
 export type VNodeContainer = VNodeElem | VNodeComp;
@@ -52,7 +53,7 @@ export type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeElem;
   tag: string;
   attrs: VNodeElemAttributes;
-  children: VNodeFlatArray;
+  //children: VNodeFlatArray;
   dom?: Element;
 };
 
@@ -66,7 +67,7 @@ export type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
   _z_: VNodeTypeComp;
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
-  children?: VNodeFlatArray;
+  //children?: VNodeFlatArray;
   dom?: Node;
   instance?: VNodeCompInstance;
 };
