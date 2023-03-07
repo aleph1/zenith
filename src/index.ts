@@ -71,7 +71,7 @@ function elem(selector: string): VNodeElem {
 
   // if no passed attributes
   if(attrs == null || typeof attrs !== 'object' || attrs.tag != null || Array.isArray(attrs)) {
-    attrs = {};
+    attrs = sealedEmptyObject;
   // otherwise, copy attributes
   } else {
     attrs = Object.assign( {}, attrs );
