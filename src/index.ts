@@ -256,6 +256,7 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
 }
 
 function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld?:VNodeFlatArray) {
+  //console.log('diffVNodeChildren()');
   // we need to do a diff
   if(childrenOld) {
     const childrenLength = children.length;
@@ -270,6 +271,7 @@ function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld
   } else {
     createVNodes(vNode, children, 0, children.length);
   }
+  vNode.children = children;
   // *** this works but it's not great
   //if( children === childrenOld || children == null && childrenOld == null) return;
   //const childrenLength = children.length;
