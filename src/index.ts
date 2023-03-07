@@ -20,6 +20,7 @@ const DEBUG = window.DEBUG;
 // definition types and values
 type DefTypeComp = 1;
 const DEF_TYPE_COMP: DefTypeComp = 1;
+const sealedEmptyObject: object = Object.seal({});
 
 import {
   VNodeTypeNone,
