@@ -294,33 +294,32 @@ function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number,
   //parent.children = children;
 }
 
+// *** if only components will be updated this function isn't necessary
+//function updateVNode(parent: VNodeAny, vNode: VNodeAny) {
+//  switch(vNode._z_) {
+//    case VNODE_TYPE_COMP:
+//      vNode = vNode as VNodeComp;
+//      updateComponent(parent, vNode);
+//      break;
+//  }
+//}
+
 function createVNode(parent: VNodeAny, vNode: VNodeAny) {
-  //console.log('diffVNode()');
-  const nodeType:number = vNode._z_;
-  vNode.parent = parent;
-  // if the current vnode has no dom it hasn't been drawn before
-  if(vNode.dom) {
-    //console.log('updating component')
-    // create dom based on vnode._z_
-    switch(nodeType) {
-      case VNODE_TYPE_COMP:
-        vNode = vNode as VNodeComp;
-        updateComponent(parent, vNode);
-        break;
-    }
-  } else {
-    switch(nodeType) {
-      case VNODE_TYPE_ELEM:
-        vNode = vNode as VNodeElem;
-        createElement(parent, vNode);
-        break;
-      case VNODE_TYPE_COMP:
   switch(vNode._z_) {
     case VNODE_TYPE_ELEM:
       vNode = vNode as VNodeElem;
       createElement(parent, vNode as VNodeElem);
+      break;
     case VNODE_TYPE_COMP:
+      vNode = vNode as VNodeComp;
+      createComponent(parent, vNode);
+      break;
+    case VNODE_TYPE_TEXT:
+      vNode = vNode as VNodeText;
+      vNode.dom = document.createTextNode(vNode.tag);
+      break;
   }
+  parent.dom.appendChild(vNode.dom);
 }
 
 function removeVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number, end: number) {
