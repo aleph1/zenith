@@ -215,6 +215,8 @@ function destroyComponent(parent:VNodeAny, vNode:VNodeComp) {
 // Partial implementation, thinking this should become our diff
 function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   //console.log('diffVNode()');
+  // *** do we need a different check here?
+  vNode.parent = parent;
   if(vNodeOld != null) {
     // *** compare tag
     //if(vNode == vNodeOld || vNode)
@@ -256,8 +258,8 @@ function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number,
   while(start < end) {
     createVNode(parent, children[start++]);
   }
-  parent = parent as VNodeContainer;
-  parent.children = children;
+  //parent = parent as VNodeContainer;
+  //parent.children = children;
 }
 
 function createVNode(parent: VNodeAny, vNode: VNodeAny) {
