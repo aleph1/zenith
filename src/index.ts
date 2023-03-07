@@ -78,7 +78,7 @@ function elem(selector: string): VNodeElem {
     start++;
   }
   while( start < arguments.length ) {
-    const child:VNodeAny = arguments[ start++ ];
+    const child:VNodeAny = arguments[start++];
     children.push( typeof child === 'object' ? child : text( child ) );
   }
   return {
