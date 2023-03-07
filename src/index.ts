@@ -218,6 +218,36 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   // *** do we need a different check here?
   vNode.parent = parent;
   if(vNodeOld != null) {
+    //console.log('comparing vNodes');
+    const vNodeType = vNode._z_;
+    const vNodeOldType = vNodeOld._z_;
+    // if the type of tag is different we need to create the new node
+    //console.log(vNode);
+    //console.log(vNodeOld);
+    if(vNodeType !== vNodeOldType || vNode.tag !== vNodeOld.tag) {
+      //console.log('vNode has changed');
+      // handle components
+      if(vNodeOldType === VNODE_TYPE_COMP) {
+        destroyComponent(parent, vNodeOld as VNodeComp);
+      }
+      createVNode(parent, vNode);
+    } else {
+      //console.log('vNode has not changed');
+      vNode.dom = vNodeOld.dom;
+      switch(vNodeType) {
+        case VNODE_TYPE_ELEM:
+          vNode = vNode as VNodeElem;
+          // *** do we need to diff the old vNode's children?
+          diffVNodeChildren(vNode, vNode.children, vNodeOld.children);
+          break;
+        case VNODE_TYPE_COMP:
+          vNode = vNode as VNodeComp;
+          vNodeOld = vNodeOld as VNodeComp;
+          vNode.instance = vNodeOld.instance;
+          updateComponent(parent, vNode);  
+          break;
+      }
+    }
     // *** compare tag
     //if(vNode == vNodeOld || vNode)
   } else {
