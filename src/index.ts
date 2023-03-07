@@ -96,7 +96,7 @@ function text(value: string): VNodeText {
   }
 }
 
-function compDef( def: VNodeCompDefinition): VNodeCompDefinition {
+function compDef(def: VNodeCompDefinition): VNodeCompDefinition {
   if( DEBUG ) {
     if( typeof def.view !== 'function' ) throw new Error( 'component requires view function' );
   }
@@ -281,15 +281,11 @@ function createVNode(parent: VNodeAny, vNode: VNodeAny) {
         createElement(parent, vNode);
         break;
       case VNODE_TYPE_COMP:
-        vNode = vNode as VNodeComp;
-        createComponent(parent, vNode);
-        break;
-      case VNODE_TYPE_TEXT:
-        vNode = vNode as VNodeText;
-        vNode.dom = document.createTextNode(vNode.tag);
-        break;
-    }
-    parent.dom.appendChild(vNode.dom);
+  switch(vNode._z_) {
+    case VNODE_TYPE_ELEM:
+      vNode = vNode as VNodeElem;
+      createElement(parent, vNode as VNodeElem);
+    case VNODE_TYPE_COMP:
   }
 }
 
