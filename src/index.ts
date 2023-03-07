@@ -82,7 +82,7 @@ function elem(selector: string): VNodeElem {
     children.push( typeof child === 'object' ? child : text( child ) );
   }
   return {
-    _z_: VNODE_TYPE_ELEM,
+    type: VNODE_TYPE_ELEM,
     tag: selector,
     attrs,
     children: normalizeChildren(children)
@@ -91,7 +91,7 @@ function elem(selector: string): VNodeElem {
 
 function text(value: string): VNodeText {
   return {
-    _z_: VNODE_TYPE_TEXT,
+    type: VNODE_TYPE_TEXT,
     tag: value && value.toString() || '',
   }
 }
@@ -101,7 +101,7 @@ function compDef(def: VNodeCompDefinition): VNodeCompDefinition {
     if( typeof def.view !== 'function' ) throw new Error( 'component requires view function' );
   }
   return Object.assign( {}, def, {
-    _z_: DEF_TYPE_COMP
+    type: DEF_TYPE_COMP
   } );
 }
 
@@ -113,7 +113,7 @@ function compDef(def: VNodeCompDefinition): VNodeCompDefinition {
 //   - destroy: called once upon destruction
 function comp(componentDefinition: VNodeCompDefinition, attrs: VNodeCompAttributes): VNodeComp {
   return {
-    _z_: VNODE_TYPE_COMP,
+    type: VNODE_TYPE_COMP,
     tag: componentDefinition
   }
 }
@@ -132,7 +132,7 @@ function html(value: string): VNodeHTML {
   //
   }
   return {
-    _z_: VNODE_TYPE_HTML,
+    type: VNODE_TYPE_HTML,
     tag: '<',
     dom,
     domLength: dom.children.length
@@ -219,8 +219,8 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
   vNode.parent = parent;
   if(vNodeOld != null) {
     //console.log('comparing vNodes');
-    const vNodeType = vNode._z_;
-    const vNodeOldType = vNodeOld._z_;
+    const vNodeType = vNode.type;
+    const vNodeOldType = vNodeOld.type;
     // if the type of tag is different we need to create the new node
     //console.log(vNode);
     //console.log(vNodeOld);
@@ -296,7 +296,7 @@ function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number,
 
 // *** if only components will be updated this function isn't necessary
 //function updateVNode(parent: VNodeAny, vNode: VNodeAny) {
-//  switch(vNode._z_) {
+//  switch(vNode.type) {
 //    case VNODE_TYPE_COMP:
 //      vNode = vNode as VNodeComp;
 //      updateComponent(parent, vNode);
@@ -305,7 +305,7 @@ function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number,
 //}
 
 function createVNode(parent: VNodeAny, vNode: VNodeAny) {
-  switch(vNode._z_) {
+  switch(vNode.type) {
     case VNODE_TYPE_ELEM:
       vNode = vNode as VNodeElem;
       createElement(parent, vNode as VNodeElem);

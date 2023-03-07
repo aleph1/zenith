@@ -38,7 +38,7 @@ export interface VNodeCompInstance {
 };
 
 export interface VNodeAbstract {
-  _z_: VNodeTypeNone;
+  type: VNodeTypeNone;
   parent?: VNodeAny;
   children?: VNodeFlatArray;
 }
@@ -49,22 +49,22 @@ export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | V
 export type VNodeFlatArray = Array<VNodeAny>;
 export type VNodeAnyOrArray = VNodeAny | VNodeArray;
 
-export type VNodeElem = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeElem;
+export type VNodeElem = Omit<VNodeAbstract, 'type'> & {
+  type: VNodeTypeElem;
   tag: string;
   attrs: VNodeElemAttributes;
   //children: VNodeFlatArray;
   dom?: Element;
 };
 
-export type VNodeText = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeText;
+export type VNodeText = Omit<VNodeAbstract, 'type'> & {
+  type: VNodeTypeText;
   tag: string;
   dom?: Node;
 };
 
-export type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeComp;
+export type VNodeComp = Omit<VNodeAbstract, 'type'> & {
+  type: VNodeTypeComp;
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
   //children?: VNodeFlatArray;
@@ -72,8 +72,8 @@ export type VNodeComp = Omit<VNodeAbstract, '_z_'> & {
   instance?: VNodeCompInstance;
 };
 
-export type VNodeHTML = Omit<VNodeAbstract, '_z_'> & {
-  _z_: VNodeTypeHTML;
+export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
+  type: VNodeTypeHTML;
   tag: "<";
   dom?: Node;
   domLength?: number;
