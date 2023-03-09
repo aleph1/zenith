@@ -205,12 +205,17 @@ function createElement(parent:VNodeAny, vNode:VNodeElem) {
 }
 
 function createComponent(parent:VNodeAny, vNode:VNodeComp) {
+  // we check 
+  const state = vNode.tag.state !== false ? {} : undefined;
   const instance:VNodeCompInstance = {
     attrs: {},
-    state: {},
-    redraw: () => updateComponent(parent, vNode)
+    redraw: () => updateComponent(parent, vNode),
+    state: vNode.tag.state !== false ? {} : undefined
   };
+  // ensure this component isn't stateless
   if(vNode.tag.init) vNode.tag.init(instance);
+  // we only allow for state listening after init
+  if(typeof vNode.tag.state === 'function' ) vNode.tag.state(instance);
   vNode.instance = instance;
   vNode.dom = document.createDocumentFragment();
   diffVNodeChildren(vNode, renderViewable(instance, vNode.tag.view));
