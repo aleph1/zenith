@@ -125,10 +125,11 @@ function compDef(inputDef: VNodeCompDefinition): VNodeCompDefinition {
 //   - create: called once upon creation
 //   - view: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
 //   - destroy: called once upon destruction
-function comp(componentDefinition: VNodeCompDefinition, attrs: VNodeCompAttributes): VNodeComp {
+function comp(componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes): VNodeComp {
   return {
     type: VNODE_TYPE_COMP,
-    tag: componentDefinition
+    tag: componentDefinition,
+    attrs: attrs || sealedEmptyObject
   }
 }
 
