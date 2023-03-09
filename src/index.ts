@@ -96,13 +96,14 @@ function text(value: string): VNodeText {
   }
 }
 
-function compDef(def: VNodeCompDefinition): VNodeCompDefinition {
+//function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
+function compDef(inputDef: VNodeCompDefinition): VNodeCompDefinition {
   if( DEBUG ) {
-    if( typeof def.view !== 'function' ) throw new Error( 'component requires view function' );
+    if( typeof inputDef.view !== 'function' ) throw new Error( 'component requires view function' );
   }
-  return Object.assign( {}, def, {
-    type: DEF_TYPE_COMP
-  } );
+  const outputDef:VNodeCompDefinition = Object.assign( {}, inputDef );
+
+  return outputDef;
 }
 
 // A component should include:
