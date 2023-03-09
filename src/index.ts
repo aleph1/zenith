@@ -240,18 +240,7 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
     //console.log('comparing vNodes');
     const vNodeType = vNode.type;
     const vNodeOldType = vNodeOld.type;
-    // if the type of tag is different we need to create the new node
-    //console.log(vNode);
-    //console.log(vNodeOld);
-    if(vNodeType !== vNodeOldType || vNode.tag !== vNodeOld.tag) {
-      //console.log('vNode has changed');
-      // handle components
-      if(vNodeOldType === VNODE_TYPE_COMP) {
-        destroyComponent(parent, vNodeOld as VNodeComp);
-      }
-      createVNode(parent, vNode);
-    } else {
-      //console.log('vNode has not changed');
+    if(vNodeType === vNodeOldType && (vNode.tag === vNodeOld.tag || vNodeType === VNODE_TYPE_TEXT)) {
       vNode.dom = vNodeOld.dom;
       switch(vNodeType) {
         case VNODE_TYPE_ELEM:
@@ -265,7 +254,16 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
           vNode.instance = vNodeOld.instance;
           updateComponent(parent, vNode);  
           break;
+        case VNODE_TYPE_TEXT:
+          (vNode.dom as Text).data  = vNode.tag;
+          break;
       }
+    } else {
+      // handle components
+      if(vNodeOldType === VNODE_TYPE_COMP) {
+        destroyComponent(parent, vNodeOld as VNodeComp);
+      }
+      createVNode(parent, vNode);
     }
     // *** compare tag
     //if(vNode == vNodeOld || vNode)
