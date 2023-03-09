@@ -32,6 +32,7 @@ export interface VNodeCompDefinition {
   init?: Function;
   view: Function;
   destroy?: Function;
+  type?: DefTypeComp;
 }
 
 export interface VNodeCompInstance {
