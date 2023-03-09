@@ -209,7 +209,7 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   // we check 
   const state = vNode.tag.state !== false ? {} : undefined;
   const instance:VNodeCompInstance = {
-    attrs: {},
+    attrs: vNode.attrs,
     redraw: () => updateComponent(parent, vNode),
     state: vNode.tag.state !== false ? {} : undefined
   };
