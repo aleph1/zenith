@@ -33,6 +33,7 @@ export interface VNodeCompDefinition {
   view: Function;
   destroy?: Function;
   type?: DefTypeComp;
+  state?: Function | Boolean;
 }
 
 export interface VNodeCompInstance {
