@@ -1,3 +1,7 @@
+// defintion types
+export type DefTypeComp = 1;
+export const DEF_TYPE_COMP: DefTypeComp = 1;
+
 // node types and values
 export type VNodeTypeNone = 0;
 export type VNodeTypeElem = 1;
