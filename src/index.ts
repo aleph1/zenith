@@ -103,6 +103,19 @@ function compDef(inputDef: VNodeCompDefinition): VNodeCompDefinition {
   }
   const outputDef:VNodeCompDefinition = Object.assign( {}, inputDef );
 
+  //outputDef.type = DEF_TYPE_COMP;
+  //// only allow overrides on state
+  //if(extendDef) {
+  //  for(const prop in outputDef) {
+  //    if(typeof outputDef[prop] === 'function' && typeof extendDef[prop] === 'function'){
+  //      const fn = outputDef[prop];
+  //      outputDef[prop] = instance => {
+  //        extendDef[prop](instance);
+  //        fn(instance);
+  //      }
+  //    }
+  //  }
+  //}
   return outputDef;
 }
 
