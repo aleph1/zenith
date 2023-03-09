@@ -4,51 +4,12 @@
 	<meta charset="utf-8">
 	<title>Zenith.js Demo</title>
 	<meta name="description" content="">
-  	<meta name="viewport" content="width=device-width, initial-scale=1">
-  	<link rel="stylesheet" href="css/main.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 	<div id="app"></div>
 	<script src="../dist/zenith.js"></script>
-	<script>
-		const Counter = z.compDef( {
-			view: instance => z.elem('article', z.text('counter demo'))
-		} );
-		const Timer = z.compDef( {
-			view: instance => z.elem('article', z.text('timer demo'))
-		} );
-		const List = z.compDef( {
-			view: instance => z.elem('article', z.text('list demo'))
-		} );
-		const Header = z.compDef( {
-			view: instance => z.elem('header', z.text('Zenith.js'))
-		} );
-		const Main = z.compDef( {
-			view: instance => z.elem('main',
-				z.elem('section',
-					z.comp(Counter),
-					z.comp(Timer),
-					z.comp(List),
-				)
-			)
-		} );
-		const Footer = z.compDef( {
-			view: instance => z.elem('footer', z.text('footer content'))
-		} );
-		const Layout = z.compDef( {
-			view: instance => [
-				z.comp(Header),
-				z.comp(Main),
-				z.comp(Footer),
-			]
-		} );
-		//let counter = 0;
-		//function drawCounter() {
-		//	counter++;
-		//	z.draw(document.querySelector('#app'), z.text('Counter: ' + counter));
-		//};
-		//setInterval(drawCounter, 1000);
-		z.draw(document.querySelector('#app'), z.comp(Layout));
-	</script>
+	<script src="js/main.js"></script>
 </body>
 </html>
