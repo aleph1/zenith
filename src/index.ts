@@ -185,7 +185,7 @@ function emptyDom(dom:Element): Element {
   return dom;
 }
 
-function getNamespace(vNode, ns) {
+function getNamespace(vNode:VNodeElem, ns:string): string | undefined {
   return vNode.attrs && vNode.attrs.xmlns || elementNamespaces[vNode.tag] || ns;
 }
 
