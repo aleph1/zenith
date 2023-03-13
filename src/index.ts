@@ -378,6 +378,7 @@ export default {
   elem,
   text,
   comp,
+  html,
   compDef,
   draw(dom:Element, vnode:VNodeAny) {
     diffVNode(wrapDom(emptyDom(dom)), vnode);
