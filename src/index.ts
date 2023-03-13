@@ -60,6 +60,10 @@ import {
 // ----------------------------------------
 
 const wrappedNodes = new Map();
+const elementNamespaces = {
+  math: 'http://www.w3.org/1998/Math/MathML',
+  svg: 'http://www.w3.org/2000/svg'
+};
 
 // ----------------------------------------
 // VNODES
