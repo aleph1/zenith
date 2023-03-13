@@ -69,7 +69,18 @@ export default [
           target: 'es6'
         }
       }),
-      terser()
+      terser({
+        format: {
+          comments: function (node, comment) {
+            var text = comment.value;
+            var type = comment.type;
+            if (type == "comment2") {
+              // multiline comment
+              return /!|@preserve|@license|@cc_on/i.test(text);
+            }
+          },
+        },
+      })
     ]
   },
 ];
