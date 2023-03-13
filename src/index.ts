@@ -188,6 +188,14 @@ function emptyDom(dom:Element): Element {
 function getNamespace(vNode, ns) {
   return vNode.attrs && vNode.attrs.xmlns || elementNamespaces[vNode.tag] || ns;
 }
+
+function getElement(name:string, ns?:string, is?:string):Element {
+  // *** explore whether cloning elements is faster
+  return ns ?
+    document.createElementNS( ns, name, is ? {is: is} : null ) :
+    document.createElement( name, is ? {is: is} : null );
+}
+
 function normalizeChildren(children:VNodeArray):VNodeFlatArray {
   return children.flat(Infinity) as VNodeFlatArray;
 }
