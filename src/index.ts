@@ -185,6 +185,9 @@ function emptyDom(dom:Element): Element {
   return dom;
 }
 
+function getNamespace(vNode, ns) {
+  return vNode.attrs && vNode.attrs.xmlns || elementNamespaces[vNode.tag] || ns;
+}
 function normalizeChildren(children:VNodeArray):VNodeFlatArray {
   return children.flat(Infinity) as VNodeFlatArray;
 }
