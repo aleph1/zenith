@@ -208,6 +208,7 @@ function renderDrawable(instance:object, drawFn:Function, oldChildren?:VNodeFlat
 
 function createElement(parent:VNodeAny, vNode:VNodeElem) {
   const dom: Element = document.createElement(vNode.tag);
+  const dom: Element = getElement(vNode.tag);
   vNode.dom = dom;
   // Setting on* handlers using setAttribute does not work,
   // benchmark to compare various approaches:
