@@ -19,7 +19,7 @@ export default [
       }),
       typescript({
         compilerOptions: {
-          target: "es6"
+          target: 'es6'
         }
       })
     ]
@@ -40,7 +40,7 @@ export default [
       }),
       typescript({
         compilerOptions: {
-          target: "es6"
+          target: 'es6'
         }
       })
     ]
@@ -61,7 +61,7 @@ export default [
       }),
       typescript({
         compilerOptions: {
-          target: "es6"
+          target: 'es6'
         }
       }),
       terser()
