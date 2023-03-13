@@ -189,18 +189,18 @@ function getNamespace(vNode:VNodeElem, ns:string): string | undefined {
   return vNode.attrs && vNode.attrs.xmlns || elementNamespaces[vNode.tag] || ns;
 }
 
-function getElement(name:string, ns?:string, is?:string):Element {
+function getElement(name:string, ns?:string, is?:string): Element {
   // *** explore whether cloning elements is faster
   return ns ?
     document.createElementNS( ns, name, is ? {is: is} : null ) :
     document.createElement( name, is ? {is: is} : null );
 }
 
-function normalizeChildren(children:VNodeArray):VNodeFlatArray {
+function normalizeChildren(children:VNodeArray): VNodeFlatArray {
   return children.flat(Infinity) as VNodeFlatArray;
 }
 
-function renderDrawable(instance:object, drawFn:Function, oldChildren?:VNodeFlatArray):VNodeFlatArray {
+function renderDrawable(instance:object, drawFn:Function, oldChildren?:VNodeFlatArray): VNodeFlatArray {
   //console.log('renderDrawable()');
   const children:VNodeAnyOrArray = drawFn(instance, oldChildren);
   return Array.isArray(children) ? normalizeChildren(children) : [children];
