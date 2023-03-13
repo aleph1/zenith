@@ -380,7 +380,7 @@ export default {
   comp,
   html,
   compDef,
-  draw(dom:Element, vnode:VNodeAny) {
-    diffVNode(wrapDom(emptyDom(dom)), vnode);
+  draw(dom:Element, vNode:VNodeAny) {
+    diffVNode(wrapDom(emptyDom(dom)), vNode);
   }
 };
