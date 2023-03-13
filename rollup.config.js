@@ -2,6 +2,8 @@ import replace from '@rollup/plugin-replace';
 import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 
+const banner = '/*! Zenith.js v' + process.env.npm_package_version + ' | MIT License | © 2022 Aleph1 Technologies Inc */';
+
 export default [
   // debug build
   {
@@ -10,7 +12,8 @@ export default [
       file: 'dist/zenith.debug.js',
       format: 'iife',
       name: 'z',
-      preferConst: true
+      preferConst: true,
+      banner
     },
     plugins: [
       replace({
@@ -31,7 +34,8 @@ export default [
       file: 'dist/zenith.js',
       format: 'iife',
       name: 'z',
-      preferConst: true
+      preferConst: true,
+      banner
     },
     plugins: [
       replace({
@@ -52,7 +56,8 @@ export default [
       file: 'dist/zenith.min.js',
       format: 'iife',
       name: 'z',
-      preferConst: true
+      preferConst: true,
+      banner
     },
     plugins: [
       replace({
