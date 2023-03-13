@@ -109,7 +109,7 @@ function compDef(inputDef: VNodeCompDefinition): VNodeCompDefinition {
     if(typeof inputDef.draw !== 'function') throw new Error('component requires draw function');
     //if(inputDef.keep === true && inputDef.update) throw new Error('components with keep: true will never update');
   }
-  const outputDef:VNodeCompDefinition = Object.assign( {}, inputDef );
+  const outputDef:VNodeCompDefinition = Object.assign({}, inputDef);
 
   //outputDef.type = DEF_TYPE_COMP;
   //// only allow overrides on state
