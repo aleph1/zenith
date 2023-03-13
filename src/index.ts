@@ -2,6 +2,13 @@
 // WORKFLOW
 // ----------------------------------------
 // Creating vnodes:
+// 
+// Component lifecycle:
+// - fn(vNode) (calls constructor function)
+// - beforeDraw (not called until component is drawn once)
+// - draw(vNode,children,oldChidren?)
+// - afterDraw(vNode)*
+// - destroy(vNode)
 
 // ----------------------------------------
 // GLOBALS
@@ -98,8 +105,9 @@ function text(value: string): VNodeText {
 
 //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
 function compDef(inputDef: VNodeCompDefinition): VNodeCompDefinition {
-  if( DEBUG ) {
-    if( typeof inputDef.view !== 'function' ) throw new Error( 'component requires view function' );
+  if(DEBUG) {
+    if(typeof inputDef.draw !== 'function') throw new Error('component requires draw function');
+    //if(inputDef.keep === true && inputDef.update) throw new Error('components with keep: true will never update');
   }
   const outputDef:VNodeCompDefinition = Object.assign( {}, inputDef );
 
@@ -123,7 +131,7 @@ function compDef(inputDef: VNodeCompDefinition): VNodeCompDefinition {
 // - optional state (ideally reactive)
 // - lifecycle hooks
 //   - create: called once upon creation
-//   - view: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
+//   - draw: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
 //   - destroy: called once upon destruction
 function comp(componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes): VNodeComp {
   return {
@@ -177,9 +185,9 @@ function normalizeChildren(children:VNodeArray):VNodeFlatArray {
   return children.flat(Infinity) as VNodeFlatArray;
 }
 
-function renderViewable(instance:object, viewFn:Function):VNodeFlatArray {
-  //console.log('renderViewable()');
-  const children:VNodeAnyOrArray = viewFn(instance);
+function renderDrawable(instance:object, drawFn:Function, oldChildren?:VNodeFlatArray):VNodeFlatArray {
+  //console.log('renderDrawable()');
+  const children:VNodeAnyOrArray = drawFn(instance, oldChildren);
   return Array.isArray(children) ? normalizeChildren(children) : [children];
 }
 
@@ -219,11 +227,14 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   if(typeof vNode.tag.state === 'function' ) vNode.tag.state(instance);
   vNode.instance = instance;
   vNode.dom = document.createDocumentFragment();
-  diffVNodeChildren(vNode, renderViewable(instance, vNode.tag.view));
+  diffVNodeChildren(vNode, renderDrawable(instance, vNode.tag.draw));
 }
 
 function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
   diffVNodeChildren(vNode, renderViewable(vNode.instance, vNode.tag.view), vNode.children);
+  if(vNode.tag.beforeDraw) vNode.tag.beforeDraw(vNode.instance);
+  if(!vNode.tag.autoDraw) diffVNodeChildren(vNode, renderDrawable(vNode.instance, vNode.tag.draw, vNode.children), vNode.children);
+  if(vNode.tag.afterDraw) vNode.tag.afterDraw(vNode.instance);
 }
 
 // *** partial implementation

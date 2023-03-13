@@ -30,7 +30,10 @@ export interface VNodeCompAttributes {
 
 export interface VNodeCompDefinition {
   init?: Function;
-  view: Function;
+  draw: Function;
+  autoDraw?: boolean; // defaults to true
+  beforeDraw?: Function;
+  afterDraw?: Function;
   destroy?: Function;
   type?: DefTypeComp;
   state?: Function | Boolean;
@@ -46,6 +49,7 @@ export interface VNodeCompInstance {
 export interface VNodeAbstract {
   type: VNodeTypeNone;
   parent?: VNodeAny;
+  //index?: number;
   children?: VNodeFlatArray;
 }
 
