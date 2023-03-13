@@ -231,7 +231,6 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
 }
 
 function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
-  diffVNodeChildren(vNode, renderViewable(vNode.instance, vNode.tag.view), vNode.children);
   if(vNode.tag.beforeDraw) vNode.tag.beforeDraw(vNode.instance);
   if(!vNode.tag.autoDraw) diffVNodeChildren(vNode, renderDrawable(vNode.instance, vNode.tag.draw, vNode.children), vNode.children);
   if(vNode.tag.afterDraw) vNode.tag.afterDraw(vNode.instance);
