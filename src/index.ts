@@ -64,6 +64,7 @@ const elementNamespaces = {
   math: 'http://www.w3.org/1998/Math/MathML',
   svg: 'http://www.w3.org/2000/svg'
 };
+const namespacedElements = Object.keys(elementNamespaces).join(',');
 
 // ----------------------------------------
 // VNODES
@@ -185,7 +186,11 @@ function emptyDom(dom:Element): Element {
   return dom;
 }
 
-function getNamespace(vNode:VNodeElem, ns:string): string | undefined {
+function getElementNamespace(dom:Element | undefined): string | undefined {
+  return elementNamespaces[dom && dom.nodeName.toLowerCase()];
+}
+
+function getNamespace(vNode:VNodeElem, ns:string | undefined): string | undefined {
   return vNode.attrs && vNode.attrs.xmlns || elementNamespaces[vNode.tag] || ns;
 }
 
@@ -206,9 +211,9 @@ function renderDrawable(instance:object, drawFn:Function, oldChildren?:VNodeFlat
   return Array.isArray(children) ? normalizeChildren(children) : [children];
 }
 
-function createElement(parent:VNodeAny, vNode:VNodeElem) {
-  const dom: Element = document.createElement(vNode.tag);
-  const dom: Element = getElement(vNode.tag);
+function createElement(parent:VNodeAny, vNode:VNodeElem, ns?:string) {
+  ns = getNamespace(vNode, ns);
+  const dom: Element = getElement(vNode.tag, ns, vNode.attrs.is);
   vNode.dom = dom;
   // Setting on* handlers using setAttribute does not work,
   // benchmark to compare various approaches:
@@ -226,10 +231,10 @@ function createElement(parent:VNodeAny, vNode:VNodeElem) {
       dom.setAttribute(attr, vNode.attrs[attr]);
     }
   }
-  diffVNodeChildren(vNode as VNodeContainer, vNode.children);
+  diffVNodeChildren(vNode as VNodeContainer, vNode.children, null, ns);
 }
 
-function createComponent(parent:VNodeAny, vNode:VNodeComp) {
+function createComponent(parent:VNodeAny, vNode:VNodeComp, ns:string) {
   // we check 
   const state = vNode.tag.state !== false ? {} : undefined;
   const instance:VNodeCompInstance = {
@@ -243,7 +248,7 @@ function createComponent(parent:VNodeAny, vNode:VNodeComp) {
   if(typeof vNode.tag.state === 'function' ) vNode.tag.state(instance);
   vNode.instance = instance;
   vNode.dom = document.createDocumentFragment();
-  diffVNodeChildren(vNode, renderDrawable(instance, vNode.tag.draw));
+  diffVNodeChildren(vNode, renderDrawable(instance, vNode.tag.draw), null, ns);
 }
 
 function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
@@ -259,7 +264,7 @@ function destroyComponent(parent:VNodeAny, vNode:VNodeComp) {
 }
 
 // Partial implementation, thinking this should become our diff
-function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
+function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny, ns?: string) {
   //console.log('diffVNode()');
   // *** do we need a different check here?
   vNode.parent = parent;
@@ -290,16 +295,16 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny) {
       if(vNodeOldType === VNODE_TYPE_COMP) {
         destroyComponent(parent, vNodeOld as VNodeComp);
       }
-      createVNode(parent, vNode);
+      createVNode(parent, vNode, ns);
     }
     // *** compare tag
     //if(vNode == vNodeOld || vNode)
   } else {
-    createVNode(parent, vNode);
+    createVNode(parent, vNode, ns);
   }
 }
 
-function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld?:VNodeFlatArray) {
+function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld?:VNodeFlatArray, ns?:string) {
   //console.log('diffVNodeChildren()');
   // we need to do a diff
   if(childrenOld) {
@@ -309,11 +314,11 @@ function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld
       removeVNodes(vNode, childrenOld, childrenLength, childrenOldLength);
     }
     for(let i = 0; i < childrenLength; i++ ) {
-      diffVNode(vNode, children[i], childrenOld[i]);
+      diffVNode(vNode, children[i], childrenOld[i], ns);
     }
   // or we don't
   } else {
-    createVNodes(vNode, children, 0, children.length);
+    createVNodes(vNode, children, 0, children.length, ns);
   }
   vNode.children = children;
   // *** this works but it's not great
@@ -329,10 +334,10 @@ function diffVNodeChildren(vNode: VNodeAny, children:VNodeFlatArray, childrenOld
   //}
 }
 
-function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number, end: number) {
+function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number, end: number, ns:string) {
   //console.log('createVNodes()');
   while(start < end) {
-    createVNode(parent, children[start++]);
+    createVNode(parent, children[start++], ns);
   }
   //parent = parent as VNodeContainer;
   //parent.children = children;
@@ -348,15 +353,16 @@ function createVNodes(parent: VNodeAny, children: VNodeFlatArray, start: number,
 //  }
 //}
 
-function createVNode(parent: VNodeAny, vNode: VNodeAny) {
+function createVNode(parent: VNodeAny, vNode: VNodeAny, ns: string) {
+  //console.log('createVNode()');
   switch(vNode.type) {
     case VNODE_TYPE_ELEM:
       vNode = vNode as VNodeElem;
-      createElement(parent, vNode as VNodeElem);
+      createElement(parent, vNode as VNodeElem, ns);
       break;
     case VNODE_TYPE_COMP:
       vNode = vNode as VNodeComp;
-      createComponent(parent, vNode);
+      createComponent(parent, vNode, ns);
       break;
     case VNODE_TYPE_TEXT:
       vNode = vNode as VNodeText;
@@ -396,6 +402,6 @@ export default {
   html,
   compDef,
   draw(dom:Element, vNode:VNodeAny) {
-    diffVNode(wrapDom(emptyDom(dom)), vNode);
+    diffVNode(wrapDom(emptyDom(dom)), vNode, null, getElementNamespace(dom.closest(namespacedElements)));
   }
 };
