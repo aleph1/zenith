@@ -301,7 +301,6 @@ function diffVNode(parent: VNodeAny, vNode: VNodeAny, vNodeOld?: VNodeAny, ns?: 
         case VNODE_TYPE_COMP:
           vNode = vNode as VNodeComp;
           vNodeOld = vNodeOld as VNodeComp;
-          vNode.instance = vNodeOld.instance;
           updateComponent(parent, vNode);  
           break;
         case VNODE_TYPE_TEXT:
