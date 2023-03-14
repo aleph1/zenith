@@ -409,6 +409,24 @@ function removeVNode(parent: VNodeAny, vNode: VNodeAny) {
   }
 }
 
+function tick() {
+  // /const now = Date.now();
+  wrappedNodes.forEach(vNode => tickVNode(vNode));
+  window.requestAnimationFrame(tick);
+  //console.log('tick took : ' + (Date.now() - now));
+}
+
+function tickVNode(vNode) {
+  switch(vNode.type) {
+    case VNODE_TYPE_COMP:
+      if(vNode.tag.tick) vNode.tag.tick(vNode);
+    case VNODE_TYPE_ELEM:
+      vNode.children.forEach(childVNode => tickVNode(childVNode));
+  }
+}
+
+tick();
+
 // ----------------------------------------
 // EXPORT
 // ----------------------------------------
