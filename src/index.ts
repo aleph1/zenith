@@ -420,6 +420,8 @@ export default {
   html,
   compDef,
   draw(dom:Element, vNode:VNodeAny) {
-    diffVNode(wrapDom(emptyDom(dom)), vNode, null, getElementNamespace(dom.closest(namespacedElements)));
+    const wrapper = wrapDom(emptyDom(dom));
+    diffVNode(wrapper, vNode, null, getElementNamespace(dom.closest(namespacedElements)));
+    wrapper.children = [vNode];
   }
 };
