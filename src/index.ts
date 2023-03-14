@@ -157,7 +157,20 @@ function html(value: string): VNodeHTML {
   while( containerEl.firstChild ) {
     // copy firstChild from container element to fragment
     dom.appendChild( containerEl.firstChild );
-  //
+  }
+  // Very basic injection prevention by removing script tags.
+  // If you want to disable this then create you own function,
+  // or if you want better protection use a dedicated lib.
+  if(value.indexOf('<script') !== -1) {
+    let stack = Array.from(dom.children);
+    while (stack.length > 0) {
+      const node = stack.pop();
+      if(node.nodeName.toLowerCase() === 'script') {
+        node.remove();
+      } else {
+        stack = stack.concat(Array.from(node.children));
+      }
+    }
   }
   return {
     type: VNODE_TYPE_HTML,
