@@ -51,7 +51,7 @@ import {
   VNodeElemAttributes,
   VNodeCompAttributes,
   VNodeCompDefinition,
-  VNodeCompInstance,
+  //VNodeCompInstance,
   VNodeContainer
 } from './vnode.defs';
 
@@ -218,9 +218,9 @@ function normalizeChildren(children:VNodeArray): VNodeFlatArray {
   return children.flat(Infinity) as VNodeFlatArray;
 }
 
-function renderDrawable(instance:object, drawFn:Function, oldChildren?:VNodeFlatArray): VNodeFlatArray {
+function renderDrawable(vNode:VNodeAny, drawFn:Function, oldChildren?:VNodeFlatArray): VNodeFlatArray {
   //console.log('renderDrawable()');
-  const children:VNodeAnyOrArray = drawFn(instance, oldChildren);
+  const children:VNodeAnyOrArray = drawFn(vNode, oldChildren);
   return Array.isArray(children) ? normalizeChildren(children) : [children];
 }
 
@@ -248,32 +248,37 @@ function createElement(parent:VNodeAny, vNode:VNodeElem, ns?:string) {
 }
 
 function createComponent(parent:VNodeAny, vNode:VNodeComp, ns:string) {
-  // we check 
-  const state = vNode.tag.state !== false ? {} : undefined;
-  const instance:VNodeCompInstance = {
-    attrs: vNode.attrs,
-    redraw: () => updateComponent(parent, vNode),
-    state: vNode.tag.state !== false ? {} : undefined
-  };
+  // we check
+  if(vNode.tag.state !== false) {
+    vNode.state = {};
+  }
+  vNode.redraw = () => updateComponent(parent, vNode);
+  //const instance:VNodeCompInstance = {
+  //  attrs: vNode.attrs,
+  //  redraw: () => updateComponent(parent, vNode),
+  //  state: vNode.tag.state !== false ? {} : undefined
+  //};
   // ensure this component isn't stateless
-  if(vNode.tag.init) vNode.tag.init(instance);
+  if(vNode.tag.init) vNode.tag.init(vNode);
   // we only allow for state listening after init
-  if(typeof vNode.tag.state === 'function' ) vNode.tag.state(instance);
-  vNode.instance = instance;
+  if(typeof vNode.tag.state === 'function' ) {
+    // allows for 3rd party integration, passes vNode state and redraw function
+    vNode.stateDestructor = vNode.tag.state(vNode.state, vNode.redraw);
+  }
   vNode.dom = document.createDocumentFragment();
-  diffVNodeChildren(vNode, renderDrawable(instance, vNode.tag.draw), null, ns);
+  diffVNodeChildren(vNode, renderDrawable(vNode, vNode.tag.draw), null, ns);
 }
 
 function updateComponent(parent:VNodeAny, vNode:VNodeComp) {
-  if(vNode.tag.beforeDraw) vNode.tag.beforeDraw(vNode.instance);
-  if(!vNode.tag.autoDraw) diffVNodeChildren(vNode, renderDrawable(vNode.instance, vNode.tag.draw, vNode.children), vNode.children);
-  if(vNode.tag.afterDraw) vNode.tag.afterDraw(vNode.instance);
+  if(vNode.tag.tick) vNode.tag.tick(vNode);
+  if(!vNode.tag.autoDraw) diffVNodeChildren(vNode, renderDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children);
+  if(vNode.tag.drawn) vNode.tag.drawn(vNode);
 }
 
 // *** partial implementation
 function destroyComponent(parent:VNodeAny, vNode:VNodeComp) {
   // in cases of component, destroy them
-  if(vNode.tag.destroy) vNode.tag.destroy(vNode.instance);
+  if(vNode.tag.destroy) vNode.tag.destroy(vNode);
 }
 
 // Partial implementation, thinking this should become our diff
