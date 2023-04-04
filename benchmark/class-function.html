@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Benchmark: Object Components</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<div id="app"></div>
+	<script>
+		const emptyObject = {};
+		const VNode = {
+			type: 1
+		};
+		function MyClass(attrs) {
+			return {
+				view: vNode => {
+					const div = document.createElement('div');
+					div.innerText = vNode.attrs.value;
+					return div;
+				}
+			}
+
+		}
+		function MakeVNode(componentClass, attrs) {
+			return Object.assign({}, VNode, componentClass(attrs), {
+				attrs: attrs || emptyObject
+			})
+		}
+		const fragment = document.createDocumentFragment();
+		const vNodeCount = 10000;
+		const vNodes = [];
+		const dom = document.querySelector('#app');
+		for(let i = 0; i < vNodeCount; i++) {
+			const vNode = MakeVNode(MyClass, {value:i});
+			vNodes.push(vNode);
+			dom.appendChild(vNode.view(vNode));
+		}
+		console.log(window.performance.memory);
+	</script>
+</body>
+</html>

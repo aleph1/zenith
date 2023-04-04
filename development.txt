@@ -1,4 +1,4 @@
-2022-05-23: 5 hours
+2022-03-23: 5 hours
 - intial project structure
 - initialized git
 - initialized npm
@@ -11,7 +11,7 @@
 - signature for comp vnode function
 - exposed vnode functions (elem, text)
 
-2022-05-24: 4 hours
+2022-03-24: 4 hours
 - validation of component definitions
 - improved comments
 - added component definition validator
@@ -21,7 +21,7 @@
 - fixed code style issues
 - created demo skeleton
 
-2022-05-25: 4.5 hours
+2022-03-25: 4.5 hours
 - improved coding consistency
 - node* types and constants are more correctly vnode*
 - initial and very temporary rendering code
@@ -31,28 +31,59 @@
 - non-vnode elements can be wrapped as vnodes (useful for application containers like div#app)
 - z.draw wraps dom argument in a vnode (should be useful for better tracking its children)
 
-2022-05-26: 6 hours
+2022-03-26: 6 hours
 - evaluated testing frameworks (mocha, jest)
 - added jest, ts-jest, jest types, and jsdom
 - added tests for z.elem
 - added custom jest matcher for ensuring object has only specific properties
 - improved tests for z.elem
 
-2022-05-26: 2 hours
+2022-03-26: 2 hours
 - refactored tests for z.elem
 - typescript compiler targets es6
 
-2022-05-30: 2 hours?
+2022-03-30: 2 hours?
 - draft of create and update node logic
 
-2022-05-31: 3 hours
+2022-03-31: 3 hours
 - initial implementation of creating and updating nodes
 - began implementation of component (improved typescript definitions and placeholder logic)
 
-2022-06-01: 5 hours
+2022-04-01: 5 hours
 - revised demo code to include components and nested elements
 - modified typescript definitions
 - improved logic for how vNodes are created and updated
 - vNodes of type component have init function called
 - vNodes of type element have attributes applied
 
+2022-04-02: 3 hours
+- on* attributes are not applied to HTML elements when using setAttribute
+- created benchmark to determine fastest way to detect on* attributes
+- modified 
+
+2022-04-06: 6 hours
+- Explored ability to extend component definitions
+- Added support for external state management (need to implement teardown functionality to avoid memory leaks)
+
+2022-04-07: 4 hours
+- Refactored DOM diffing and updating
+
+2022-04-08: 6 hours
+- externalized demo code
+- improved demo code to include counter, timer, and list demos
+
+2022-04-13: 6 hours
+- refactored lifecycle hooks
+- added namespace support
+- updated build process to include comment regarding version, copyright, and license
+
+2022-04-14: 3 hours
+- performance test of components as functions versus object (function use approximatelt 10% more memory, but require less code)
+- began draft of readme.
+
+2022-04-15: 1 hour
+- added brotli package
+- added brotli compression to build script
+
+2022-04-16: 2 hours
+- refactored TypeScript definitions

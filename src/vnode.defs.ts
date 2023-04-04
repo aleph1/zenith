@@ -2,17 +2,18 @@
 export type DefTypeComp = 1;
 export const DEF_TYPE_COMP: DefTypeComp = 1;
 
-// node types and values
-export type VNodeTypeNone = 0;
-export type VNodeTypeElem = 1;
-export type VNodeTypeText = 2;
-export type VNodeTypeComp = 3;
-export type VNodeTypeHTML = 4;
-export const VNODE_TYPE_NONE: VNodeTypeNone = 0;
-export const VNODE_TYPE_ELEM: VNodeTypeElem = 1;
-export const VNODE_TYPE_TEXT: VNodeTypeText = 2;
-export const VNODE_TYPE_COMP: VNodeTypeComp = 3;
-export const VNODE_TYPE_HTML: VNodeTypeHTML = 4;
+export const enum VNodeTypes {
+  none,
+  elem,
+  text,
+  comp,
+  html,
+}
+
+export const enum DrawModes {
+  raf,
+  now,
+}
 
 export interface VNodeElemAttributes {
   /** The class name(s) for this virtual element, as a space-separated list. */
@@ -31,36 +32,31 @@ export interface VNodeCompAttributes {
 export interface VNodeCompDefinition {
   init?: Function;
   draw: Function;
-  autoDraw?: boolean; // defaults to true
-  beforeDraw?: Function;
-  afterDraw?: Function;
+  drawOnce?: boolean; // defaults to false
+  tick?: Function;
+  drawn?: Function;
   destroy?: Function;
   type?: DefTypeComp;
   state?: Function | Boolean;
+  defaultState?: Function;
 }
 
-export interface VNodeCompInstance {
-  attrs: VNodeCompAttributes;
-  // *** for now state is non-reactive
-  state?: Object;
-  redraw: Function;
-};
+//export interface VNodeCompInstance {
+//  attrs: VNodeCompAttributes;
+//  state?: Object;
+//  redraw: Function;
+//};
 
 export interface VNodeAbstract {
-  type: VNodeTypeNone;
+  type: VNodeTypes.none;
   parent?: VNodeAny;
   //index?: number;
   children?: VNodeFlatArray;
+  keys?: Boolean;
 }
 
-export type VNodeContainer = VNodeElem | VNodeComp;
-export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
-export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray>;
-export type VNodeFlatArray = Array<VNodeAny>;
-export type VNodeAnyOrArray = VNodeAny | VNodeArray;
-
 export type VNodeElem = Omit<VNodeAbstract, 'type'> & {
-  type: VNodeTypeElem;
+  type: VNodeTypes.elem;
   tag: string;
   attrs: VNodeElemAttributes;
   //children: VNodeFlatArray;
@@ -68,23 +64,33 @@ export type VNodeElem = Omit<VNodeAbstract, 'type'> & {
 };
 
 export type VNodeText = Omit<VNodeAbstract, 'type'> & {
-  type: VNodeTypeText;
+  type: VNodeTypes.text;
   tag: string;
-  dom?: Node;
+  dom?: Text;
 };
 
 export type VNodeComp = Omit<VNodeAbstract, 'type'> & {
-  type: VNodeTypeComp;
+  type: VNodeTypes.comp;
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
   //children?: VNodeFlatArray;
-  dom?: Node;
-  instance?: VNodeCompInstance;
+  dom?: DocumentFragment;
+  //instance?: VNodeCompInstance;
+  redraw?: Function;
+  state?: Object;
+  destroyState?: Function;
 };
 
 export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
-  type: VNodeTypeHTML;
+  type: VNodeTypes.html;
   tag: "<";
-  dom?: Node;
+  dom?: DocumentFragment;
   domLength?: number;
 };
+
+export type VNodeDrawable = VNodeComp; // in case we add additional drawable types
+export type VNodeContainer = VNodeElem | VNodeComp;
+export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
+export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray | boolean | undefined | string | number>;
+export type VNodeFlatArray = Array<VNodeAny>;
+export type VNodeAnyOrArray = VNodeAny | VNodeArray;
