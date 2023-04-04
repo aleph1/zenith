@@ -4,7 +4,7 @@
   "description": "Another front-end framework.",
   "main": "index.js",
   "scripts": {
-    "build": "rollup --config",
+    "build": "rollup --config && node src/after-build.mjs",
     "test": "jest --coverage"
   },
   "repository": {
