@@ -3,7 +3,7 @@ import {
   VNodeTypes,
 } from './vNode.defs';
 
-describe('vNode creation', () => {
+describe('vNode', () => {
 
   describe('z.elem()', () => {
 
@@ -44,7 +44,7 @@ describe('vNode creation', () => {
       expect(Object.isFrozen(vNode.attrs)).toBe(true);
     });
 
-    test('Handles svg', () => {
+    test('Handles <svg>', () => {
       const vNode = z.elem('svg');
       expect(vNode).not.toBeNull();
       expect(typeof vNode).toBe('object');
@@ -55,7 +55,7 @@ describe('vNode creation', () => {
       expect(vNode.children).toEqual([]);
     });
 
-    test('Handles math', () => {
+    test('Handles <math>', () => {
       const vNode = z.elem('math');
       expect(vNode).not.toBeNull();
       expect(typeof vNode).toBe('object');
@@ -70,6 +70,31 @@ describe('vNode creation', () => {
       const vNode = z.elem('div');
       expect(() => {
         vNode.attrs.id = 'test';
+      }).toThrow(Error);
+    });
+
+    test('Children with keys', () => {
+      const vNode1 = z.elem('div', {key:1});
+      const vNode2 = z.elem('div', {key:2});
+      const vNode3 = z.elem('div', vNode1, vNode2);
+      expect(vNode1.attrs.key).toBe(1);
+      expect(vNode2.attrs.key).toBe(2);
+    });
+
+    test('Children with no keys', () => {
+      const vNode1 = z.elem('div');
+      const vNode2 = z.elem('div');
+      const vNode3 = z.elem('div', vNode1, vNode2);
+      expect(vNode1.attrs.key).toBe(undefined);
+      expect(vNode2.attrs.key).toBe(undefined);
+    });
+
+    test('Children with mixed keys throws error', () => {
+      expect(() => {
+        z.elem('div',
+          z.elem('div', {key:1}),
+          z.elem('div')
+        );
       }).toThrow(Error);
     });
 
@@ -324,251 +349,320 @@ describe('vNode creation', () => {
 
   describe('z.comp()', () => {
 
-    // *** add tests for all possible parent types
-
   });
 
   describe('z.html()', () => {
 
-    test('Handles single html element', () => {
-      const vNode = z.html('<div></div>');
+    test('Handles text', () => {
+      const vNode = z.html('test');
       expect(vNode).not.toBeNull();
       expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('div');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-    
-    test('Handles single html element with text', () => {
-      const vNode = z.html('<div>test1</div>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('div');
-      elem1.innerHTML = 'test1';
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles single html element with attribute', () => {
-      const vNode = z.html('<div id="test1"></div>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('div');
-      elem1.id = 'test1';
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles multiple html elements', () => {
-      const vNode = z.html('<div></div><div></div>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(2);
-      const elem1 = document.createElement('div');
-      const elem2 = document.createElement('div');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-      expect(vNode.dom.children[1]).toEqual(elem2);
-    });
-
-    test('Handles multiple html elements with text', () => {
-      const vNode = z.html('<div>test1</div><div>test2</div>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(2);
-      const elem1 = document.createElement('div');
-      elem1.innerHTML = 'test1';
-      const elem2 = document.createElement('div');
-      elem2.innerHTML = 'test2';
-      expect(vNode.dom.children[0]).toEqual(elem1);
-      expect(vNode.dom.children[1]).toEqual(elem2);
-    });
-
-    test('Handles multiple html elements with attributes', () => {
-      const vNode = z.html('<div id="test1"></div><div id="test2"></div>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(2);
-      const elem1 = document.createElement('div');
-      elem1.id = 'test1';
-      const elem2 = document.createElement('div');
-      elem2.id = 'test2';
-      expect(vNode.dom.children[0]).toEqual(elem1);
-      expect(vNode.dom.children[1]).toEqual(elem2);
-    });
-
-    test('Handles text and html element', () => {
-      const vNode = z.html('test1<div>test2</div>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      // ***
-      //const elem1 = document.createElement('tr');
-      //expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    // tests for all possible parent types
-
-    test('Handles <col/>', () => {
-      const vNode = z.html('<col/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('col');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <caption/>', () => {
-      const vNode = z.html('<caption/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('caption');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <colgroup/>', () => {
-      const vNode = z.html('<colgroup/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('colgroup');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <tbody/>', () => {
-      const vNode = z.html('<tbody/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('tbody');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <tfoot/>', () => {
-      const vNode = z.html('<tfoot/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('tfoot');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <thead/>', () => {
-      const vNode = z.html('<thead/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('thead');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <td/>', () => {
-      const vNode = z.html('<td/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('td');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <th/>', () => {
-      const vNode = z.html('<th/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('th');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <tr/>', () => {
-      const vNode = z.html('<tr/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElement('tr');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <thead/><tbody/>', () => {
-      const vNode = z.html('<thead/><tbody/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(2);
-      const elem1 = document.createElement('thead');
-      const elem2 = document.createElement('tbody');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-      expect(vNode.dom.children[1]).toEqual(elem2);
-    });
-
-    test('Handles <svg/>', () => {
-      const vNode = z.html('<svg/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      expect(vNode.dom.children[0]).toEqual(elem1);
-    });
-
-    test('Handles <math/>', () => {
-      const vNode = z.html('<math/>');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag' , 'dom', 'domLength']);
-      expect(vNode.dom instanceof DocumentFragment).toBe(true);
-      expect(vNode.domLength).toBe(1);
-      const elem1 = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'math');
-      expect(vNode.dom.children[0]).toEqual(elem1);
+      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
+      expect(vNode.type).toBe(VNodeTypes.html);
+      expect(vNode.tag).toBe('test');
     });
 
   });
 
 });
 
-describe('DOM creation', () => {
+describe('DOM', () => {
 
-  describe('Elements', () => {
+  describe('Creation with z.draw()', () => {
+
+    test('z.elem() with no attributes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.elem('div');
+      const elem1 = document.createElement('div');
+      z.draw(app, vNode);
+      expect(vNode.dom).toEqual(elem1);
+    });
+
+    test('z.elem() with attributes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.elem('div', {
+        id: 'test'
+      });
+      const elem1 = document.createElement('div');
+      elem1.id = 'test';
+      z.draw(app, vNode);
+      expect(vNode.dom).toEqual(elem1);
+    });
+
+    test('z.elem() with text', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.elem('div', z.text('test'));
+      const elem1 = document.createElement('div');
+      elem1.innerHTML = 'test';
+      z.draw(app, vNode);
+      expect(vNode.dom).toEqual(elem1);
+    });
+
+    test('z.elem() with single z.elem() child', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode1 = z.elem('p');
+      const vNode2 = z.elem('div', vNode1);
+      const elem1 = document.createElement('p');
+      const elem2 = document.createElement('div');
+      elem2.appendChild(elem1);
+      z.draw(app, vNode2);
+      expect(vNode1.dom).toEqual(elem1);
+      expect(vNode2.dom).toEqual(elem2);
+    });
+
+    //test('z.elem() with multiple z.elem() children', () => {
+    //  document.body.innerHTML = '<div id="app"></div>';
+    //  const app = document.querySelector('#app');
+    //  const vNode1 = z.elem('p');
+    //  const vNode2 = z.elem('div', vNode1);
+    //  const elem1 = document.createElement('p');
+    //  const elem2 = document.createElement('div');
+    //  elem2.appendChild(elem1);
+    //  z.draw(app, vNode2);
+    //  expect(vNode1.dom).toEqual(elem1);
+    //  expect(vNode2.dom).toEqual(elem2);
+    //});
+
+    test('z.elem() svg with z.html() child with multiple svg elements', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode1 = z.html('<g></g><rect/>');
+      const vNode2 = z.elem('svg', vNode1);
+      z.draw(app, vNode2);
+      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      expect(vNode1.dom[0].nodeName).toEqual('g');
+      expect(vNode1.dom[0] instanceof SVGElement);
+      expect((vNode1.dom[0] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      expect(vNode1.dom[1].nodeName).toEqual('rect');
+      expect(vNode1.dom[1] instanceof SVGElement);
+      expect((vNode1.dom[1] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+    });
+
+    test('z.html() with single html element', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<div></div>');
+      const elem1 = document.createElement('div');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+    
+    test('z.html() with single html element with text', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<div>test1</div>');
+      const elem1 = document.createElement('div');
+      elem1.innerHTML = 'test1';
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with single html element with attribute', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<div id="test1"></div>');
+      const elem1 = document.createElement('div');
+      elem1.id = 'test1';
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with multiple html elements', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<div></div><div></div>');
+      const elem1 = document.createElement('div');
+      const elem2 = document.createElement('div');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+      expect(vNode.dom[1]).toEqual(elem2);
+    });
+
+    test('z.html() with multiple html elements with text', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<div>test1</div><div>test2</div>');
+      const elem1 = document.createElement('div');
+      elem1.innerHTML = 'test1';
+      const elem2 = document.createElement('div');
+      elem2.innerHTML = 'test2';
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+      expect(vNode.dom[1]).toEqual(elem2);
+    });
+
+    test('z.html() with multiple html elements with attributes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<div id="test1"></div><div id="test2"></div>');
+      const elem1 = document.createElement('div');
+      elem1.id = 'test1';
+      const elem2 = document.createElement('div');
+      elem2.id = 'test2';
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+      expect(vNode.dom[1]).toEqual(elem2);
+    });
+
+    test('z.html() with text and html element', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('test1<div>test2</div>');
+      const elem1 = document.createTextNode('test1');
+      const elem2 = document.createElement('div');
+      elem2.innerHTML = 'test2';
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+      expect(vNode.dom[1]).toEqual(elem2);
+    });
+
+    // some elements can only be children of specific elements,
+    // and there are separate tests for each of these
+
+    test('z.html() with <caption>', () => {
+      document.body.innerHTML = '<table></table>';
+      const app = document.querySelector('table');
+      const vNode = z.html('<caption>');
+      const elem1 = document.createElement('caption');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <col>', () => {
+      document.body.innerHTML = '<table><colgroup></colgroup><table>';
+      const app = document.querySelector('colgroup');
+      const vNode = z.html('<col>');
+      const elem1 = document.createElement('col');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <thead>', () => {
+      document.body.innerHTML = '<table><table>';
+      const app = document.querySelector('table');
+      const vNode = z.html('<thead>');
+      const elem1 = document.createElement('thead');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <tbody>', () => {
+      document.body.innerHTML = '<table><table>';
+      const app = document.querySelector('table');
+      const vNode = z.html('<tbody>');
+      const elem1 = document.createElement('tbody');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <tr>', () => {
+      document.body.innerHTML = '<table><tbody></tbody><table>';
+      const app = document.querySelector('tbody');
+      const vNode = z.html('<tr>');
+      const elem1 = document.createElement('tr');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <td>', () => {
+      document.body.innerHTML = '<table><tbody><tr></tr></tbody><table>';
+      const app = document.querySelector('tr');
+      const vNode = z.html('<td>');
+      const elem1 = document.createElement('td');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <tfoot>', () => {
+      document.body.innerHTML = '<table><table>';
+      const app = document.querySelector('table');
+      const vNode = z.html('<tfoot>');
+      const elem1 = document.createElement('tfoot');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <th>', () => {
+      document.body.innerHTML = '<table><tbody><tr></tr></tbody><table>';
+      const app = document.querySelector('tr');
+      const vNode = z.html('<th>');
+      const elem1 = document.createElement('th');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with <thead>', () => {
+      document.body.innerHTML = '<table><table>';
+      const app = document.querySelector('table');
+      const vNode = z.html('<thead>');
+      const elem1 = document.createElement('thead');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with all other HTML5 tags', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const obsoleteTags = ['acronym', 'applet', 'basefont', 'big', 'center', 'dir', 'font', 'strike', 'tt'];
+      const validTags = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'big', 'blockquote', 'br', 'button', 'canvas', 'cite', 'code', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'textarea', 'time', 'title', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr']
+      obsoleteTags.concat(validTags).forEach(tag => {
+        const vNode = z.html('<' + tag + '/>');
+        const elem1 = document.createElement(tag);
+        z.draw(app, vNode);
+        expect(vNode.dom[0]).toEqual(elem1);
+      });
+    });
+
+    test('z.html() with two nodes requiring specific parents', () => {
+      document.body.innerHTML = '<table></table>';
+      const app = document.querySelector('table');
+      const vNode = z.html('<thead/><tbody/>');
+      const elem1 = document.createElement('thead');
+      const elem2 = document.createElement('tbody');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+      expect(vNode.dom[1]).toEqual(elem2);
+    });
+
+    test('z.html() with <svg/>', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<svg/>');
+      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
+
+    test('z.html() with single svg element within elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode1 = z.html('<g></g>');
+      const vNode2 = z.elem('svg', vNode1);
+      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      z.draw(app, vNode2);
+      expect(vNode1.dom[0].nodeName).toEqual('g');
+      expect(vNode1.dom[0] instanceof SVGElement);
+      expect((vNode1.dom[0] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+    });
+
+    test('z.html() with <math/>', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode = z.html('<math/>');
+      const elem1 = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'math');
+      z.draw(app, vNode);
+      expect(vNode.dom[0]).toEqual(elem1);
+    });
 
   });
 
-  describe('Attributes', () => {
+  describe('Attributes with z.elem()', () => {
 
-    test('Handles string attribute', () => {
+    test('z.elem() handles string attribute', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('div');
@@ -628,7 +722,7 @@ describe('DOM creation', () => {
 
   });
 
-  describe('Events', () => {
+  describe('Events with z.elem()', () => {
 
     test('onclick event is called', () => {
       document.body.innerHTML = '<div id="app"></div>';
@@ -699,9 +793,9 @@ describe('DOM creation', () => {
 
   });
 
-  describe('Forms', () => {
+  describe('Forms with z.elem()', () => {
 
-    test('When checked is true, checkbox is checked', () => {
+    test('Checkbox from z.elem("input", {type: "checkbox", checked: true}) is checked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('input', {
@@ -713,7 +807,7 @@ describe('DOM creation', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(true);
     });
 
-    test('When checked is false, checkbox is unchecked', () => {
+    test('Checkbox from z.elem("input", {type: "checkbox", checked: false}) is unchecked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('input', {
@@ -725,7 +819,7 @@ describe('DOM creation', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(false);
     });
 
-    test('When checked is omitted, checkbox is unchecked', () => {
+    test('Checkbox from z.elem("input", {type: "checkbox"}) is unchecked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('input', {
@@ -736,7 +830,7 @@ describe('DOM creation', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(false);
     });
 
-    test('When checked is true, radio is checked', () => {
+    test('Radio from z.elem("input", {type: "radio", checked: true}) is checked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('input', {
@@ -748,7 +842,7 @@ describe('DOM creation', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(true);
     });
 
-    test('When checked is false, radio is unchecked', () => {
+    test('Radio from z.elem("input", {type: "radio", checked: false}) is unchecked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('input', {
@@ -760,7 +854,7 @@ describe('DOM creation', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(false);
     });
 
-    test('When checked is omitted, radio is unchecked', () => {
+    test('Radio from z.elem("input", {type: "radio"}) is unchecked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('input', {
