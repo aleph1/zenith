@@ -4,6 +4,7 @@ export const DEF_TYPE_COMP: DefTypeComp = 1;
 
 export const enum VNodeTypes {
   none,
+  defn,
   elem,
   text,
   comp,
@@ -36,9 +37,9 @@ export interface VNodeCompDefinition {
   tick?: Function;
   drawn?: Function;
   destroy?: Function;
-  type?: DefTypeComp;
-  state?: Function | Boolean;
-  defaultState?: Function;
+  type?: VNodeTypes.defn;
+  //state?: Function | Boolean;
+  //defaultState?: Function;
 }
 
 //export interface VNodeCompInstance {
@@ -50,12 +51,15 @@ export interface VNodeCompDefinition {
 export interface VNodeAbstract {
   type: VNodeTypes.none;
   parent?: VNodeAny;
-  //index?: number;
+  index?: number;
   children?: VNodeFlatArray;
   keys?: Boolean;
+  attrs?: {
+    [property: string]: any;
+  };
 }
 
-export type VNodeElem = Omit<VNodeAbstract, 'type'> & {
+export type VNodeElem = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   type: VNodeTypes.elem;
   tag: string;
   attrs: VNodeElemAttributes;
@@ -69,12 +73,12 @@ export type VNodeText = Omit<VNodeAbstract, 'type'> & {
   dom?: Text;
 };
 
-export type VNodeComp = Omit<VNodeAbstract, 'type'> & {
+export type VNodeComp = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   type: VNodeTypes.comp;
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
   //children?: VNodeFlatArray;
-  dom?: DocumentFragment;
+  dom?: Element;
   //instance?: VNodeCompInstance;
   redraw?: Function;
   state?: Object;
@@ -83,9 +87,9 @@ export type VNodeComp = Omit<VNodeAbstract, 'type'> & {
 
 export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
   type: VNodeTypes.html;
-  tag: "<";
-  dom?: DocumentFragment;
-  domLength?: number;
+  tag: string;
+  dom?: Array<ChildNode>;
+  length?: number;
 };
 
 export type VNodeDrawable = VNodeComp; // in case we add additional drawable types
