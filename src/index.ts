@@ -47,8 +47,9 @@ import {
 // CONSTANTS
 // ----------------------------------------
 
-let drawMode = DrawModes.raf;
+//let drawMode = DrawModes.raf;
 let tickCount = 0;
+let keepCount = 0;
 
 //const wrappedNodes = new Map();
 
@@ -61,12 +62,16 @@ const ELEMENT_NAMESPACES = {
 // for finding namespace for createElement(NS) calls
 const ELEMENT_NAMESPACES_QUERY = Object.keys(ELEMENT_NAMESPACES).join(',');
 
+const ELEMENT_CLONERS = {};
+
 // used on elements with no attrs to avoid creating new objects
 const FROZEN_EMPTY_OBJECT = Object.freeze({});
 
 // used to queue component updates when drawMode is DRAW_MODE_RAF
-const redrawQueue = new Map();
-//const componentsToTick = [];
+const componentRedrawQueue = new Map();
+const componentTickQueue = new Map();
+
+const keepVNodes: Map<number, VNodeAny> = new Map();
 
 // Adapted from ivi https://github.com/ivijs/ivi/
 // takes a list of unique numbers (-1 is special and can
@@ -155,10 +160,8 @@ const getNamespace = (vNode:VNodeElem, ns:string | undefined): string | undefine
 };
 
 const getElement = (name:string, ns?:string, is?:string): Element => {
-  // *** explore whether cloning elements is faster
-  return ns
-    ? document.createElementNS(ns, name, is ? {is: is} : null)
-    : document.createElement(name, is ? {is: is} : null);
+  const fullName = name + ':' + (ns || '') + ':' + (is || '');
+  return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? {is} : null) : document.createElement(name, is ? {is} : null))).cloneNode();
 };
 
 const drawInternal = (parentDom: Element, newVNode: VNodeAny, oldVNode?: VNodeAny): void => {
@@ -210,8 +213,8 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
     // *** 
     if(newChildrenLength > 0) {
       // determine if children are keyed
-      const isNewKeyed = (newChildren[0] && newChildren[0].attrs || FROZEN_EMPTY_OBJECT).key != null;
-      const isOldKeyed = (oldChildren[0] && oldChildren[0].attrs || FROZEN_EMPTY_OBJECT).key != null;
+      const isNewKeyed = newChildren[0] && newChildren[0].attrs && newChildren[0].attrs.key != null;
+      const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && newChildren[0].attrs.key != null;
       // keyed diff
       // 1) get IDs for new children
       // 2) get IDs for old children
@@ -219,13 +222,16 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
       // 4) iterate through new children IDs and ***
       if(isNewKeyed && isOldKeyed) {
         //console.log('keyed');
-        const tempDom = getElement(parentDom.nodeName, ns);
-        //const doms = [];
+        //const tempDom = getElement(parentDom.nodeName, ns);
+        const doms = [];
         const newChildrenByKey = {};
         const oldChildrenByKey = {};
-        const oldKeyOrder = [];
-        const newKeyOrder = [];
+        //const oldKeyOrder = [];
+        //const newKeyOrder = [];
+        //const lisPositions = [0];
+        //let lisIndex = 0;
         // get keys for all new children
+        let now = performance.now();
         for(const child of newChildren) {
           //newChildrenByKey[child.attrs.key] = child;
           newChildrenByKey[child.attrs.key] = true;
@@ -236,7 +242,7 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
           // when old key is still in use, keep the old node
           if(newChildrenByKey[key]) {
             oldChildrenByKey[key] = child;
-            oldKeyOrder.push(key);
+            //oldKeyOrder.push(key);
           // otherwise, nullify the node and delete its DOM
           } else {
             // removeNode returns null
@@ -246,71 +252,21 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
           }
         }
 
-        //// LIS algo
-        //let newChildrenIndex = newChildrenLength - 1;
-        //let lis = [];
-        //let lisMax = 1;
-        //let lisLen = 0;
-        //let lisVal = -1;
-        //for(const index of oldKeyOrder) {
-        //  const key = oldKeyOrder[index];
-        //  // when the key < 0 do nothing
-        //  if(key > lisVal) {
-        //    lisLen++;
-        //    lisVal = key;
-        //  //} else if(key !== -1) {
-        //  } else {
-        //    lis.push(lisLen);
-        //    if(lisLen > lisMax) lisMax = lisLen;
-        //    lisLen = 0;
-        //    lisVal = -1;
-        //  }
-        //}
-        //lis.push(lisLen);
-        //console.log('lisMax : ' + lisMax);
-
-        // get longest sequence and position
-        //console.log(oldKeyOrder);
-        //markLIS(oldKeyOrder);
-        //while(newChildrenIndex)
-        //for(let i = newChildren.length - 1; )
-        //console.log(oldKeyOrder);
-        //for(let i = 0; i < oldKeyOrder; i++) {
-        //
-        //}
-        /*
-        var lengthOfLIS = function(nums) {
-          if (nums.length === 0) return 0;
-          let result = 1;
-          const LISEndAt = new Array(nums.length).fill(1);
-
-          for (let i = 1; i < nums.length; i++) {
-            LISEndAt[i] = Math.max(1,
-              ...LISEndAt.slice(0, i).map((item, j) => {
-                return nums[i] > nums[j] ? item + 1 : 0
-              }));
-
-            result = Math.max(LISEndAt[i], result);
-          }
-          
-          return result;
-        }
-        */
         // iterate through new children and diff with old children
         for(const child of newChildren) {
           updateVNode(parentDom, child, oldChildrenByKey[child.attrs.key], ns);
           if(Array.isArray(child.dom)) {
             for(const index in child.dom) {
-              //doms.push(child.dom[index]);
-              tempDom.appendChild(child.dom[index]);
+              doms.push(child.dom[index]);
+              child.dom[index].remove();
             }
           } else {
-            //doms.push(child.dom);
-            tempDom.appendChild(child.dom);
+            doms.push(child.dom);
+            child.dom.remove();
           }
         }
-        insertElements(parentDom, 0, [...tempDom.childNodes]);
-        //insertElements(parentDom, 0, doms);
+        insertElements(parentDom, -1, doms);
+
       // non-keyed diff
       // 1) remove all old children ***
       } else {
@@ -340,15 +296,24 @@ const insertElements = (parentDom: Element, index: number, elements:Array<ChildN
   let i = 0;
   let count = 0;
   let element: Element | Text | ChildNode;
-  while(i < elements.length) {
-    element = elements[i];
-    if(element) {
-      if(index > parentDom.childElementCount) parentDom.insertBefore(element, parentDom.childNodes[index]);
-      else parentDom.appendChild(element);
-      index++;
-      count++;
+  if(index < 0) {
+    while(i < elements.length) {
+      element = elements[i++];
+      if(element) {
+        parentDom.appendChild(element);
+        count++;
+      }
     }
-    i++;
+  } else {
+    while(i < elements.length) {
+      element = elements[i++];
+      if(element) {
+        if(index > parentDom.childElementCount) parentDom.insertBefore(element, parentDom.childNodes[index]);
+        else parentDom.appendChild(element);
+        index++;
+        count++;
+      }
+    }
   }
   return count;
 };
@@ -376,23 +341,6 @@ const createVNode = (parentDom: Element, vNode: VNodeAny, ns: string, index: num
   }
   return elsAddedToDom;
 };
-
-//const createHTML = (parentDom: Element | DocumentFragment, vNode:VNodeHTML, ns?:string): void => {
-//  // create a fragment from the passed string
-//  const dom = vNode.dom = new DocumentFragment();
-//  const value = vNode.tag;
-//  const firstEl = value.match(ELEMENT_REGEX);
-//  // create an HTML container element 
-//  const containerEl = document.createElement(firstEl && ELEMENT_PARENTS[firstEl[1]] || 'div');
-//  // copy the value to the inner html of the container elements
-//  containerEl.innerHTML = value == null ? '' : value;
-//  // iterate through container element while it has a firstChild
-//  while(containerEl.firstChild) {
-//    // copy firstChild from container element to fragment
-//    dom.appendChild(containerEl.firstChild);
-//  }
-//  vNode.domLength = dom.childNodes.length;
-//}
 
 const createHTML = (parentDom: Element, vNode: VNodeHTML, ns: string): void => {
   const tempDom = getElement(parentDom.nodeName, ns);
@@ -439,14 +387,14 @@ const createElement = (parentDom: Element, vNode: VNodeElem, ns: string): void =
 
 const createComponent = (parentDom: Element, vNode: VNodeComp, ns: string): void => {
   vNode.redraw = now => {
-    if(now || drawMode === DrawModes.now) updateComponent(parentDom, vNode, ns);
+    if(now) updateComponent(parentDom, vNode, ns);
     else deferUpdateComponent(parentDom, vNode, ns);
   }
-  // ensure this component isn't stateless
   if(vNode.tag.init) vNode.tag.init(vNode);
   vNode.dom = getElement(parentDom.nodeName, ns); //ns ? document.createElementNS(ns, parentDom.nodeName) : document.createElement(parentDom.nodeName);
   vNode.children = drawDrawable(vNode, vNode.tag.draw);
   createVNodes(vNode.dom, vNode.children, 0, vNode.children.length, ns, 0);
+  if(vNode.tag.tick) componentTickQueue.set(vNode, vNode.tag.tick);
   // *** tunnel to element, test this
   //if(vNode.children.length === 1 && vNode.children[0].type === VNODE_TYPE_ELEM ) {
   //  vNode.dom = vNode.children[0].dom;
@@ -454,18 +402,14 @@ const createComponent = (parentDom: Element, vNode: VNodeComp, ns: string): void
 };
 
 const updateComponent = (parentDom: Element, vNode:VNodeComp, ns: string): void => {
-  //if(vNode.tag.tick) vNode.tag.tick(vNode);
-  //if(!vNode.tag.autoDraw) diffVNodeChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children);
-  //if(vNode.tag.drawn) vNode.tag.drawn(vNode);
-  if(!vNode.tag.drawOnce) {
+  //if(!vNode.tag.drawOnce) {
     vNode.children = updateChildren(vNode.dom, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns);
     if(vNode.tag.drawn) vNode.tag.drawn(vNode);
-  }
+  //}
 };
 
 // *** partial implementation
 const destroyComponent = (parentDom: Element, vNode:VNodeComp): void => {
-  if(vNode.destroyState) vNode.destroyState();
   if(vNode.tag.destroy) vNode.tag.destroy(vNode);
 };
 
@@ -532,7 +476,7 @@ const elem: {
     attrs = Object.freeze(Object.assign( {}, attrs ));
     index++;
   }
-  while( index < args.length ) {
+  while(index < args.length) {
     const child = args[index++];
     const childType = typeof child;
     children.push(!child || childType === 'undefined' || childType === 'boolean' ? null : childType === 'object' ? child : text(child));
@@ -546,7 +490,7 @@ const elem: {
   return vNode;
 };
 
-const deferUpdateComponent = (parentDom: Element, vNode:VNodeAny, ns: string) => redrawQueue.set(vNode, [parentDom, ns]);
+const deferUpdateComponent = (parentDom: Element, vNode:VNodeAny, ns: string) => componentRedrawQueue.set(vNode, [parentDom, ns]);
 
 //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
 const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
@@ -556,21 +500,7 @@ const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
     //if(inputDef.defaultState && typeof inputDef.defaultState !== 'function') throw new Error('if component definition has defaultState it must be a function');
     //if(inputDef.keep === true && inputDef.update) throw new Error('components with keep: true will never update');
   }
-  const outputDef:VNodeCompDefinition = Object.assign({}, inputDef);
-  //outputDef.type = DEF_TYPE_COMP;
-  //// only allow overrides on state
-  //if(extendDef) {
-  //  for(const prop in outputDef) {
-  //    if(typeof outputDef[prop] === 'function' && typeof extendDef[prop] === 'function'){
-  //      const fn = outputDef[prop];
-  //      outputDef[prop] = instance => {
-  //        extendDef[prop](instance);
-  //        fn(instance);
-  //      }
-  //    }
-  //  }
-  //}
-  return outputDef;
+  return Object.assign({}, inputDef, {type: VNodeTypes.compDef});
 }
 
 // A component should include:
@@ -595,6 +525,22 @@ const html = (value: string): VNodeHTML => {
   };
 };
 
+const keep = (vNode: VNodeElem | VNodeComp): number => {
+  Object.defineProperties(vNode, {
+    keep: {configurable: false, writable: false, value: ++keepCount},
+    state: {configurable: false, writable: false, value: {}}
+  });
+  keepVNodes.set(++keepCount, vNode);
+  return keepCount;
+};
+
+//// *** tbd, kept nodes can’t be recycled
+//// should they be manually freeable,
+//// or should they be freed on destroy
+//const free = (vNode: number): boolean => {
+//  return true;
+//};
+
 // *** should we allow for passing a vNode, or an array of vNodes?
 const draw = (dom: Element, vNode: VNodeAny): void => {
   emptyDom(dom);
@@ -613,20 +559,20 @@ const draw = (dom: Element, vNode: VNodeAny): void => {
 //}
 
 const tick = (): void => {
-  const now = performance.now();
+  
+  //const now = performance.now();
   tickCount++;
-  if(redrawQueue.size) {
-    for(const [key, value] of redrawQueue) {
-      updateComponent(value[0], key, value[1]);
-    }
-    redrawQueue.clear();
-    const elapsed = Math.floor(performance.now() - now);
-    if(elapsed > 1) console.log(elapsed);
+  for(const [vNode, value] of componentRedrawQueue) {
+    updateComponent(value[0], vNode, value[1]);
   }
-  //for(const vNode of componentsToTick) {
-  //  vNode.tag.tick(vNode);
-  //}
-  window.requestAnimationFrame(tick);
+  componentRedrawQueue.clear();
+  for(const [vNode, tick] of componentTickQueue) {
+    tick(vNode, tickCount);
+  }
+  //const elapsed = Math.floor(performance.now() - now);
+  //if(elapsed > 1) console.log(elapsed);
+  
+  requestAnimationFrame(tick);
 };
 
 tick();
@@ -640,6 +586,21 @@ export default {
   text,
   comp,
   html,
+  keep,
+  //free,
   compDef,
   draw,
+  //diff: {
+  //  none: 0,
+  //  self: 1,
+  //  children: 2,
+  //},
+  types: Object.freeze({
+    none: VNodeTypes.none,
+    compDef: VNodeTypes.compDef,
+    elem: VNodeTypes.elem,
+    text: VNodeTypes.text,
+    comp: VNodeTypes.comp,
+    html: VNodeTypes.html,
+  })
 };

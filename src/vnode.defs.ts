@@ -4,7 +4,7 @@ export const DEF_TYPE_COMP: DefTypeComp = 1;
 
 export const enum VNodeTypes {
   none,
-  defn,
+  compDef,
   elem,
   text,
   comp,
@@ -33,20 +33,12 @@ export interface VNodeCompAttributes {
 export interface VNodeCompDefinition {
   init?: Function;
   draw: Function;
-  drawOnce?: boolean; // defaults to false
+  //drawOnce?: boolean; // defaults to false
   tick?: Function;
   drawn?: Function;
   destroy?: Function;
-  type?: VNodeTypes.defn;
-  //state?: Function | Boolean;
-  //defaultState?: Function;
+  type?: VNodeTypes.compDef;
 }
-
-//export interface VNodeCompInstance {
-//  attrs: VNodeCompAttributes;
-//  state?: Object;
-//  redraw: Function;
-//};
 
 export interface VNodeAbstract {
   type: VNodeTypes.none;
@@ -65,6 +57,7 @@ export type VNodeElem = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   attrs: VNodeElemAttributes;
   //children: VNodeFlatArray;
   dom?: Element;
+  keep?: number;
 };
 
 export type VNodeText = Omit<VNodeAbstract, 'type'> & {
@@ -82,7 +75,8 @@ export type VNodeComp = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   //instance?: VNodeCompInstance;
   redraw?: Function;
   state?: Object;
-  destroyState?: Function;
+  keep?: number;
+  //destroyState?: Function;
 };
 
 export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
