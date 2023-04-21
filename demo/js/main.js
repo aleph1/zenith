@@ -1,5 +1,5 @@
 //import { observable, observe, destroy } from './simple-observable-proxy.mjs';
-
+//const now = performance.now();
 (() => {
 
 	const fixIndentation = str => {
@@ -15,7 +15,6 @@
 	};
 
 	const CodeBlock = z.compDef( {
-		//keep: true,
 		draw: vNode => z.html('<pre class="language-js"><code>' + fixIndentation(vNode.attrs.code) + '</code></pre>')
 	});
 
@@ -23,17 +22,19 @@
 		draw: vNode => z.elem('article',
 			z.elem('div',{
 				class: 'code'
-			}, z.comp(CodeBlock, {
+			}, z.comp(CodeBlock,
+				{
 					code: vNode.attrs.code
 				})
 			),
-			z.elem('div',{
-				class: 'demo'
-			},
-				z.comp(vNode.attrs.demo)
+			z.elem('div',
+				{
+					class: 'demo'
+				},
+				vNode.attrs.demo.type === z.types.compDef ? z.comp(vNode.attrs.demo) : vNode.attrs.demo
 			)
 		)
-	})
+	});
 
 	const counter = {
 		value: 0,
@@ -122,17 +123,21 @@
 		]
 	});
 
-	const firstNames = ['Aki', 'Amy', 'Andrew', 'Ang', 'Brianna', 'Bruce', 'Cassandra', 'Dae', 'Deion', 'Elijah', 'Emma', 'Han', 'Hiromi', 'Jackie', 'Jamal', 'Jin', 'Kalisha', 'Keysha', 'Lamonte', 'Liang', 'Naoki', 'Osamu'];
-	const lastNames = ['Barnes', 'Diaz', 'Ferguson', 'Hunt', 'James', 'Lee', 'McDonald', 'Olson', 'Ramirez', 'Singh', 'Smith', 'Wood'];
+	const firstNames = ['Aki', 'Adam', 'Amy', 'Ang', 'Brianna', 'Bruce', 'Cassandra', 'Charles', 'Colette', 'Dae', 'Deion', 'Elijah', 'Emma', 'Han', 'Hiromi', 'Jackie', 'Jamal', 'Jin', 'Kalisha', 'Keysha', 'Lamonte', 'Liang', 'Naoki', 'Osamu'];
+	const lastNames = ['Anderson', 'Barnes', 'Chan', 'Diaz', 'Ferguson', 'Hunt', 'James', 'Lee', 'McDonald', 'Olson', 'Ramirez', 'Singh', 'Smith', 'Wood'];
 	const people = [];
-	for(let i = 0; i < 2000; i++) {
+	let personId = 0;
+	const addPerson = () => {
 		people.push({
-			id: i,
+			id: personId++,
 			firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
 			lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
 			age: Math.floor(Math.random() * 60 + 18)
 		})
 	}
+	for(let i = 0; i < 250; i++) {
+		addPerson();
+	};
 
 	const shuffle = arr => {
 		let currentIndex = arr.length, randomIndex;
@@ -143,71 +148,88 @@
 			// And swap it with the current element.
 			[arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
 		}
-	}
+	};
 
 	const KeyedList = z.compDef({
 		draw: vNode => [
 			z.elem('div',
 				//z.elem('div', z.text(people.map(person => person.id).join(', '))),
-				z.text('Sort by:'),
-				z.elem('select',
-					{
-						onchange(e) {
-							switch(e.target.value) {
-								case 'id':
-									people.sort((a,b) => a.id-b.id);
-									break;
-								case 'firstname':
-									people.sort((a,b) => {
-										const nameA = a.firstName.toUpperCase();
-										const nameB = b.firstName.toUpperCase();
-										if (nameA < nameB) return -1;
-										if (nameA > nameB) return 1;
-										return 0;
-									});
-									break;
-								case 'lastname':
-									people.sort((a,b) => {
-										const nameA = a.lastName.toUpperCase();
-										const nameB = b.lastName.toUpperCase();
-										if (nameA < nameB) return -1;
-										if (nameA > nameB) return 1;
-										return 0;
-									});
-									break;
-								case 'age':
-									people.sort((a,b) => a.age-b.age);
-									break;
-							}
-							vNode.redraw();
-						}
-					},
-					z.elem('option', {
-						value: 'id',
-					}, z.text('ID')),
-					z.elem('option', {
-						value: 'firstname',
-					}, z.text('First Name')),
-					z.elem('option', {
-						value: 'lastname',
-					}, z.text('Last Name')),
-					z.elem('option', {
-						value: 'age',
-					}, z.text('Age')),
-				),
+				z.elem('button', {
+					onclick(e) {
+						addPerson();
+						vNode.redraw();
+					}
+				}, z.text('add')),
 				z.elem('button', {
 					onclick(e) {
 						shuffle(people);
 						vNode.redraw();
 					}
-				}, z.text('shuffle'))
+				}, z.text('shuffe')),
+				z.elem('button', {
+					onclick(e) {
+						people.push(people.shift());
+						vNode.redraw();
+					}
+				}, z.text('move first to last')),
+				z.elem('button', {
+					onclick(e) {
+						people.unshift(people.pop());
+						vNode.redraw();
+					}
+				}, z.text('move last to first')),
+				z.text('Length: ' + people.length)
 			),
 			z.elem('table',
-				z.html('<thead><tr><th>ID</th><th>First Name</th><th>Last Name</th><th>Age</th></thead'),
+				z.elem('thead',
+					z.elem('tr',
+						z.elem('th', {
+							class: 'sort',
+							onclick(e) {
+								people.sort((a,b) => a.id-b.id);
+								vNode.redraw();
+							}
+						}, z.text('ID')),
+						z.elem('th', {
+							class: 'sort',
+							onclick(e) {
+								people.sort((a,b) => {
+									const nameA = a.firstName.toUpperCase();
+									const nameB = b.firstName.toUpperCase();
+									if (nameA < nameB) return -1;
+									if (nameA > nameB) return 1;
+									return 0;
+								});
+								vNode.redraw();
+							}
+						}, z.text('First Name')),
+						z.elem('th', {
+							class: 'sort',
+							onclick(e) {
+								people.sort((a,b) => {
+									const nameA = a.lastName.toUpperCase();
+									const nameB = b.lastName.toUpperCase();
+									if (nameA < nameB) return -1;
+									if (nameA > nameB) return 1;
+									return 0;
+								});
+								vNode.redraw();
+							}
+						}, z.text('Last Name')),
+						z.elem('th', {
+							class: 'sort',
+							onclick(e) {
+								people.sort((a,b) => a.age-b.age);
+								vNode.redraw();
+							}
+						}, z.text('Age')),
+					)
+				),
 				z.elem('tbody',
 					//people.map(person => z.elem('li', {key: person.id}, z.text(person.id + ': ' + person.firstName + ' ' + person.lastName + ' (' + person.age + ' years)'))))
-					people.map( person => z.elem('tr', {diff: false, key: person.id},
-						z.elem('td', z.text(person.id)),
+					//people.map( person => z.elem('tr', {diff: false, key: person.id},
+					people.map( person => z.elem('tr',// {key: person.id},
+						z.elem('td', {class: 'r'}, z.text(person.id)),
 						z.elem('td', z.text(person.firstName)),
 						z.elem('td', z.text(person.lastName)),
 						z.elem('td', {class: 'r'}, z.text(person.age)),
@@ -224,33 +246,81 @@
 		return 'rgb(' + r + ',' + g + ',' + b + ')';
 	}
 
-	let context;
-
 	const Canvas = z.compDef({
-		draw: (vNode, oldChildren) => oldChildren || z.elem('canvas', {
-			width: '100%',
-			height: '100%'
-		}),
+		draw: (vNode, oldChildren) => {
+			return oldChildren || z.elem('canvas', {
+				width: '100%',
+				height: '100%'
+			});
+		},
 		tick: (vNode, tickCount) => {
-			//console.log(tickCount);
-			if(!context) context = vNode.dom.getContext('2d');
-			const canvasRect = vNode.dom.getBoundingClientRect();
-			const canvasWidth = Math.min(canvasRect.width, window.innerWidth) * window.devicePixelRatio;
-			const canvasHeight = canvasRect.height * window.devicePixelRatio;
+			const canvas = vNode.children[0].dom;
+			const context = canvas.getContext('2d');
+			const bounds = canvas.getBoundingClientRect();
+			const canvasWidth = Math.min(bounds.width, window.innerWidth) * window.devicePixelRatio;
+			const canvasHeight = bounds.height * window.devicePixelRatio;
 			const rectWidth = Math.random() * canvasWidth / 10;
 			const rectHeight = Math.random() * canvasHeight / 10;
-			if(vNode.dom.width != canvasWidth) vNode.dom.width = canvasWidth;
-			if(vNode.dom.height != canvasHeight) vNode.dom.height = canvasHeight;
-			context.fillStyle = 'rgb(255,255,255,.1)';
+			if(canvas.width != canvasWidth) canvas.width = canvasWidth;
+			if(canvas.height != canvasHeight) canvas.height = canvasHeight;
+			context.save();
+			context.globalAlpha = 1;
+			context.globalCompositeOperation = 'destination-in';
+			context.fillStyle = 'rgba(0, 0, 0, 0.95)';
 			context.fillRect(0, 0, canvasWidth, canvasHeight);
+			context.restore();
 			context.fillStyle = getRndColor();
 			context.fillRect(Math.random() * (canvasWidth - rectWidth), Math.random() * (canvasHeight - rectHeight), rectWidth, rectHeight);
+		},
+	});
+
+	const CanvasInstance = z.comp(Canvas);
+
+	const SVG = z.compDef({
+		draw: (vNode, oldChildren) => z.elem('svg',
+			z.elem('circle', {
+				cx: 25,
+				cy: 25,
+				r: 25,
+				'data-vx': 1,
+				'data-vy': 1,
+			})
+		),
+		tick: vNode => {
+			const svg = vNode.children[0].dom;
+			const circle = svg.querySelector('circle');
+			const bounds = svg.getBoundingClientRect();
+			const vx = parseInt(circle.dataset.vx);
+			const vy = parseInt(circle.dataset.vy);
+			let x = parseInt(circle.getAttribute('cx'));
+			let y = parseInt(circle.getAttribute('cy'));
+			if(x + 25 > bounds.width) {
+				x = bounds.width - 25;
+				circle.dataset.vx = -1;
+			} else if(x - 25 < 0) {
+				x = 25;
+				circle.dataset.vx = 1;
+			} else {
+				x += vx;
+			}
+			if(y + 25 > bounds.height) {
+				y = bounds.height - 25;
+				circle.dataset.vy = -1;
+			} else if(y - 25 < 0) {
+				y = 25;
+				circle.dataset.vy = 1;
+			} else {
+				y += vy;
+			}
+			circle.setAttribute('cx', x);
+			circle.setAttribute('cy', y);
 		}
 	});
 
-	const SVG = z.compDef({
-		draw: vNode => z.elem('svg',
-			z.elem('rect')
+	const KeptElems = z.compDef({
+		draw: vNode => z.elem('div',
+			z.elem('div'),
+			z.elem('div'),
 		)
 	});
 
@@ -383,10 +453,36 @@
 				demo: KeyedList,
 				code: `
 				// Keyed List Demo
-				const firstNames = ['Aki', 'Amy', 'Andrew', 'Ang', 'Brianna', 'Bruce', 'Cassandra', 'Dae', 'Deion', 'Elijah', 'Emma', 'Han', 'Hiromi', 'Jackie', 'Jamal', 'Jin', 'Kalisha', 'Keysha', 'Lamonte', 'Liang', 'Naoki', 'Osamu'];
-				const lastNames = ['Barnes', 'Diaz', 'Ferguson', 'Hunt', 'James', 'Lee', 'McDonald', 'Olson', 'Ramirez', 'Singh', 'Smith', 'Wood'];
+				const firstNames = [
+					'Aki', 'Adam', 'Amy', 'Ang',
+					'Brianna', 'Bruce',
+					'Cassandra', 'Charles', 'Colette',
+					'Dae', 'Deion',
+					'Elijah', 'Emma',
+					'Han', 'Hiromi',
+					'Jackie', 'Jamal', 'Jin',
+					'Kalisha', 'Keysha', 'Lamonte',
+					'Liang',
+					'Naoki',
+					'Osamu'
+				];
+				const lastNames = [
+					'Anderson', 
+					'Barnes',
+					'Chan',
+					'Diaz',
+					'Ferguson',
+					'Hunt',
+					'James',
+					'Lee',
+					'McDonald',
+					'Olson',
+					'Ramirez',
+					'Singh', 'Smith',
+					'Wood'
+				];
 				const people = [];
-				for(let i = 0; i < 100; i++) {
+				for(let i = 0; i < 250; i++) {
 					people.push({
 						id: i,
 						firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
@@ -395,10 +491,18 @@
 					})
 				}
 
+				const shuffle = arr => {
+					let currentIndex = arr.length, randomIndex;
+					while (currentIndex !== 0) {
+						randomIndex = Math.floor(Math.random() * currentIndex);
+						currentIndex--;
+						[arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
+					}
+				}
+
 				const KeyedList = z.compDef({
 					draw: vNode => [
 						z.elem('div',
-							//z.elem('div', z.text(people.map(person => person.id).join(', '))),
 							z.text('Sort by:'),
 							z.elem('select',
 								{
@@ -428,6 +532,9 @@
 											case 'age':
 												people.sort((a,b) => a.age-b.age);
 												break;
+											case 'random':
+												suffle(people);
+												break;
 										}
 										vNode.redraw();
 									}
@@ -444,6 +551,9 @@
 								z.elem('option', {
 									value: 'age',
 								}, z.text('Age')),
+								z.elem('option', {
+									value: 'random',
+								}, z.text('Random')),
 							),
 						),
 						z.elem('table',
@@ -456,7 +566,6 @@
 								)
 							),
 							z.elem('tbody',
-								//people.map(person => z.elem('li', {key: person.id}, z.text(person.id + ': ' + person.firstName + ' ' + person.lastName + ' (' + person.age + ' years)'))))
 								people.map( person => z.elem('tr', {key: person.id},
 									z.elem('td', z.text(person.id)),
 									z.elem('td', z.text(person.firstName)),
@@ -469,7 +578,7 @@
 				});`
 			}),
 			z.comp(Demo, {
-				demo: Canvas,
+				demo: CanvasInstance,
 				code: `
 				// Canvas Demo
 				// In cases where you want granular control over a
@@ -480,20 +589,30 @@
 					draw: (vNode, oldChildren) => oldChildren || z.elem('canvas', {
 						width: '100%',
 						height: '100%'
-					})
-					tick: vNode => {
-						const context = vNode.state.context || ( vNode.state.context = vNode.dom.getContext('2d') );
-						const canvasRect = vNode.dom.getBoundingClientRect();
-						const canvasWidth = canvasRect.width * window.devicePixelRatio;
-						const canvasHeight = canvasRect.height * window.devicePixelRatio;
+					}),
+					tick: (vNode, tickCount) => {
+						const canvas = vNode.dom[0];
+						const context = canvas.getContext('2d');
+						const bounds = canvas.getBoundingClientRect();
+						const canvasWidth = bounds.width * window.devicePixelRatio;
+						const canvasHeight = bounds.height * window.devicePixelRatio;
 						const rectWidth = Math.random() * canvasWidth / 10;
 						const rectHeight = Math.random() * canvasHeight / 10;
-						if(vNode.dom.width != canvasWidth) vNode.dom.width = canvasWidth;
-						if(vNode.dom.height != canvasHeight) vNode.dom.height = canvasHeight;
-						context.fillStyle = 'rgb(255,255,255,.1)';
+						if(canvas.width != canvasWidth) canvas.width = canvasWidth;
+						if(canvas.height != canvasHeight) canvas.height = canvasHeight;
+						context.save();
+						context.globalAlpha = 1;
+						context.globalCompositeOperation = 'destination-in';
+						context.fillStyle = 'rgba(0, 0, 0, 0.95)';
 						context.fillRect(0, 0, canvasWidth, canvasHeight);
+						context.restore();
 						context.fillStyle = getRndColor();
-						context.fillRect(Math.random() * (canvasWidth - rectWidth), Math.random() * (canvasHeight - rectHeight), rectWidth, rectHeight);
+						context.fillRect(
+							Math.random() * (canvasWidth - rectWidth),
+							Math.random() * (canvasHeight - rectHeight),
+							rectWidth,
+							rectHeight
+						);
 					}
 				});`
 			}),
@@ -501,9 +620,48 @@
 				demo: SVG,
 				code: `
 				// SVG Demo
-				function SVG(vNode) {
-
-				}`
+				const radius = 25;
+				const velocity = 1;
+				const SVG = z.compDef({
+					draw: (vNode, oldChildren) => z.elem('svg',
+						z.elem('circle', {
+							cx: radius,
+							cy: radius,
+							r: radius,
+							'data-vx': velocity,
+							'data-vy': velocity,
+						})
+					),
+					tick: vNode => {
+						const svg = vNode.children[0].dom;
+						const circle = svg.querySelector('circle');
+						const bounds = svg.getBoundingClientRect();
+						const vx = parseInt(circle.dataset.vx);
+						const vy = parseInt(circle.dataset.vy);
+						let x = parseInt(circle.getAttribute('cx'));
+						let y = parseInt(circle.getAttribute('cy'));
+						if(x + radius > bounds.width) {
+							x = bounds.width - radius;
+							circle.dataset.vx = -velocity;
+						} else if(x - radius < 0) {
+							x = radius;
+							circle.dataset.vx = velocity;
+						} else {
+							x += vx;
+						}
+						if(y + radius > bounds.height) {
+							y = bounds.height - radius;
+							circle.dataset.vy = -velocity;
+						} else if(y - radius < 0) {
+							y = radius;
+							circle.dataset.vy = velocity;
+						} else {
+							y += vy;
+						}
+						circle.setAttribute('cx', x);
+						circle.setAttribute('cy', y);
+					}
+				});`
 			}),
 		)
 	});
@@ -531,3 +689,4 @@
 	}));
 	setTimeout(() => document.querySelector('html').classList.add('loaded'), 1);
 })();
+//console.log(performance.now() - now);
