@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Benchmark: Object Components</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	Check the console.
+	<script>
+		const elemsPerTest = 100;
+		const numTests = 100;
+		let iteration = 0;
+		let now = performance.now();
+		const zPool = (() => {
+			const FROZEN_EMPTY_OBJECT = Object.freeze({});
+			const TYPE_ELEM = 1;
+			const pool = [];
+			const poolSize = 500;
+			const elemReset = {
+				attrs: FROZEN_EMPTY_OBJECT,
+				children: null,
+				dom: null
+			}
+			for(let i = 0; i < poolSize; i++) {
+				pool.push({
+					type: TYPE_ELEM,
+					attrs: FROZEN_EMPTY_OBJECT,
+					tag: null,
+					children: null,
+				})
+			}
+			const getElem = () => {
+				if(pool.length) return pool.pop();
+				return {
+					type: TYPE_ELEM,
+					attrs: FROZEN_EMPTY_OBJECT,
+					tag: null,
+					children: null,
+				}
+			}
+			return {
+				elem: (selector, ...args) => {
+					const elemInstance = getElem();
+					const children = [];
+					let index = 0;
+					let attrs = args[index];
+					if (!attrs || typeof attrs !== 'object' || attrs.tag != null || Array.isArray(attrs)) {
+						// this happens when the elem is freed
+						//elemInstance.attrs = FROZEN_EMPTY_OBJECT;
+					} else {
+						elemInstance.attrs = Object.freeze(Object.assign( {}, attrs ));
+						index++;
+					}
+					while(index < args.length) {
+						const child = args[index++];
+						const childType = typeof child;
+						children.push(!child || childType === 'undefined' || childType === 'boolean' ? null : childType === 'object' ? child : child);
+					}
+					elemInstance.tag = selector;
+					elemInstance.children = children;
+					return elemInstance;
+				},
+				free: (elem) => {
+					if(pool.length < poolSize) {
+						pool.push(Object.assign(elem, elemReset));
+					}
+				}
+			}
+		})();
+		console.log('creating zenith with a pool took: ' + (performance.now() - now));
+		const elems = [];
+		const test = () => {
+			iteration++;
+			now = performance.now();
+			const l = iteration * elemsPerTest;
+			for(let j = 0; j < l; j++) {
+				const attrs = {};
+				if(j % 2 === 0) attrs.test = 1;
+				elems.push(zPool.elem('div', attrs));
+			}
+			console.log('creating ' + l + ' elems took: ' + (performance.now() - now));
+			now = performance.now();
+			for(let j = 0; j < l; j++) {
+				zPool.free(elems[j]);
+			}
+			console.log('freeing ' + l + ' elems took: ' + (performance.now() - now));
+			elems.length = 0;
+			if(iteration < numTests) window.requestAnimationFrame(test);
+		}
+		test();
+	</script>
+</body>
+</html>

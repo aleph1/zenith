@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Benchmark: Object Components</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	Check the console.
+	<script>
+		const elemsPerTest = 100;
+		const numTests = 100;
+		let iteration = 0;
+		let now = performance.now();
+		const zPool = (() => {
+			const FROZEN_EMPTY_OBJECT = Object.freeze({});
+			const TYPE_ELEM = 1;
+			return {
+				elem: (selector, ...args) => {
+					const children = [];
+					let index = 0;
+					let attrs = args[index];
+					if (!attrs || typeof attrs !== 'object' || attrs.tag != null || Array.isArray(attrs)) {
+						// this happens when the elem is freed
+						attrs = FROZEN_EMPTY_OBJECT;
+					} else {
+						attrs = Object.freeze(Object.assign( {}, attrs ));
+						index++;
+					}
+					while(index < args.length) {
+						const child = args[index++];
+						const childType = typeof child;
+						children.push(!child || childType === 'undefined' || childType === 'boolean' ? null : childType === 'object' ? child : child);
+					}
+					return {
+						type: TYPE_ELEM,
+						tag: selector,
+						children: children,
+						attrs: attrs
+					};
+				}
+			}
+		})();
+		console.log('creating zenith with a pool took: ' + (performance.now() - now));
+		const elems = [];
+		const test = () => {
+			iteration++;
+			now = performance.now();
+			const l = iteration * elemsPerTest;
+			for(let j = 0; j < l; j++) {
+				const attrs = {};
+				if(j % 2 === 0) attrs.test = 1;
+				elems.push(zPool.elem('div', attrs));
+			}
+			console.log('creating ' + l + ' elems took: ' + (performance.now() - now));
+			elems.length = 0;
+			if(iteration < numTests) window.requestAnimationFrame(test);
+		}
+		test();
+	</script>
+</body>
+</html>
