@@ -354,8 +354,9 @@
 				z.elem('div', {
 					class: 'info'
 				},
-					z.elem('h1', z.text('Zenith.js is a tiny yet powerful GUI framework that is under 2kb minified and gzipped.')),
-					z.elem('p', z.text('Its virtual dom and diffing algorithm function on an entire page or on specific nodes — especially useful in cases where you know that only a portion of the tree will change. Zenith.js is fast, flexible, and doesn’t require a compile step.'))
+					z.elem('h1', z.text('Zenith.js is a tiny yet powerful GUI framework that is under 2.5kb minified and gzipped, and 2kb minified and brotlified.')),
+					z.elem('p', z.text('Its virtual dom and diffing algorithm function on an entire page or on specific nodes — especially useful in cases where you know that only a portion of the tree will change. It allows for granular control over components that need to govern themselves and their own content — canvas, WebGL, SVG — and an opt-in object pool to minimize garbage collection.')),
+					z.elem('p', z.text('Zenith.js is fast, flexible, and doesn’t require a compile step.'))
 				)
 			)
 		)
