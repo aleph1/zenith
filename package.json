@@ -1,5 +1,5 @@
 {
-  "name": "@aleph-1/zenith",
+  "name": "zenith",
   "version": "0.0.1",
   "description": "Another front-end framework.",
   "main": "index.js",
