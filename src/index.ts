@@ -43,6 +43,12 @@ import {
   VNodeContainer
 } from './vnode.defs';
 
+import {
+  grow,
+  pools,
+  poolSizes
+} from './pool';
+
 // ----------------------------------------
 // CONSTANTS
 // ----------------------------------------
@@ -573,7 +579,8 @@ const tick = (): void => {
   }
   //const elapsed = Math.floor(performance.now() - now);
   //if(elapsed > 1) console.log(elapsed);
-  
+  // refactor if we end up caching other vNode types
+  if(pools[VNodeTypes.elem].length > poolSizes[VNodeTypes.elem]) pools[VNodeTypes.elem].length = poolSizes[VNodeTypes.elem];
   requestAnimationFrame(tick);
 };
 
@@ -597,6 +604,7 @@ export default {
   //  self: 1,
   //  children: 2,
   //},
+  grow,
   type: Object.freeze({
     none: VNodeTypes.none,
     compDef: VNodeTypes.compDef,
