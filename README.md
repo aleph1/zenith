@@ -1,8 +1,10 @@
-# _Zenith.js_
+# Zenith
 
-Zenith.js is a minimal view layer for building web interfaces. It is designed to be simple to use, while integrating with 3rd party libraries for state management and routing.
+Zenith is a tiny yet powerful reactive JavaScript framework that is under 2.5kb minified and gzipped, and 2kb minified and brotlified.
 
-Here’s the first example to get you started. As you can see there is no build step required.
+Its virtual dom and diffing algorithm function on an entire page or on specific nodes — especially useful in cases where you know that only a portion of the (v)dom tree will change. It allows for granular control over components that need to govern themselves and their own content, such as canvas, WebGL, or SVG. Additionally, it includes an opt-in object pool to minimize garbage collection.
+
+Zenith is fast, flexible, fully tested, and doesn’t require a build step.
 
 ```html
 <!DOCTYPE html>
