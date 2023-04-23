@@ -31,7 +31,7 @@
 				{
 					class: 'demo'
 				},
-				vNode.attrs.demo.type === z.types.compDef ? z.comp(vNode.attrs.demo) : vNode.attrs.demo
+				vNode.attrs.demo.type === z.type.compDef ? z.comp(vNode.attrs.demo) : vNode.attrs.demo
 			)
 		)
 	});

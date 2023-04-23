@@ -175,7 +175,8 @@ const updateVNode = (parentDom: Element, newVNode: VNodeAny, oldVNode?: VNodeAny
     const oldVNodeType = oldVNode.type;
     if(newVNodeType === oldVNodeType) {
       newVNode.dom = oldVNode.dom;
-      if((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
+      // *** should we reenable .diff check?
+      //if((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
         switch(newVNodeType) {
           case VNodeTypes.elem:
             //(newVNode as VNodeElem).dom = (oldVNode as VNodeElem).dom;
@@ -194,7 +195,7 @@ const updateVNode = (parentDom: Element, newVNode: VNodeAny, oldVNode?: VNodeAny
               (newVNode.dom as Text).replaceWith(newVNode.dom = document.createTextNode(newVNode.tag));
             }
         }
-      }
+      //}
     } else {
       removeVNode(oldVNode);
       //if(newVNode) createVNode(parentDom, newVNode, ns);
@@ -231,7 +232,7 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
         //const lisPositions = [0];
         //let lisIndex = 0;
         // get keys for all new children
-        let now = performance.now();
+        //let now = performance.now();
         for(const child of newChildren) {
           //newChildrenByKey[child.attrs.key] = child;
           newChildrenByKey[child.attrs.key] = true;
@@ -420,8 +421,10 @@ const removeVNodes = (children:VNodeFlatArray, start: number, end: number): void
 };
 
 const removeVNode = (vNode: VNodeAny): void => {
+  const pool = pools[vNode.type];
   switch(vNode.type) {
     case VNodeTypes.elem:
+      pool.push(vNode);
     case VNodeTypes.comp:
       removeVNodes(vNode.children, 0, vNode.children.length);
       break;
@@ -481,11 +484,10 @@ const elem: {
     const childType = typeof child;
     children.push(!child || childType === 'undefined' || childType === 'boolean' ? null : childType === 'object' ? child : text(child));
   }
-  const vNode:VNodeElem = {
-    type: VNodeTypes.elem,
+  const vNode = Object.assign(pools[VNodeTypes.elem].pop() || { type: VNodeTypes.elem }, {
     tag: selector,
     attrs
-  };
+  });
   vNode.children = normalizeChildren(vNode, children);
   return vNode;
 };
@@ -595,7 +597,7 @@ export default {
   //  self: 1,
   //  children: 2,
   //},
-  types: Object.freeze({
+  type: Object.freeze({
     none: VNodeTypes.none,
     compDef: VNodeTypes.compDef,
     elem: VNodeTypes.elem,
