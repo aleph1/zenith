@@ -19,18 +19,17 @@ Zenith is fast, flexible, fully tested, and doesn’t require a build step.
         value: 0,
         interval: null
       };
-      const counter = 0;
-      let counter
       const CounterDef = z.compDef({
         init: vNode => {
           counter.interval = setInterval(() => {
-            counter++;
+            counter.value++;
             vNode.redraw();
           }, 1000);
         }
-        view: vNode => z.elem('div', z.text('Counter: ' + counter.value)),
+        draw: vNode => z.elem('div', z.text('Counter: ' + counter.value)),
         destroy: vNode => {
           clearInterval(counter.interval);
+          counter.interval = null;
         }
       });
       z.draw(document.querySelector('#app'), z.comp(CounterDef));
