@@ -401,12 +401,15 @@ const removeVNodes = (children:VNodeFlatArray, start: number, end: number): void
 };
 
 const removeVNode = (vNode: VNodeAny): void => {
-  const pool = pools[vNode.type];
   switch(vNode.type) {
     case VNodeTypes.elem:
-      pool.push(vNode);
-    case VNodeTypes.comp:
+      if(vNode.attrs.tick) tickQueue.delete(vNode);
       removeVNodes(vNode.children, 0, vNode.children.length);
+      break;
+    case VNodeTypes.comp:
+      if(vNode.tag.tick) tickQueue.delete(vNode);
+      removeVNodes(vNode.children, 0, vNode.children.length);
+      vNode.children.length = 0;
       break;
     case VNodeTypes.html:
       // *** fix this as TypeScript insists el can be a String
@@ -415,7 +418,8 @@ const removeVNode = (vNode: VNodeAny): void => {
       }
       break;
   }
-  if('remove' in vNode.dom) vNode.dom.remove();
+  if (vNode.dom && (vNode.dom as Element).remove) (vNode.dom as Element).remove();
+  delete vNode.dom;
 };
 
 const drawDrawable = (vNode: VNodeDrawable, drawFn: Function, oldChildren?:VNodeFlatArray) => {
