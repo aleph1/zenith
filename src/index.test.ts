@@ -22,6 +22,13 @@ describe('Component definition', () => {
     expect(vNode.draw).toBe(draw);
   });
 
+  test('Returns an object with the correct type', () => {
+    const vNode = z.compDef({
+      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
+    });
+    expect(vNode.type).toBe(VNodeTypes.compDef);
+  });
+
 });
 
 describe('vNode', () => {
