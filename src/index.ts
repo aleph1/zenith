@@ -75,10 +75,9 @@ const FROZEN_EMPTY_OBJECT = Object.freeze({});
 
 // used to queue component updates when drawMode is DRAW_MODE_RAF
 const componentRedrawQueue = new Map();
-const componentTickQueue = new Map();
+const tickQueue = new Map();
 
-const keepVNodes: Map<number, VNodeAny> = new Map();
-
+//const keepVNodes: Map<number, VNodeAny> = new Map();
 
 const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlatArray => {
   const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
@@ -508,20 +507,19 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
 };
 
 const tick = (): void => {
-  
   //const now = performance.now();
   tickCount++;
   for(const [vNode, value] of componentRedrawQueue) {
     updateComponent(value[0], vNode, value[1]);
   }
   componentRedrawQueue.clear();
-  for(const [vNode, tick] of componentTickQueue) {
+  for(const [vNode, tick] of tickQueue) {
     tick(vNode, tickCount);
   }
   //const elapsed = Math.floor(performance.now() - now);
-  //if(elapsed > 1) console.log(elapsed);
+  //if (elapsed > 1) console.log(elapsed);
   // refactor if we end up caching other vNode types
-  if(pools[VNodeTypes.elem].length > poolSizes[VNodeTypes.elem]) pools[VNodeTypes.elem].length = poolSizes[VNodeTypes.elem];
+  //if (pools[VNodeTypes.elem].length > poolSizes[VNodeTypes.elem]) pools[VNodeTypes.elem].length = poolSizes[VNodeTypes.elem];
   requestAnimationFrame(tick);
 };
 
