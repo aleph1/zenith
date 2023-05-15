@@ -38,6 +38,15 @@ describe('Component definition', () => {
     expect(vNode.init).toBe(init);
   });
 
+  test('Returned object has tick if passed', () => {
+    const tick = (vNode: VNodeComp, tickCount: number): void => null;
+    const vNode = z.compDef({
+      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+      tick
+    });
+    expect(vNode.tick).toBe(tick);
+  });
+
 });
 
 describe('vNode', () => {
