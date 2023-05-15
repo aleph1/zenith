@@ -422,7 +422,7 @@ const removeVNode = (vNode: VNodeAny): void => {
   delete vNode.dom;
 };
 
-const drawDrawable = (vNode: VNodeDrawable, drawFn: Function, oldChildren?:VNodeFlatArray) => {
+const drawDrawable = (vNode: VNodeDrawable, drawFn: (vNode: VNodeDrawable, oldChildren: VNodeFlatArray) => VNodeAnyOrArray, oldChildren?:VNodeFlatArray) => {
   const children = drawFn(vNode, oldChildren);
   return normalizeChildren(vNode, Array.isArray(children) ? children : [children]);
 };
