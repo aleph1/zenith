@@ -16,6 +16,7 @@
 
 declare global {
   // used to specify debug or production build
+  // eslint-disable-next-line
   var DEBUG: boolean;
 }
 const DEBUG = window.DEBUG;
@@ -25,7 +26,7 @@ const DEBUG = window.DEBUG;
 // ----------------------------------------
 
 import {
-  DrawModes,
+  //DrawModes,
   VNodeTypes,
   VNodeElem,
   VNodeText,
@@ -39,7 +40,6 @@ import {
   VNodeElemAttributes,
   VNodeCompAttributes,
   VNodeCompDefinition,
-  //VNodeCompInstance,
   VNodeContainer
 } from './vnode.defs';
 
@@ -55,7 +55,7 @@ import {
 
 //let drawMode = DrawModes.raf;
 let tickCount = 0;
-let keepCount = 0;
+//let keepCount = 0;
 
 const mountedNodes = new Map();
 
@@ -148,12 +148,12 @@ const updateVNode = (parentVNode: VNodeAny, newVNode: VNodeAny, oldVNode?: VNode
   return newVNode;
 };
 
-const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string):VNodeFlatArray => {
-  if(oldChildren) {
+const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string):VNodeFlatArray => {
+  if (oldChildren) {
     const newChildrenLength = newChildren.length;
     const oldChildrenLength = oldChildren.length;
     // *** 
-    if(newChildrenLength > 0) {
+    if (newChildrenLength > 0) {
       // determine if children are keyed
       const isNewKeyed = newChildren[0] && newChildren[0].attrs && newChildren[0].attrs.key != null;
       const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && newChildren[0].attrs.key != null;
@@ -162,7 +162,7 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
       // 2) get IDs for old children
       // 3) get IDs for old children
       // 4) iterate through new children IDs and ***
-      if(isNewKeyed && isOldKeyed) {
+      if (isNewKeyed && isOldKeyed) {
         //console.log('keyed');
         //const tempDom = getElement(parentDom.nodeName, ns);
         const doms = [];
@@ -176,13 +176,13 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
         //let now = performance.now();
         for(const child of newChildren) {
           //newChildrenByKey[child.attrs.key] = child;
-          newChildrenByKey[child.attrs.key] = true;
+          newChildrenByKey[child.attrs.key as string] = true;
         }
         // get keys for all old children
         for(const child of oldChildren) {
-          const key = child.attrs.key;
+          const key = child.attrs.key as string;
           // when old key is still in use, keep the old node
-          if(newChildrenByKey[key]) {
+          if (newChildrenByKey[key]) {
             oldChildrenByKey[key] = child;
             //oldKeyOrder.push(key);
           // otherwise, nullify the node and delete its DOM
@@ -196,8 +196,9 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
 
         // iterate through new children and diff with old children
         for(const child of newChildren) {
-          updateVNode(parentDom, child, oldChildrenByKey[child.attrs.key], ns);
-          if(Array.isArray(child.dom)) {
+          // *** newChildren[child as number] = updateVNode(parentDom, child, oldChildrenByKey[child.attrs.key as string], ns);
+          updateVNode(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
+          if (Array.isArray(child.dom)) {
             for(const index in child.dom) {
               doms.push(child.dom[index]);
               child.dom[index].remove();
@@ -207,23 +208,23 @@ const updateChildren = (parentDom: Element, newChildren:VNodeFlatArray, oldChild
             child.dom.remove();
           }
         }
-        insertElements(parentDom, -1, doms);
+        insertElements(parentNode.dom as Element, -1, doms);
 
       // non-keyed diff
       // 1) remove all old children ***
       } else {
-        if(newChildrenLength < oldChildrenLength) {
+        if (newChildrenLength < oldChildrenLength) {
           removeVNodes(oldChildren, newChildrenLength, oldChildrenLength);
         }
         for(let i = 0; i < newChildrenLength; i++ ) {
-          updateVNode(parentDom, newChildren[i], oldChildren[i], ns);
+          newChildren[i] = updateVNode(parentNode, newChildren[i], oldChildren[i], ns);
         }
       }
     } else {
       removeVNodes(oldChildren, 0, oldChildrenLength);
     }
   } else {
-    createVNodes(parentDom, newChildren, 0, newChildren.length, ns, 0);
+    createVNodes(parentNode, newChildren, 0, newChildren.length, ns, 0);
   }
   return newChildren;
 };
