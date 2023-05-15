@@ -242,7 +242,7 @@ const insertElements = (parentDom: Element, index: number, elements:Array<ChildN
   if (index < 0) {
     while(i < elements.length) {
       element = elements[i++];
-      if(element) {
+      if (element) {
         parentDom.appendChild(element);
         count++;
       }
