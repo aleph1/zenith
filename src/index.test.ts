@@ -47,6 +47,15 @@ describe('Component definition', () => {
     expect(vNode.tick).toBe(tick);
   });
 
+  test('Returned object has destroy if passed', () => {
+    const destroy = (vNode: VNodeComp): void => null;
+    const vNode = z.compDef({
+      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+      destroy
+    });
+    expect(vNode.destroy).toBe(destroy);
+  });
+
 });
 
 describe('vNode', () => {
