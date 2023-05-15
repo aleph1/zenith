@@ -328,32 +328,18 @@ const setDOMAttribute = (vNode: VNodeElem, attr: string, newValue: boolean | num
   }
 };
 
+const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void => {
+  vNode.events = {};
+  vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, ns), vNode.attrs.is as string);
+  if (vNode.attrs.tick) tickQueue.set(vNode, vNode.attrs.tick);
   // ensure <input>s have a type before doing additional attribute manipulation
-  if (vNode.tag === 'input' && vNode.attrs.type != null) dom.setAttribute('type', vNode.attrs.type);
+  if (vNode.tag === 'input' && vNode.attrs.type != null) vNode.dom.setAttribute('type', vNode.attrs.type);
   // iterate attributes
   for(const attr in vNode.attrs) {
-    const val = vNode.attrs[attr];
-    // Skip values that are undefined or null
-    // this is faster than val !== null && val !== undefined
-    // *** benchmark to prove it
-    if(val != null && attr !== 'type' && attr !== 'key') {
-      // Setting on* handlers using setAttribute does not work,
-      // benchmark to compare various approaches:
-      // https://www.measurethat.net/Benchmarks/Show/19171/0/compare-detecting-object-keys-starting-with-on
-      // Array access performs better in most current browsers,
-      // however, it might be worth considering a couple of other
-      // approaches:
-      // - nested object: attrs = { on:{ click(){}, etc. } };
-      // - object containing all on* attributes that has a property
-      //   added when a new match is made
-      if(typeof val === 'boolean') {
-        if(val === true) {
-          dom.setAttribute(attr, attr);
-        } else {
-          dom.removeAttribute(attr);
-        }
-      } else if(attr[0] === 'o' && attr[1] === 'n') {
-        dom[attr] = val;
+    setDOMAttribute(vNode, attr, vNode.attrs[attr], undefined, ns);
+  }
+  createVNodes(vNode, vNode.children, 0, vNode.children.length, ns, 0);
+};
       } else {
         dom.setAttribute(attr, val);
       }
