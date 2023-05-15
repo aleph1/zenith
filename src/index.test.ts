@@ -6,6 +6,15 @@ import {
   VNodeTypes
 } from './vNode.defs';
 
+describe('Component definition', () => {
+
+  test('Throws error on missing draw function', () => {
+    expect(() => {
+      const vNode = z.compDef({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    }).toThrow(Error);
+  });
+});
+
 describe('vNode', () => {
 
   describe('z.elem()', () => {
