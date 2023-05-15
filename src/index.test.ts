@@ -13,6 +13,15 @@ describe('Component definition', () => {
       const vNode = z.compDef({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     }).toThrow(Error);
   });
+
+  test('Returns an object with the passed draw function', () => {
+    const draw = (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null;
+    const vNode = z.compDef({
+      draw
+    });
+    expect(vNode.draw).toBe(draw);
+  });
+
 });
 
 describe('vNode', () => {
