@@ -82,15 +82,15 @@ const tickQueue = new Map();
 const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlatArray => {
   const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
   const firstChild = normalizedChildren[0];
-  const isKeyed = !firstChild || typeof firstChild === 'boolean' || firstChild.type !== VNodeTypes.elem || !firstChild.attrs.hasOwnProperty('key') ? false : true;
-  if(isKeyed) vNode.keys = true;
+  const isKeyed = !firstChild || typeof firstChild === 'boolean' || firstChild.type !== VNodeTypes.elem || !Object.prototype.hasOwnProperty.call(firstChild.attrs, 'key') ? false : true;
+  if (isKeyed) vNode.keys = true;
   for(const [index, child] of normalizedChildren.entries()) {
     // convert all falsy children to null
-    if(!child || typeof child === 'boolean') {
+    if (!child || typeof child === 'boolean') {
       normalizedChildren[index] = null;
     } else {
-      if((child as VNodeComp).type === VNodeTypes.comp || (child as VNodeElem).type === VNodeTypes.elem ) {
-        if(isKeyed !== (child as VNodeContainer).attrs.hasOwnProperty('key')) throw new Error('children must be either keyed or non-keyed.');
+      if ((child as VNodeComp).type === VNodeTypes.comp || (child as VNodeElem).type === VNodeTypes.elem ) {
+        if (isKeyed !== Object.prototype.hasOwnProperty.call((child as VNodeContainer).attrs, 'key')) throw new Error('children must be keyed or keyless');
       }
     }
   };
