@@ -93,7 +93,7 @@ const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlat
         if (isKeyed !== Object.prototype.hasOwnProperty.call((child as VNodeContainer).attrs, 'key')) throw new Error('children must be keyed or keyless');
       }
     }
-  };
+  }
   return normalizedChildren;
 };
 
