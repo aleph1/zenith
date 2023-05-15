@@ -250,8 +250,8 @@ const insertElements = (parentDom: Element, index: number, elements:Array<ChildN
   } else {
     while(i < elements.length) {
       element = elements[i++];
-      if(element) {
-        if(index > parentDom.childElementCount) parentDom.insertBefore(element, parentDom.childNodes[index]);
+      if (element) {
+        if (index > parentDom.childElementCount) parentDom.insertBefore(element, parentDom.childNodes[index]);
         else parentDom.appendChild(element);
         index++;
         count++;
