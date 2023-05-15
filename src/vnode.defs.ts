@@ -17,37 +17,42 @@ export const enum DrawModes {
 }
 
 export interface VNodeElemAttributes {
-  /** The class name(s) for this virtual element, as a space-separated list. */
+  // The class name(s) for this virtual element, as a space-separated list.
   class?: string;
-  /** A key to optionally associate with this element. */
+  // A key to optionally associate with this element.
   key?: string | number;
-  /** Any virtual element properties (attributes and event handlers). */
+  is?: string;
+  type?: string;
+  //keep?: number | boolean;
+  tick?: (vNode: VNodeElem, tickCount: number) => void;
+  // Any virtual element properties (attributes and event handlers).
   [property: string]: any;
 }
 
 export interface VNodeCompAttributes {
-  /** Any virtual element properties (e.g., attributes and event handlers). */
-  [property: string]: any;
+  key?: string | number;
+  // Any virtual element properties (e.g., attributes and event handlers).
+  [property: string]: string | number;
 }
 
 export interface VNodeCompDefinition {
-  init?: Function;
-  draw: Function;
+  init?: (vNode: VNodeComp) => void;
+  draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray) => VNodeAnyOrArray;
   //drawOnce?: boolean; // defaults to false
-  tick?: Function;
-  drawn?: Function;
-  destroy?: Function;
+  tick?: (vNode: VNodeComp, tickCount: number) => void;
+  drawn?: (vNode: VNodeComp) => void;
+  destroy?: (vNode: VNodeComp) => void;
   type?: VNodeTypes.compDef;
 }
 
-export interface VNodeAbstract {
+interface VNodeAbstract {
   type: VNodeTypes.none;
   parent?: VNodeAny;
   index?: number;
   children?: VNodeFlatArray;
-  keys?: Boolean;
+  keys?: boolean;
   attrs?: {
-    [property: string]: any;
+    [property: string]: string | number | ((event?: Event) => void);
   };
 }
 
@@ -55,9 +60,13 @@ export type VNodeElem = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   type: VNodeTypes.elem;
   tag: string;
   attrs: VNodeElemAttributes;
-  //children: VNodeFlatArray;
+  events?: {
+    [property: string]: any;
+  };
   dom?: Element;
-  keep?: number;
+  state?: {
+    [property: string]: any;
+  }
 };
 
 export type VNodeText = Omit<VNodeAbstract, 'type'> & {
@@ -70,13 +79,9 @@ export type VNodeComp = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   type: VNodeTypes.comp;
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
-  //children?: VNodeFlatArray;
   dom?: Element;
-  //instance?: VNodeCompInstance;
-  redraw?: Function;
-  state?: Object;
-  keep?: number;
-  //destroyState?: Function;
+  redraw?: (now?: boolean) => void;
+  //keep?: number;
 };
 
 export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
