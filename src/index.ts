@@ -297,8 +297,37 @@ const createHTML = (parentNode: VNodeAny, vNode: VNodeHTML, ns: string): void =>
   vNode.length = vNode.dom.length;
 };
 
-const createElement = (parentDom: Element, vNode: VNodeElem, ns: string): void => {
-  const dom: Element = vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, ns), vNode.attrs.is);
+const setDOMAttribute = (vNode: VNodeElem, attr: string, newValue: boolean | number | string | ((event?: Event) => void), oldValue: boolean | number | string | ((event?: Event) => void), ns: string): void => {
+  // Skip values that are undefined or null
+  // this is faster than newValue !== null && newValue !== undefined
+  // *** benchmark to prove it
+  if (newValue != null && attr !== 'type' && attr !== 'key' && attr !== 'tick') {
+    if (attr === 'value') {
+      if (vNode.tag === 'input' || vNode.tag === 'textarea') (vNode.dom as HTMLInputElement).value = newValue + '';
+    } else if (typeof newValue === 'boolean') {
+      if (newValue === true) {
+        vNode.dom.setAttribute(attr, attr);
+      } else {
+        vNode.dom.removeAttribute(attr);
+      }
+    // Setting on* handlers using setAttribute does not work,
+    // so we need a conditional to detect on*.
+    // Benchmark to compare various approaches:
+    // https://www.measurethat.net/Benchmarks/Show/19171/0/compare-detecting-object-keys-starting-with-on
+    // Array access performs better in most current browsers,
+    // however, it might be worth considering a couple of other
+    // approaches:
+    // - nested object: attrs = { on:{ click(){}, etc. } };
+    // - object containing all on* attributes that has a property
+    //   added when a new match is made
+    } else if (attr[0] === 'o' && attr[1] === 'n') {
+      vNode.events[attr.slice(2)] = vNode.dom[attr] = newValue;
+    } else {
+      vNode.dom.setAttribute(attr, newValue as string);
+    }
+  }
+};
+
   // ensure <input>s have a type before doing additional attribute manipulation
   if (vNode.tag === 'input' && vNode.attrs.type != null) dom.setAttribute('type', vNode.attrs.type);
   // iterate attributes
