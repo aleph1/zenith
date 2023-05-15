@@ -57,7 +57,7 @@ import {
 let tickCount = 0;
 let keepCount = 0;
 
-//const wrappedNodes = new Map();
+const mountedNodes = new Map();
 
 // for createElementNS calls
 const ELEMENT_NAMESPACES = {
@@ -483,29 +483,29 @@ const keep = (vNode: VNodeElem | VNodeComp): number => {
   return keepCount;
 };
 
-//// *** tbd, kept nodes can’t be recycled
-//// should they be manually freeable,
-//// or should they be freed on destroy
-//const free = (vNode: number): boolean => {
-//  return true;
-//};
-
-// *** should we allow for passing a vNode, or an array of vNodes?
-const draw = (dom: Element, vNode: VNodeAny): void => {
-  emptyDom(dom);
-  // *** should we wrap dom in a vNode?
-  drawInternal(dom, vNode);
+const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem => {
+  // first check to see if DOM is a child node of a mounted node
+  let ancestor = dom.parentNode;
+  while(ancestor) {
+    if(mountedNodes.get(ancestor)) throw new Error('dom ancestor is already drawn');
+    ancestor = ancestor.parentNode;
+  }
+  // we wrap the node to be able to get its previous vNode children
+  const mountedNode = mountedNodes.get(dom) || mountedNodes.set(dom, Object.assign(elem(dom.nodeName.toLowerCase()), {
+    dom: dom
+  })).get(dom);
+  removeVNodes(mountedNode.children, 0, mountedNode.children.length)
+  mountedNode.children.length = 0;
+  // *** replace with Array.isArray(vNode) ? vNode : [vNode]
+  if(vNodeAnyOrArray != null) {
+    mountedNode.children = Array.isArray(vNodeAnyOrArray) ? normalizeChildren(mountedNode, vNodeAnyOrArray) : [vNodeAnyOrArray];
+    for(const child of mountedNode.children) {
+      if (child.dom == null) createVNode(mountedNode, child, getClosestElementNamespace(dom));
+      else updateVNode(mountedNode, child, null, getClosestElementNamespace(dom));
+    }
+  }
+  return mountedNode;
 };
-
-//function wrapDom(dom:Element): VNodeElem {
-//  if(DEBUG) {
-//    // why do we need to cast dom as any to not get a Typescript compile error?
-//    if(<any> dom instanceof Element) throw new Error('wrap requires DOM Element');
-//  }
-//  return wrappedNodes.get(dom) || wrappedNodes.set(dom, Object.assign(elem(dom.nodeName.toLowerCase()), {
-//    dom: dom
-//  })).get(dom);
-//}
 
 const tick = (): void => {
   
@@ -539,7 +539,7 @@ export default {
   keep,
   //free,
   compDef,
-  draw,
+  mount,
   //diff: {
   //  none: 0,
   //  self: 1,
