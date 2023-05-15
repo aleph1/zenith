@@ -135,10 +135,10 @@ describe('vNode', () => {
       expect(vNode2.attrs.key).toBe(2);
     });
 
-    test('Children with no keys', () => {
+    test('z.elem() children with no keys', () => {
       const vNode1 = z.elem('div');
       const vNode2 = z.elem('div');
-      const vNode3 = z.elem('div', vNode1, vNode2);
+      z.elem('div', vNode1, vNode2);
       expect(vNode1.attrs.key).toBe(undefined);
       expect(vNode2.attrs.key).toBe(undefined);
     });
