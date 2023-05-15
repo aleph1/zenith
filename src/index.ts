@@ -364,18 +364,19 @@ const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNod
   return newVNode;
 };
 
-const createComponent = (parentDom: Element, vNode: VNodeComp, ns: string): void => {
+const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
   vNode.redraw = now => {
-    if(now) updateComponent(parentDom, vNode, ns);
-    else deferUpdateComponent(parentDom, vNode, ns);
+    if (now) updateComponent(parentNode, vNode, ns);
+    else deferUpdateComponent(parentNode, vNode, ns);
   }
-  if(vNode.tag.init) vNode.tag.init(vNode);
-  vNode.dom = getElement(parentDom.nodeName, ns); //ns ? document.createElementNS(ns, parentDom.nodeName) : document.createElement(parentDom.nodeName);
+  if (vNode.tag.init) vNode.tag.init(vNode);
+  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns); //ns ? document.createElementNS(ns, parentDom.nodeName) : document.createElement(parentDom.nodeName);
+  //console.log(vNode.dom);
   vNode.children = drawDrawable(vNode, vNode.tag.draw);
-  createVNodes(vNode.dom, vNode.children, 0, vNode.children.length, ns, 0);
-  if(vNode.tag.tick) componentTickQueue.set(vNode, vNode.tag.tick);
-  // *** tunnel to element, test this
-  //if(vNode.children.length === 1 && vNode.children[0].type === VNODE_TYPE_ELEM ) {
+  createVNodes(vNode, vNode.children, 0, vNode.children.length, ns, 0);
+  if (vNode.tag.tick) tickQueue.set(vNode, vNode.tag.tick);
+  // *** tunnel to element?
+  //if (vNode.children.length === 1 && vNode.children[0].type === VNODE_TYPE_ELEM ) {
   //  vNode.dom = vNode.children[0].dom;
   //}
 };
