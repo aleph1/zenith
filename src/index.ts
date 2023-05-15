@@ -467,10 +467,15 @@ const elem: {
     const childType = typeof child;
     children.push(!child || childType === 'undefined' || childType === 'boolean' ? null : childType === 'object' ? child : text(child));
   }
-  const vNode = Object.assign(pools[VNodeTypes.elem].pop() || { type: VNodeTypes.elem }, {
+  //const vNode = Object.assign(pools[VNodeTypes.elem].pop() || {type: VNodeTypes.elem}, {
+  //  tag: selector,
+  //  attrs
+  //});
+  const vNode:VNodeElem = {
+    type: VNodeTypes.elem,
     tag: selector,
     attrs
-  });
+  };
   vNode.children = normalizeChildren(vNode, children);
   return vNode;
 };
