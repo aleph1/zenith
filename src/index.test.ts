@@ -143,7 +143,7 @@ describe('vNode', () => {
       expect(vNode2.attrs.key).toBe(undefined);
     });
 
-    test('Children with mixed keys throws error', () => {
+    test('z.elem() children with mixed keys throws error', () => {
       expect(() => {
         z.elem('div',
           z.elem('div', {key:1}),
