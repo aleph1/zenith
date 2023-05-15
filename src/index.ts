@@ -105,6 +105,8 @@ const getNamespace = (vNode:VNodeElem, ns:string | undefined): string | undefine
   return vNode.attrs && vNode.attrs.xmlns || ELEMENT_NAMESPACES[vNode.tag] || ns;
 };
 
+// cloning elements is faster than creating them in most browsers:
+// https://www.measurethat.net/Benchmarks/Show/25003/0/create-versus-clone-element
 const getElement = (name:string, ns?:string, is?:string): Element => {
   const fullName = name + ':' + (ns || '') + ':' + (is || '');
   return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? {is} : null) : document.createElement(name, is ? {is} : null))).cloneNode();
