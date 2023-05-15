@@ -326,6 +326,15 @@ describe('vNode', () => {
       expect(vNode.type).toBe(VNodeTypes.comp);
     });
 
+    test('Returns a vNode with the correct type when an incorrect type is passed', () => {
+      const compDef = z.compDef({
+        draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+        type: 0
+      })
+      const vNode = z.comp(compDef);
+      expect(vNode.type).toBe(VNodeTypes.comp);
+    });
+
   });
 
   describe('z.text()', () => {
