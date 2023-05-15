@@ -1,5 +1,3 @@
-//import { observable, observe, destroy } from './simple-observable-proxy.mjs';
-//const now = performance.now();
 (() => {
 
 	const fixIndentation = str => {
@@ -72,7 +70,11 @@
 		},
 		draw: vNode => [
 			z.elem('div', z.text('Timer: ' + timer.value))
-		]
+		],
+		destroy: vNode => {
+			clearInterval(timer.interval);
+			timer.interval = null;
+		}
 	} );
 
 	const todo = {
@@ -376,15 +378,25 @@
 				demo: Timer,
 				code: `
 				// Timer Demo
-				const timer = 0;
+				const timer = {
+					value: 0,
+					interval: null
+				};
+
 				const Timer = z.compDef({
 					init: vNode => {
-						setInterval(() => {
-							timer++;
+						timer.interval = setInterval(() => {
+							timer.value++;
 							vNode.redraw();
 						}, 1000);
 					},
-					draw: vNode => z.elem('div', z.text('Timer: ' + timer))
+					draw: vNode => [
+						z.elem('div', z.text('Timer: ' + timer.value))
+					],
+					destroy: vNode => {
+						clearInterval(timer.interval);
+						timer.interval = null;
+					}
 				});`
 			}),
 			z.comp(Demo, {
