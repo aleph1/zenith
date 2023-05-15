@@ -127,10 +127,10 @@ describe('vNode', () => {
       }).toThrow(Error);
     });
 
-    test('Children with keys', () => {
+    test('z.elem() children with keys', () => {
       const vNode1 = z.elem('div', {key:1});
       const vNode2 = z.elem('div', {key:2});
-      const vNode3 = z.elem('div', vNode1, vNode2);
+      z.elem('div', vNode1, vNode2);
       expect(vNode1.attrs.key).toBe(1);
       expect(vNode2.attrs.key).toBe(2);
     });
