@@ -484,12 +484,9 @@ const deferUpdateComponent = (parentNode: VNodeAny, vNode:VNodeAny, ns: string) 
 
 //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
 const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
-  if(DEBUG) {
-    if(typeof inputDef.draw !== 'function') throw new Error('component definition requires draw function');
-    // *** zenith no longer has internal state
-    //if(inputDef.defaultState && typeof inputDef.defaultState !== 'function') throw new Error('if component definition has defaultState it must be a function');
-    //if(inputDef.keep === true && inputDef.update) throw new Error('components with keep: true will never update');
-  }
+  //if (DEBUG) {
+    if (typeof inputDef.draw !== 'function') throw new Error('component definition requires draw function');
+  //}
   return Object.assign({}, inputDef, {type: VNodeTypes.compDef});
 }
 
