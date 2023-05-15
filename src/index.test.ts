@@ -71,7 +71,6 @@ describe('vNode', () => {
       expect(vNode).toHaveProperty('tag', 'div');
       expect(vNode).toHaveProperty('attrs', {});
       expect(vNode).toHaveProperty('children', []);
-      //expect(vNode).toHaveProperty('keys', false);
     });
 
     test('z.elem("div", {id:"test"}) returns an object with the expected properties', () => {
