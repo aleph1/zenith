@@ -152,7 +152,7 @@ describe('vNode', () => {
       }).toThrow(Error);
     });
 
-    test('Handles single z.elem() child', () => {
+    test('z.elem() with single z.elem() child', () => {
       const vNode = z.elem('div', z.elem('div'));
       expect(vNode.children).toEqual([{
         tag: 'div',
