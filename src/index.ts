@@ -439,7 +439,7 @@ const emptyDom = (dom: Element): void => {
 // ----------------------------------------
 
 const text = (value: string | number | bigint): VNodeText => {
-  const type = typeof value
+  const type = typeof value;
   return {
     type: VNodeTypes.text,
     tag: type === 'string' || type === 'number' || type === 'bigint' ? value + '' : ''
