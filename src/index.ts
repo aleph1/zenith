@@ -79,65 +79,6 @@ const componentTickQueue = new Map();
 
 const keepVNodes: Map<number, VNodeAny> = new Map();
 
-// Adapted from ivi https://github.com/ivijs/ivi/
-// takes a list of unique numbers (-1 is special and can
-// occur multiple times) and returns an array with the indices
-// of the items that are part of the longest increasing
-// subsequence
-//const lisTemp = [];
-//const markLIS = (a: Array<number>): void => {
-//  const length = a.length;
-//  const parent = new Array(length);
-//  const index = new Array(length);
-//  let indexLength = 0;
-//  let i = 0;
-//  let j: number;
-//  let k: number;
-//  let lo: number;
-//  let hi: number;
-//
-//  // Skip -1 values at the start of the input array `a`.
-//  //for (; a[i] === -1; i++) { /**/ }
-//
-//  index[0] = i++;
-//  while (i < length) {
-//    k = a[i];
-//    if (k !== -1) { // Ignore -1 values.
-//      j = index[indexLength];
-//      if (a[j] < k) {
-//        parent[i] = j;
-//        index[++indexLength] = i;
-//      } else {
-//        lo = 0;
-//        hi = indexLength;
-//
-//        while (lo < hi) {
-//          j = (lo + hi) >> 1;
-//          if (a[index[j]] < k) {
-//            lo = j + 1;
-//          } else {
-//            hi = j;
-//          }
-//        }
-//
-//        if (k < a[index[lo]]) {
-//          if (lo > 0) {
-//            parent[i] = index[lo - 1];
-//          }
-//          index[lo] = i;
-//        }
-//      }
-//    }
-//    i++;
-//  };
-//
-//  // Mutate input array `a` and assign -2 value to all nodes that are part of LIS.
-//  j = index[indexLength];
-//  while (indexLength-- >= 0) {
-//    a[j] = -2;
-//    j = parent[j];
-//  }
-//};
 
 const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlatArray => {
   const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
