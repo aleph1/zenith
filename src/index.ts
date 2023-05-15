@@ -229,9 +229,9 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
   return newChildren;
 };
 
-const createVNodes = (parentDom: Element, children: VNodeFlatArray, start: number, end: number, ns: string, index: number): void => {
+const createVNodes = (parentNode: VNodeAny, children: VNodeFlatArray, start: number, end: number, ns: string, index: number): void => {
   while(start < end) {
-    index += createVNode(parentDom, children[start++], ns, index);
+    index += createVNode(parentNode, children[start++], ns, index);
   }
 };
 
