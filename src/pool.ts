@@ -2,8 +2,12 @@ import {
   VNodeTypes
 } from './vnode.defs';
 
-export const pools = {};
-export const poolSizes = {};
+export const pools = {
+  [VNodeTypes.elem]: [],
+};
+export const poolSizes = {
+  [VNodeTypes.elem]: 0
+};
 export const grow = (type: VNodeTypes.elem, amount: number): void => {
   const pool = pools[type];
   if(pool.length < amount) {
@@ -22,5 +26,3 @@ export const grow = (type: VNodeTypes.elem, amount: number): void => {
     pool.length = amount;
   }
 };
-pools[VNodeTypes.elem] = [];
-poolSizes[VNodeTypes.elem] = 0;
