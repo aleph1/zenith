@@ -381,10 +381,10 @@ const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): vo
   //}
 };
 
-const updateComponent = (parentDom: Element, vNode:VNodeComp, ns: string): void => {
-  //if(!vNode.tag.drawOnce) {
-    vNode.children = updateChildren(vNode.dom, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns);
-    if(vNode.tag.drawn) vNode.tag.drawn(vNode);
+const updateComponent = (parentNode: VNodeAny, vNode:VNodeComp, ns: string): void => {
+  //if (!vNode.tag.drawOnce) {
+    vNode.children = updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns);
+    if (vNode.tag.drawn) vNode.tag.drawn(vNode);
   //}
 };
 
