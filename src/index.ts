@@ -454,7 +454,6 @@ const elem: {
   const children:VNodeArray = [];
   let index = 0;
   let attrs = args[index];
-
   // if no passed attributes
   if (!attrs || typeof attrs !== 'object' || attrs.tag != null || Array.isArray(attrs)) {
     attrs = FROZEN_EMPTY_OBJECT;
