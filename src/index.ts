@@ -290,8 +290,8 @@ const createVNode = (parentNode: VNodeAny, vNode: VNodeAny, ns: string, index = 
   return elsAddedToDom;
 };
 
-const createHTML = (parentDom: Element, vNode: VNodeHTML, ns: string): void => {
-  const tempDom = getElement(parentDom.nodeName, ns);
+const createHTML = (parentNode: VNodeAny, vNode: VNodeHTML, ns: string): void => {
+  const tempDom = getElement((parentNode.dom as Element).nodeName, ns);
   tempDom.innerHTML = vNode.tag;
   vNode.dom = [...tempDom.childNodes];
   vNode.length = vNode.dom.length;
