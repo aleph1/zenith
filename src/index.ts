@@ -480,7 +480,7 @@ const elem: {
   return vNode;
 };
 
-const deferUpdateComponent = (parentDom: Element, vNode:VNodeAny, ns: string) => componentRedrawQueue.set(vNode, [parentDom, ns]);
+const deferUpdateComponent = (parentNode: VNodeAny, vNode:VNodeAny, ns: string) => componentRedrawQueue.set(vNode, [parentNode, ns]);
 
 //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
 const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
