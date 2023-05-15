@@ -261,26 +261,31 @@ const insertElements = (parentDom: Element, index: number, elements:Array<ChildN
   return count;
 };
 
-const createVNode = (parentDom: Element, vNode: VNodeAny, ns: string, index: number = 0): number => {
+const createVNode = (parentNode: VNodeAny, vNode: VNodeAny, ns: string, index = 0): number => {
+  //console.log('createVNode()');
+  //console.log(vNode);
+  //if(typeof vNode === 'number') vNode = keepVNodes.get(vNode);
   let elsAddedToDom = 0;
-  switch(vNode.type) {
-    case VNodeTypes.elem:
-      createElement(parentDom, vNode as VNodeElem, ns);
-      elsAddedToDom = insertElements(parentDom, index, [vNode.dom]);
-      break;
-    case VNodeTypes.comp:
-      createComponent(parentDom, vNode as VNodeComp, ns);
-      elsAddedToDom = insertElements(parentDom, index, [...vNode.dom.childNodes]);
-      break;
-    case VNodeTypes.text:
-      vNode = vNode as VNodeText;
-      vNode.dom = document.createTextNode(vNode.tag);
-      elsAddedToDom = insertElements(parentDom, index, [vNode.dom]);
-      break;
-    case VNodeTypes.html:
-      createHTML(parentDom, vNode as VNodeHTML, ns);
-      elsAddedToDom = insertElements(parentDom, index, vNode.dom);
-      break;
+  if(vNode != null) {
+    switch(vNode.type) {
+      case VNodeTypes.elem:
+        createElement(parentNode, vNode as VNodeElem, ns);
+        elsAddedToDom = insertElements(parentNode.dom as Element, index, [vNode.dom]);
+        break;
+      case VNodeTypes.comp:
+        createComponent(parentNode, vNode as VNodeComp, ns);
+        elsAddedToDom = insertElements(parentNode.dom as Element, index, [...vNode.dom.childNodes]);
+        break;
+      case VNodeTypes.text:
+        vNode = vNode as VNodeText;
+        vNode.dom = document.createTextNode(vNode.tag);
+        elsAddedToDom = insertElements(parentNode.dom as Element, index, [vNode.dom]);
+        break;
+      case VNodeTypes.html:
+        createHTML(parentNode, vNode as VNodeHTML, ns);
+        elsAddedToDom = insertElements(parentNode.dom as Element, index, vNode.dom);
+        break;
+    }
   }
   return elsAddedToDom;
 };
