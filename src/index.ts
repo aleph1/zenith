@@ -512,15 +512,6 @@ const html = (value: string): VNodeHTML => {
   };
 };
 
-const keep = (vNode: VNodeElem | VNodeComp): number => {
-  Object.defineProperties(vNode, {
-    keep: {configurable: false, writable: false, value: ++keepCount},
-    state: {configurable: false, writable: false, value: {}}
-  });
-  keepVNodes.set(++keepCount, vNode);
-  return keepCount;
-};
-
 const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem => {
   // first check to see if DOM is a child node of a mounted node
   let ancestor = dom.parentNode;
