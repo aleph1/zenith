@@ -389,8 +389,9 @@ const updateComponent = (parentNode: VNodeAny, vNode:VNodeComp, ns: string): voi
 };
 
 // *** partial implementation
-const destroyComponent = (parentDom: Element, vNode:VNodeComp): void => {
-  if(vNode.tag.destroy) vNode.tag.destroy(vNode);
+const destroyComponent = (parentNode: VNodeAny, vNode:VNodeComp): void => {
+  if (vNode.tag.destroy) vNode.tag.destroy(vNode);
+  if (vNode.tag.tick) tickQueue.delete(vNode);
 };
 
 const removeVNodes = (children:VNodeFlatArray, start: number, end: number): void => {
