@@ -335,6 +335,14 @@ describe('vNode', () => {
       expect(vNode.type).toBe(VNodeTypes.comp);
     });
 
+    test('Returns a vNode with the component definition as .tag', () => {
+      const compDef = z.compDef({
+        draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
+      })
+      const vNode = z.comp(compDef);
+      expect(vNode.tag).toBe(compDef);
+    });
+
   });
 
   describe('z.text()', () => {
