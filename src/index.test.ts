@@ -1,6 +1,9 @@
 import z from './index';
 import {
-  VNodeTypes,
+  VNodeAnyOrArray,
+  VNodeComp,
+  VNodeFlatArray,
+  VNodeTypes
 } from './vNode.defs';
 
 describe('vNode', () => {
