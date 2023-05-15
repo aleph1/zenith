@@ -43,11 +43,11 @@ import {
   VNodeContainer
 } from './vnode.defs';
 
-import {
-  grow,
-  pools,
-  poolSizes
-} from './pool';
+//import {
+//  grow,
+//  pools,
+//  poolSizes
+//} from './pool';
 
 // ----------------------------------------
 // CONSTANTS
@@ -536,8 +536,6 @@ export default {
   text,
   comp,
   html,
-  keep,
-  //free,
   compDef,
   mount,
   //diff: {
@@ -545,7 +543,7 @@ export default {
   //  self: 1,
   //  children: 2,
   //},
-  grow,
+  //grow,
   type: Object.freeze({
     none: VNodeTypes.none,
     compDef: VNodeTypes.compDef,
