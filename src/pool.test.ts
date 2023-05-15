@@ -25,4 +25,11 @@ describe('pooling', () => {
     expect(pools[VNodeTypes.elem][0].type).toBe(VNodeTypes.elem);
   });
 
+  //***
+  //test('elem pool reuses element', () => {
+  //  grow(VNodeTypes.elem, 1);
+  //  const vNode = z.elem('div');
+  //  expect(pools[VNodeTypes.elem]).toEqual(0);
+  //});
+
 }); 
