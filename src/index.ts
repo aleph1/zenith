@@ -239,7 +239,7 @@ const insertElements = (parentDom: Element, index: number, elements:Array<ChildN
   let i = 0;
   let count = 0;
   let element: Element | Text | ChildNode;
-  if(index < 0) {
+  if (index < 0) {
     while(i < elements.length) {
       element = elements[i++];
       if(element) {
