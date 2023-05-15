@@ -316,6 +316,9 @@ describe('vNode', () => {
 
   });
 
+  describe('z.comp()', () => {
+  });
+
   describe('z.text()', () => {
 
     test('Handles empty string', () => {
