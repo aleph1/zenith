@@ -459,7 +459,7 @@ const elem: {
     attrs = FROZEN_EMPTY_OBJECT;
   // otherwise, copy attributes
   } else {
-    attrs = Object.freeze(Object.assign( {}, attrs ));
+    attrs = Object.freeze(Object.assign({}, attrs));
     index++;
   }
   while(index < args.length) {
