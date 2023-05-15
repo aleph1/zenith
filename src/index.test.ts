@@ -29,6 +29,15 @@ describe('Component definition', () => {
     expect(vNode.type).toBe(VNodeTypes.compDef);
   });
 
+  test('Returned object has init if passed', () => {
+    const init = (vNode: VNodeComp): void => null;
+    const vNode = z.compDef({
+      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+      init
+    });
+    expect(vNode.init).toBe(init);
+  });
+
 });
 
 describe('vNode', () => {
