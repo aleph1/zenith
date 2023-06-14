@@ -122,7 +122,7 @@ const updateVNode = (parentVNode: VNodeAny, newVNode: VNodeAny, oldVNode?: VNode
       //if ((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
         switch(newVNodeType) {
           case VNodeTypes.elem:
-            newVNode = updateElement(parentVNode, newVNode, oldVNode as VNodeElem, ns);
+            updateElement(parentVNode, newVNode, oldVNode as VNodeElem, ns);
             break;
           case VNodeTypes.comp:
             //(newVNode as VNodeComp).dom = (oldVNode as VNodeComp).dom;
