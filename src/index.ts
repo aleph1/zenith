@@ -523,16 +523,15 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
   const mountedNode = mountedNodes.get(dom) || mountedNodes.set(dom, Object.assign(elem(dom.nodeName.toLowerCase()), {
     dom: dom
   })).get(dom);
-  removeVNodes(mountedNode.children, 0, mountedNode.children.length)
+
+  removeVNodes(mountedNode.children, 0, mountedNode.children.length);
   mountedNode.children.length = 0;
-  // *** replace with Array.isArray(vNode) ? vNode : [vNode]
+  //emptyDom(dom);
+
   if(vNodeAnyOrArray != null) {
-    mountedNode.children = Array.isArray(vNodeAnyOrArray) ? normalizeChildren(mountedNode, vNodeAnyOrArray) : [vNodeAnyOrArray];
-    for(const child of mountedNode.children) {
-      if (child.dom == null) createVNode(mountedNode, child, getClosestElementNamespace(dom));
-      else updateVNode(mountedNode, child, null, getClosestElementNamespace(dom));
-    }
+    updateChildren(mountedNode, Array.isArray(vNodeAnyOrArray) ? normalizeChildren(mountedNode, vNodeAnyOrArray) : [vNodeAnyOrArray], null, getClosestElementNamespace(dom));
   }
+
   return mountedNode;
 };
 
