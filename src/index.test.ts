@@ -348,6 +348,16 @@ describe('vNode', () => {
       expect(node.attrs).toEqual({});
       expect(Object.isFrozen(node.attrs)).toBe(true);
     });
+
+    test('Returns a vNode with a frozen attrs object with the expected properties', () => {
+      const compDef = z.compDef({
+        draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
+      });
+      const node = z.comp(compDef, {
+        id: 'test'
+      });
+      expect(node.attrs).toEqual({id:'test'});
+      expect(Object.isFrozen(node.attrs)).toBe(true);
     });
 
     test('Returns a vNode with the component definition as .tag', () => {
