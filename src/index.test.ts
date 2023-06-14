@@ -6,7 +6,17 @@ import {
   VNodeTypes
 } from './vNode.defs';
 
-describe('Component definition', () => {
+/*
+Please do not use the test syntax as an approach to coding with Zenith!
+
+The tests uses vNodes stored as const, as well as nested access to
+children[*].children[*]..., which are both bad practice in the majority
+of contexts. Writing the tests this way allows for slightly shorter code.
+
+Refer to the documentation and examples for proper coding practices.
+*/
+
+describe('Component definition, z.compDef()', () => {
 
   test('Throws error on missing draw function', () => {
     expect(() => {
