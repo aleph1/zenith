@@ -113,7 +113,7 @@ const getElement = (name:string, ns?:string, is?:string): Element => {
 };
 
 const updateVNode = (parentVNode: VNodeAny, newVNode: VNodeAny, oldVNode?: VNodeAny, ns?: string): VNodeAny => {
-  if (oldVNode) {
+  if (oldVNode != null) {
     const newVNodeType = newVNode.type;
     const oldVNodeType = oldVNode.type;
     if (newVNodeType === oldVNodeType) {
