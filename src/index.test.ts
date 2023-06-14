@@ -20,50 +20,50 @@ describe('Component definition, z.compDef()', () => {
 
   test('Throws error on missing draw function', () => {
     expect(() => {
-      const vNode = z.compDef({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      const node = z.compDef({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     }).toThrow(Error);
   });
 
   test('Returns an object with the passed draw function', () => {
     const draw = (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null;
-    const vNode = z.compDef({
+    const node = z.compDef({
       draw
     });
-    expect(vNode.draw).toBe(draw);
+    expect(node.draw).toBe(draw);
   });
 
   test('Returns an object with the correct type', () => {
-    const vNode = z.compDef({
+    const node = z.compDef({
       draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
     });
-    expect(vNode.type).toBe(VNodeTypes.compDef);
+    expect(node.type).toBe(VNodeTypes.compDef);
   });
 
   test('Returned object has init if passed', () => {
     const init = (vNode: VNodeComp): void => null;
-    const vNode = z.compDef({
+    const node = z.compDef({
       draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
       init
     });
-    expect(vNode.init).toBe(init);
+    expect(node.init).toBe(init);
   });
 
   test('Returned object has tick if passed', () => {
     const tick = (vNode: VNodeComp, tickCount: number): void => null;
-    const vNode = z.compDef({
+    const node = z.compDef({
       draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
       tick
     });
-    expect(vNode.tick).toBe(tick);
+    expect(node.tick).toBe(tick);
   });
 
   test('Returned object has destroy if passed', () => {
     const destroy = (vNode: VNodeComp): void => null;
-    const vNode = z.compDef({
+    const node = z.compDef({
       draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
       destroy
     });
-    expect(vNode.destroy).toBe(destroy);
+    expect(node.destroy).toBe(destroy);
   });
 
 });
@@ -73,67 +73,67 @@ describe('vNode', () => {
   describe('z.elem()', () => {
 
     test('z.elem("div") returns an object with the expected properties', () => {
-      const vNode = z.elem('div');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
-      expect(vNode).toHaveProperty('type', VNodeTypes.elem);
-      expect(vNode).toHaveProperty('tag', 'div');
-      expect(vNode).toHaveProperty('attrs', {});
-      expect(vNode).toHaveProperty('children', []);
+      const node = z.elem('div');
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
+      expect(node).toHaveProperty('type', VNodeTypes.elem);
+      expect(node).toHaveProperty('tag', 'div');
+      expect(node).toHaveProperty('attrs', {});
+      expect(node).toHaveProperty('children', []);
     });
 
     test('z.elem("div", {id:"test"}) returns an object with the expected properties', () => {
-      const vNode = z.elem('div', {id:"test"});
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
-      expect(vNode).toHaveProperty('type', VNodeTypes.elem);
-      expect(vNode).toHaveProperty('tag', 'div');
-      expect(typeof vNode.attrs).toBe('object');
-      expect(vNode.attrs).toHaveOnlyProperties(['id']);
-      expect(vNode.attrs).toHaveProperty('id', 'test');
-      //expect(vNode).toHaveProperty('children', []);
+      const node = z.elem('div', {id:'test'});
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
+      expect(node).toHaveProperty('type', VNodeTypes.elem);
+      expect(node).toHaveProperty('tag', 'div');
+      expect(typeof node.attrs).toBe('object');
+      expect(node.attrs).toHaveOnlyProperties(['id']);
+      expect(node.attrs).toHaveProperty('id', 'test');
+      expect(node).toHaveProperty('children', []);
     });
 
     test('z.elem("div") returns a vNode with a frozen empty attrs object', () => {
-      const vNode = z.elem('div');
-      expect(vNode.attrs).toEqual({});
-      expect(Object.isFrozen(vNode.attrs)).toBe(true);
+      const node = z.elem('div');
+      expect(node.attrs).toEqual({});
+      expect(Object.isFrozen(node.attrs)).toBe(true);
     });
 
     test('z.elem("div", {id:"test"}) returns a vNode with a frozen attrs object with the expected properties', () => {
-      const vNode = z.elem('div', {id:"test"});
-      expect(vNode.attrs).toEqual({id:"test"});
-      expect(Object.isFrozen(vNode.attrs)).toBe(true);
+      const node = z.elem('div', {id:'test'});
+      expect(node.attrs).toEqual({id:'test'});
+      expect(Object.isFrozen(node.attrs)).toBe(true);
     });
 
     test('Handles <svg>', () => {
-      const vNode = z.elem('svg');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
-      expect(vNode.type).toBe(VNodeTypes.elem);
-      expect(vNode.tag).toBe('svg');
-      expect(vNode.attrs).toEqual({});
-      expect(vNode.children).toEqual([]);
+      const node = z.elem('svg');
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
+      expect(node.type).toBe(VNodeTypes.elem);
+      expect(node.tag).toBe('svg');
+      expect(node.attrs).toEqual({});
+      expect(node.children).toEqual([]);
     });
 
     test('Handles <math>', () => {
-      const vNode = z.elem('math');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
-      expect(vNode.type).toBe(VNodeTypes.elem);
-      expect(vNode.tag).toBe('math');
-      expect(vNode.attrs).toEqual({});
-      expect(vNode.children).toEqual([]);
+      const node = z.elem('math');
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag', 'attrs', 'children']);
+      expect(node.type).toBe(VNodeTypes.elem);
+      expect(node.tag).toBe('math');
+      expect(node.attrs).toEqual({});
+      expect(node.children).toEqual([]);
     });
 
     test('Attempting to modify attrs throws an error', () => {
-      const vNode = z.elem('div');
+      const node = z.elem('div');
       expect(() => {
-        vNode.attrs.id = 'test';
+        node.attrs.id = 'test';
       }).toThrow(Error);
     });
 
@@ -143,14 +143,20 @@ describe('vNode', () => {
       z.elem('div', vNode1, vNode2);
       expect(vNode1.attrs.key).toBe(1);
       expect(vNode2.attrs.key).toBe(2);
+    test('Handles children with keys', () => {
+      const node1 = z.elem('div', {key:1});
+      const node2 = z.elem('div', {key:2});
+      z.elem('div', node1, node2);
+      expect(node1.attrs.key).toBe(1);
+      expect(node2.attrs.key).toBe(2);
     });
 
-    test('z.elem() children with no keys', () => {
-      const vNode1 = z.elem('div');
-      const vNode2 = z.elem('div');
-      z.elem('div', vNode1, vNode2);
-      expect(vNode1.attrs.key).toBe(undefined);
-      expect(vNode2.attrs.key).toBe(undefined);
+    test('Handles children with no keys', () => {
+      const node1 = z.elem('div');
+      const node2 = z.elem('div');
+      z.elem('div', node1, node2);
+      expect(node1.attrs.key).toBe(undefined);
+      expect(node2.attrs.key).toBe(undefined);
     });
 
     test('z.elem() children with mixed keys throws error', () => {
@@ -162,20 +168,19 @@ describe('vNode', () => {
       }).toThrow(Error);
     });
 
-    test('z.elem() with single z.elem() child', () => {
-      const vNode = z.elem('div', z.elem('div'));
-      expect(vNode.children).toEqual([{
+    test('Handles single z.elem() child', () => {
+      const node = z.elem('div', z.elem('div'));
+      expect(node.children).toEqual([{
         tag: 'div',
         type: VNodeTypes.elem,
-        //keys: false,
         attrs: {},
         children: [],
       }]);
     });
 
     test('Handles array with one z.elem()', () => {
-      const vNode = z.elem('div', [z.elem('div')]);
-      expect(vNode.children).toEqual([{
+      const node = z.elem('div', [z.elem('div')]);
+      expect(node.children).toEqual([{
         tag: 'div',
         type: VNodeTypes.elem,
         //keys: false,
@@ -184,40 +189,36 @@ describe('vNode', () => {
       }]);
     });
 
-    test('Handles mutliple z.elem() children', () => {
-      const vNode = z.elem('div', z.elem('div'), z.elem('p'));
-      expect(vNode.children).toEqual([
+    test('Handles multiple z.elem() children', () => {
+      const node = z.elem('div', z.elem('div'), z.elem('p'));
+      expect(node.children).toEqual([
         {
           tag: 'div',
           type: VNodeTypes.elem,
-          //keys: false,
           attrs: {},
           children: [],
         },
         {
           tag: 'p',
           type: VNodeTypes.elem,
-          //keys: false,
           attrs: {},
           children: [],
         }
       ]);
     });
 
-    test('Handles array with multiple z.elem()', () => {
-      const vNode = z.elem('div', [z.elem('div'), z.elem('p')]);
-      expect(vNode.children).toEqual([
+    test('Handles array with multiple z.elem() children', () => {
+      const node = z.elem('div', [z.elem('div'), z.elem('p')]);
+      expect(node.children).toEqual([
         {
           tag: 'div',
           type: VNodeTypes.elem,
-          //keys: false,
           attrs: {},
           children: [],
         },
         {
           tag: 'p',
           type: VNodeTypes.elem,
-          //keys: false,
           attrs: {},
           children: [],
         }
@@ -225,103 +226,103 @@ describe('vNode', () => {
     });
 
     test('Handles single null child', () => {
-      const vNode = z.elem('div', null);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', null);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single null child array', () => {
-      const vNode = z.elem('div', [null]);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', [null]);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single undefined child', () => {
-      const vNode = z.elem('div', undefined);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', undefined);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single undefined child array', () => {
-      const vNode = z.elem('div', [undefined]);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', [undefined]);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single false child', () => {
-      const vNode = z.elem('div', false);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', false);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single false child array', () => {
-      const vNode = z.elem('div', [false]);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', [false]);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single true child', () => {
-      const vNode = z.elem('div', true);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', true);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles single true child array', () => {
-      const vNode = z.elem('div', [true]);
-      expect(vNode.children).toEqual([null]);
+      const node = z.elem('div', [true]);
+      expect(node.children).toEqual([null]);
     });
 
     test('Handles multiple null children', () => {
-      const vNode = z.elem('div', null, null);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', null, null);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles mixed null children', () => {
-      const vNode = z.elem('div', null, [null]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', null, [null]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple null children array', () => {
-      const vNode = z.elem('div', [null, null]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', [null, null]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple undefined children', () => {
-      const vNode = z.elem('div', undefined, undefined);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', undefined, undefined);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple undefined children array', () => {
-      const vNode = z.elem('div', [undefined, undefined]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', [undefined, undefined]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles mixed undefined children', () => {
-      const vNode = z.elem('div', undefined, [undefined]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', undefined, [undefined]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple false children', () => {
-      const vNode = z.elem('div', false, false);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', false, false);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple false children array', () => {
-      const vNode = z.elem('div', [false, false]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', [false, false]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles mixed false children', () => {
-      const vNode = z.elem('div', false, [false]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', false, [false]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple true children', () => {
-      const vNode = z.elem('div', true, true);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', true, true);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles multiple true children array', () => {
-      const vNode = z.elem('div', [true, true]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', [true, true]);
+      expect(node.children).toEqual([null, null]);
     });
 
     test('Handles mixed true children', () => {
-      const vNode = z.elem('div', true, [true]);
-      expect(vNode.children).toEqual([null, null]);
+      const node = z.elem('div', true, [true]);
+      expect(node.children).toEqual([null, null]);
     });
 
   });
@@ -331,18 +332,18 @@ describe('vNode', () => {
     test('Returns a vNode with the correct type', () => {
       const compDef = z.compDef({
         draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
-      })
-      const vNode = z.comp(compDef);
-      expect(vNode.type).toBe(VNodeTypes.comp);
+      });
+      const node = z.comp(compDef);
+      expect(node.type).toBe(VNodeTypes.comp);
     });
 
     test('Returns a vNode with the correct type when an incorrect type is passed', () => {
       const compDef = z.compDef({
         draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
         type: 0
-      })
-      const vNode = z.comp(compDef);
-      expect(vNode.type).toBe(VNodeTypes.comp);
+      });
+      const node = z.comp(compDef);
+      expect(node.type).toBe(VNodeTypes.comp);
     });
 
     test('Returns a vNode with the component definition as .tag', () => {
