@@ -427,9 +427,10 @@ const drawDrawable = (vNode: VNodeDrawable, drawFn: (vNode: VNodeDrawable, oldCh
   return normalizeChildren(vNode, Array.isArray(children) ? children : [children]);
 };
 
-const emptyDom = (dom: Element): void => {
-  while(dom.lastChild) dom.lastChild.remove();
-};
+// *** unused
+//const emptyDom = (dom: Element): void => {
+//  while(dom.lastChild) dom.lastChild.remove();
+//};
 
 // ----------------------------------------
 // VNODES
