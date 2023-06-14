@@ -373,12 +373,12 @@ describe('vNode', () => {
   describe('z.text()', () => {
 
     test('Handles empty string', () => {
-      const vNode = z.text('');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
-      expect(vNode.type).toBe(VNodeTypes.text);
-      expect(vNode.tag).toBe('');
+      const node = z.text('');
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag']);
+      expect(node.type).toBe(VNodeTypes.text);
+      expect(node.tag).toBe('');
     });
 
     test('Handles non-empty string', () => {
