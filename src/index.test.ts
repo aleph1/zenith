@@ -340,7 +340,7 @@ describe('vNode', () => {
       expect(node.type).toBe(VNodeTypes.comp);
     });
 
-    test('Returns a vNode with the component definition as .tag', () => {
+    test('Returns a vNode with a frozen empty attrs object', () => {
       const compDef = z.compDef({
         draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
       })
