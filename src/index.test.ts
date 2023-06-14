@@ -364,8 +364,8 @@ describe('vNode', () => {
       const compDef = z.compDef({
         draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
       })
-      const vNode = z.comp(compDef);
-      expect(vNode.tag).toBe(compDef);
+      const node = z.comp(compDef);
+      expect(node.tag).toBe(compDef);
     });
 
   });
