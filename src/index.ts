@@ -376,8 +376,8 @@ const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNod
 };
 
 const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
-  vNode.redraw = now => {
-    if (now) updateComponent(parentNode, vNode, ns);
+  vNode.redraw = immediate => {
+    if (immediate) updateComponent(parentNode, vNode, ns);
     else deferUpdateComponent(parentNode, vNode, ns);
   }
   if (vNode.tag.init) vNode.tag.init(vNode);
