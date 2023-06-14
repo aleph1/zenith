@@ -321,6 +321,8 @@ const setDOMAttribute = (vNode: VNodeElem, attr: string, newValue: boolean | num
       } else {
         vNode.dom.removeAttribute(attr);
       }
+    } else if (attr === 'class') {
+      vNode.dom.setAttribute(attr, Array.isArray(newValue) ? newValue.join(' ') : newValue as string);
     // Setting on* handlers using setAttribute does not work,
     // so we need a conditional to detect on*.
     // Benchmark to compare various approaches:
