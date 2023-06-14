@@ -343,9 +343,11 @@ describe('vNode', () => {
     test('Returns a vNode with a frozen empty attrs object', () => {
       const compDef = z.compDef({
         draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
-      })
-      const vNode = z.comp(compDef);
-      expect(vNode.tag).toBe(compDef);
+      });
+      const node = z.comp(compDef);
+      expect(node.attrs).toEqual({});
+      expect(Object.isFrozen(node.attrs)).toBe(true);
+    });
     });
 
     test('Returns a vNode with the component definition as .tag', () => {
