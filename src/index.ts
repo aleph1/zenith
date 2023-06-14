@@ -500,7 +500,7 @@ const comp = (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttribu
   return {
     type: VNodeTypes.comp,
     tag: componentDefinition,
-    attrs: attrs || FROZEN_EMPTY_OBJECT
+    attrs: attrs ? Object.freeze(attrs) : FROZEN_EMPTY_OBJECT
   }
 }
 
