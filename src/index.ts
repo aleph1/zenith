@@ -354,27 +354,25 @@ const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void
   createVNodes(vNode, vNode.children, 0, vNode.children.length, ns, 0);
 };
 
-const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): VNodeElem => {
+const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): void => {
+  newVNode.events = oldVNode.events;
   //if (newVNode.attrs === oldVNode.attrs && newVNode.attrs !== FROZEN_EMPTY_OBJECT) throw new Error('must not reuse attrs object across calls to z.elem()');
   // input type must be set before other attributes
   if (newVNode.tag === 'input' && newVNode.attrs.type != null) newVNode.dom.setAttribute('type', newVNode.attrs.type);
-  // set new attributes
-  for(const attr in newVNode.attrs) {
-    setDOMAttribute(newVNode, attr, newVNode.attrs[attr], oldVNode.attrs[attr], ns);
-  }
-  // remove old attributes
+  // remove old attrs
   for(const attr in oldVNode.attrs) {
-    // *** implement logic to remove old attributes
-    if (newVNode.attrs[attr] != null) {
-      if (attr[0] === 'o' && attr[1] === 'n') {
-        newVNode.events[attr.slice(2)] = newVNode.dom[attr] = null;
-      } else {
-        newVNode.dom.removeAttribute(attr);
-      }
+    if (attr[0] === 'o' && attr[1] === 'n') {
+      newVNode.events[attr.slice(2)] = newVNode.dom[attr] = null;
+    } else {
+      newVNode.dom.removeAttribute(attr);
     }
   }
-  newVNode.children = updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
-  return newVNode;
+  // set new attributes
+  for(const attr in newVNode.attrs) {
+    //console.log(attr + ': ' + newVNode.attrs[attr]);
+    setDOMAttribute(newVNode, attr, newVNode.attrs[attr], oldVNode.attrs[attr], ns);
+    //console.log(newVNode.dom[attr]);
+  }
   updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
 };
 
