@@ -129,8 +129,8 @@ const updateVNode = (parentVNode: VNodeAny, newVNode: VNodeAny, oldVNode?: VNode
             if (newVNode.tag === oldVNode.tag) {
               updateComponent(parentVNode, newVNode, ns);
             } else {
-              createComponent(parentVNode, newVNode, ns);
               removeVNode(oldVNode);
+              createVNode(parentVNode, newVNode, ns);
             }
             break;
           case VNodeTypes.text:
