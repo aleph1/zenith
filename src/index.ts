@@ -148,15 +148,20 @@ const updateVNode = (parentVNode: VNodeAny, newVNode: VNodeAny, oldVNode?: VNode
   return newVNode;
 };
 
-const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string):VNodeFlatArray => {
-  if (oldChildren) {
+const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string): void => {
+  //console.log('updateChildren()');
+  //console.log(newChildren);
+  if (oldChildren != null) {
+    //console.log('has old children');
+    //console.log(oldChildren);
     const newChildrenLength = newChildren.length;
     const oldChildrenLength = oldChildren.length;
     // *** 
     if (newChildrenLength > 0) {
       // determine if children are keyed
-      const isNewKeyed = newChildren[0] && newChildren[0].attrs && newChildren[0].attrs.key != null;
-      const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && newChildren[0].attrs.key != null;
+      //Object.prototype.hasOwnProperty.call
+      const isNewKeyed = newChildren[0] && newChildren[0].attrs && Object.prototype.hasOwnProperty.call(newChildren[0].attrs, 'key') && newChildren[0].attrs.key != null;
+      const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && Object.prototype.hasOwnProperty.call(oldChildren[0].attrs, 'key') && oldChildren[0].attrs.key != null;
       // keyed diff
       // 1) get IDs for new children
       // 2) get IDs for old children
@@ -197,15 +202,19 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
         // iterate through new children and diff with old children
         for(const child of newChildren) {
           // *** newChildren[child as number] = updateVNode(parentDom, child, oldChildrenByKey[child.attrs.key as string], ns);
-          updateVNode(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
-          if (Array.isArray(child.dom)) {
-            for(const index in child.dom) {
-              doms.push(child.dom[index]);
-              child.dom[index].remove();
-            }
-          } else {
+          if(child != null) {
+            updateVNode(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
             doms.push(child.dom);
-            child.dom.remove();
+            (child.dom as Element).remove();
+            //if (Array.isArray(child.dom)) {
+            //  for(const index in child.dom) {
+            //    doms.push(child.dom[index]);
+            //    child.dom[index].remove();
+            //  }
+            //} else {
+            //  doms.push(child.dom);
+            //  child.dom.remove();
+            //}
           }
         }
         insertElements(parentNode.dom as Element, -1, doms);
@@ -217,16 +226,17 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
           removeVNodes(oldChildren, newChildrenLength, oldChildrenLength);
         }
         for(let i = 0; i < newChildrenLength; i++ ) {
-          newChildren[i] = updateVNode(parentNode, newChildren[i], oldChildren[i], ns);
+          updateVNode(parentNode, newChildren[i], oldChildren[i], ns);
         }
       }
     } else {
       removeVNodes(oldChildren, 0, oldChildrenLength);
     }
   } else {
+    //console.log('does not have old children');
     createVNodes(parentNode, newChildren, 0, newChildren.length, ns, 0);
   }
-  return newChildren;
+  parentNode.children = newChildren;
 };
 
 const createVNodes = (parentNode: VNodeAny, children: VNodeFlatArray, start: number, end: number, ns: string, index: number): void => {
@@ -362,6 +372,7 @@ const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNod
   }
   newVNode.children = updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
   return newVNode;
+  updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
 };
 
 const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
@@ -383,7 +394,7 @@ const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): vo
 
 const updateComponent = (parentNode: VNodeAny, vNode:VNodeComp, ns: string): void => {
   //if (!vNode.tag.drawOnce) {
-    vNode.children = updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns);
+    updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns);
     if (vNode.tag.drawn) vNode.tag.drawn(vNode);
   //}
 };
@@ -408,6 +419,7 @@ const removeVNode = (vNode: VNodeAny): void => {
       break;
     case VNodeTypes.comp:
       if(vNode.tag.tick) tickQueue.delete(vNode);
+      
       removeVNodes(vNode.children, 0, vNode.children.length);
       vNode.children.length = 0;
       break;
