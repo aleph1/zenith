@@ -947,10 +947,10 @@ describe('DOM', () => {
     test('z.html() with <col>', () => {
       document.body.innerHTML = '<table><colgroup></colgroup><table>';
       const app = document.querySelector('colgroup');
-      const vNode = z.html('<col>');
+      const node = z.html('<col>');
       const elem1 = document.createElement('col');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
     });
 
     test('z.html() with <thead>', () => {
