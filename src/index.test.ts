@@ -2234,6 +2234,21 @@ describe('DOM', () => {
       });
       z.draw(app, el1);
 
+    test('textarea value is updated when DOM value differs from vNode value', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('textarea', {
+        value: 'test',
+      });
+      const node2 = z.elem('textarea', {
+        value: 'test2',
+      });
+      z.mount(app, node1);
+      (node1.dom as HTMLTextAreaElement).value += '1';
+      z.mount(app, node2);
+      expect((node1.dom as HTMLTextAreaElement).value).toBe('test2');
+    });
+
     test('Checkbox from z.elem("input", {type: "checkbox", checked: true}) is checked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
