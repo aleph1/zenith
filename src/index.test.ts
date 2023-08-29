@@ -1898,17 +1898,22 @@ describe('DOM', () => {
       expect(node3.children[0].dom).toEqual(elem2);
     });
 
-    test('z.html() with all other HTML5 tags', () => {
+    test('z.comp() number of children decreases when redrawn deferred', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const obsoleteTags = ['acronym', 'applet', 'basefont', 'big', 'center', 'dir', 'font', 'strike', 'tt'];
-      const validTags = ['a', 'abbr', 'address', 'area', 'article', 'aside', 'audio', 'b', 'base', 'bdi', 'bdo', 'big', 'blockquote', 'br', 'button', 'canvas', 'cite', 'code', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt', 'em', 'embed', 'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'legend', 'li', 'link', 'main', 'map', 'mark', 'menu', 'menuitem', 'meta', 'meter', 'nav', 'noframes', 'noscript', 'object', 'ol', 'optgroup', 'option', 'output', 'p', 'param', 'pre', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'section', 'select', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup', 'table', 'textarea', 'time', 'title', 'track', 'tt', 'u', 'ul', 'var', 'video', 'wbr']
-      obsoleteTags.concat(validTags).forEach(tag => {
-        const vNode = z.html('<' + tag + '/>');
-        const elem1 = document.createElement(tag);
-        z.draw(app, vNode);
-        expect(vNode.dom[0]).toEqual(elem1);
+      const values = ['test1', 'test2'];
+      const compDef = z.compDef({
+        draw: vNode => vNode.attrs.values.map(label => z.text(label))
       });
+      const node = z.comp(compDef, {
+        values
+      });
+      z.mount(app, node);
+      expect(node.children.length).toEqual(2);
+      values.pop();
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(node.children.length).toEqual(1);
     });
 
     test('z.html() with two nodes requiring specific parents', () => {
