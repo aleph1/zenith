@@ -193,7 +193,6 @@ describe('vNode', () => {
       expect(node.children).toEqual([{
         tag: 'div',
         type: VNodeTypes.elem,
-        //keys: false,
         attrs: {},
         children: [],
       }]);
