@@ -471,7 +471,7 @@ describe('vNode', () => {
 
   });
 
-  describe('z.comp()', () => {
+  describe('z.html()', () => {
 
   });
 
