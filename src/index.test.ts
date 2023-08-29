@@ -406,12 +406,12 @@ describe('vNode', () => {
     });
 
     test('Handles number', () => {
-      const vNode = z.text(1);
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
-      expect(vNode.type).toBe(VNodeTypes.text);
-      expect(vNode.tag).toBe('1');
+      const node = z.text(1);
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag']);
+      expect(node.type).toBe(VNodeTypes.text);
+      expect(node.tag).toBe('1');
     });
 
     test('Handles BigInt', () => {
