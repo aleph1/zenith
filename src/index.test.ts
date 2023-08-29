@@ -613,6 +613,21 @@ describe('DOM', () => {
       expect(node1.dom).toEqual(elem1);
     });
 
+    test('z.elem() is xhtml custom type with attributes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {
+        id: 'custom-xhtml',
+        is: 'custom-xhtml',
+      });
+      const elem1 = document.createElement('div', {
+        is: 'custom-xhtml',
+      });
+      elem1.id = 'custom-xhtml';
+      z.mount(app, node1);
+      expect(node1.dom).toEqual(elem1);
+    });
+
     test('z.elem() svg with z.html() child with multiple svg elements', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
