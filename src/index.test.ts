@@ -806,6 +806,25 @@ describe('DOM', () => {
       expect(vNode.children[0].dom).toEqual(elem1);
     });
 
+    test('z.comp() draw returns array of z.elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const component = z.compDef({
+        draw: () => [
+          z.elem('div', {id: 'test1'}),
+          z.elem('div', {id: 'test2'}),
+        ]
+      });
+      const vNode = z.comp(component);
+      const elem1 = document.createElement('div');
+      elem1.id = 'test1';
+      const elem2 = document.createElement('div');
+      elem2.id = 'test2';
+      z.mount(app, vNode);
+      expect(vNode.children[0].dom).toEqual(elem1);
+      expect(vNode.children[1].dom).toEqual(elem2);
+    });
+
     });
 
     test('z.html() with single html element', () => {
