@@ -2896,11 +2896,17 @@ describe('DOM', () => {
       expect(el1.dom.getAttribute('disabled')).toBe('disabled');
     });
 
+    test('Attribute starting with "on" is applied as a function', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const callback = jest.fn();
       const el1 = z.elem('div', {
-        onclick: callback
+        onclick: e => e.stopImmediatePropagation()
+      });
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLElement).toBe(true);
+      expect(typeof (el1.dom as HTMLElement).onclick).toBe('function');
+    });
+
       });
       z.draw(app, el1);
 
