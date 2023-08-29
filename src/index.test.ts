@@ -2888,6 +2888,14 @@ describe('DOM', () => {
       expect(el1.dom.getAttribute('id')).toBeNull();
     });
 
+    test('Attribute of true is equivalent to attribute="attribute"', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('div', {disabled: true});
+      z.mount(app, el1);
+      expect(el1.dom.getAttribute('disabled')).toBe('disabled');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
