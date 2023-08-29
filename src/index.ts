@@ -98,8 +98,8 @@ const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlat
   return normalizedChildren;
 };
 
-const getClosestElementNamespace = (dom:Element | undefined): string | undefined => {
-  return dom && 'closest' in dom ? ELEMENT_NAMESPACES[(dom.closest(ELEMENT_NAMESPACES_QUERY) || dom).nodeName.toLowerCase()] : undefined;
+const getClosestElementNamespace = (dom:Element): string | undefined => {
+  return dom.closest(ELEMENT_NAMESPACES[(dom.closest(ELEMENT_NAMESPACES_QUERY) || dom).nodeName.toLowerCase()]);
 };
 
 const getNamespace = (vNode:VNodeElem, ns:string | undefined): string | undefined => {
