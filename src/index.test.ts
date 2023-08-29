@@ -17,6 +17,21 @@ of contexts. Writing the tests this way allows for slightly shorter code.
 Refer to the documentation and examples for proper coding practices.
 */
 
+// jest’s handling of promises with setTimeout is not function,
+// so we create a deferred prommise and simulate the setTimeout
+// using jest.advanceTimersByTime outside of the promise
+function generateDeferredPromise() {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => {
+    [resolve, reject] = [res, rej];
+  });
+  return {promise, reject, resolve};
+}
+
+// TESTS TO ADD
+// - z.elem with children has children reapplied in different order
+// - z.comp where draw returns elem that requires different parent (<tr>, <tbody>)
+
 describe('Component definition, z.compDef()', () => {
 
   test('Throws error on missing draw function', () => {
