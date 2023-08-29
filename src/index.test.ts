@@ -2228,11 +2228,28 @@ describe('DOM', () => {
       expect((node.doms[2] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
+    test('Nested z.comp() namespaces change correctly', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('div', {id: null});
-      z.draw(app, el1);
-      expect(el1.dom.getAttribute('id')).toBeNull();
+      let elType = 'html';
+      const nestedCompDef = z.compDef({
+        draw: vNode => elType === 'html' ? z.elem('div') : z.elem('rect')
+      });
+      const compDef = z.compDef({
+        draw: vNode => elType === 'html' ? z.elem('div', z.comp(nestedCompDef)) : z.elem('svg', z.comp(nestedCompDef))
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+      expect(node.children[0].children[0].children.length).toBe(1);
+      expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+      elType = 'svg';
+      node.redraw(true);
+      expect(node.children.length).toBe(1);
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      expect(node.children[0].children[0].children.length).toBe(1);
+      expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
     test('Attribute of undefined is equivalent to no attribute', () => {
