@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "rollup --config && node src/after-build.mjs",
+    "lint": "eslint . --ext .ts",
     "test": "jest --coverage --verbose"
   },
   "repository": {
