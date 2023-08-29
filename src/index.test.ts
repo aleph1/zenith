@@ -1174,6 +1174,16 @@ describe('DOM', () => {
 
   describe('Updating', () => {
 
+    test('DOM is reused if possible', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {id: 'test1'});
+      const node2 = z.elem('div', {id: 'test2'});
+      z.mount(app, node1);
+      z.mount(app, node2);
+      expect(node1.dom).toEqual(node2.dom);
+    });
+
 
   });
     });
