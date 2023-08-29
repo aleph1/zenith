@@ -620,12 +620,14 @@ const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
 //   - draw: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
 //   - destroy: called once upon destruction
 const comp = (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes): VNodeComp => {
-  return {
+  const vNode:VNodeComp = {
+    redraw: now => redrawComponent(vNode, now),
     type: VNodeTypes.comp,
     tag: componentDefinition,
     attrs: attrs ? Object.freeze(attrs) : FROZEN_EMPTY_OBJECT
-  }
-}
+  };
+  return vNode;
+};
 
 const html = (value: string): VNodeHTML => {
   const type = typeof value;
