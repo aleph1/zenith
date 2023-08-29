@@ -772,6 +772,17 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(1);
     });
 
+    test('z.comp() draw returns undefined', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: () => undefined
+      });
+      const vNode = z.comp(compDef);
+      z.mount(app, vNode);
+      expect(vNode.children.length).toEqual(1);
+    });
+
     });
 
     test('z.html() with single html element', () => {
