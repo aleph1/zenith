@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Zenith.js Demo</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../css/demos.css">
+	<style>
+		@keyframes fade-in {
+		    from {opacity:0;}
+		    to {opacity:1;}
+		}
+		ul > li {
+			animation: fade-in 2s forwards;
+		}
+	</style>
+</head>
+<body>
+	<div id="app"></div>
+	<script src="../mithril/mithril.min.js"></script>
+	<script>
+		let id = 1;
+		const appEl = document.querySelector('#app');
+		const items = [];
+		const shuffle = arr => {
+			let currentIndex = arr.length,
+				randomIndex;
+
+			// While there remain elements to shuffle.
+			while (currentIndex != 0) {
+				// Pick a remaining element.
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex--;
+				// And swap it with the current element.
+				[arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
+			}
+			return arr;
+		}
+		const List = {
+			view: vNode => m('ul', vNode.attrs.items.map(item => m('li', 'Item ' + item)))
+		};
+		const tick = () => {
+			shuffle(items);
+			items.splice(Math.floor(Math.random() * items.length), 1);
+			items.push(id++, id++);
+			m.render(document.querySelector('#app'), m(List, {
+				items
+			}));
+			window.requestAnimationFrame(tick);
+		};
+		while(id <= 20) {
+			items.push(id++);
+		}
+		tick();
+	</script>
+</body>
+</html>

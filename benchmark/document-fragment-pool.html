@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Benchmark: Object Components</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	Check the console.
+	<script>
+		let iteration = 0;
+		let now = performance.now();
+		const documentFragmentCount = 100;
+		const numTests = 100;
+		const div = document.createElement('div');
+		const documentFragmentPool = ((size, growthFactor) => {
+			let _size;
+			const _growthFactor = growthFactor || 2;
+			const _pool = [];
+			const grow = () => {
+				_size = _size ? _size * _growthFactor : size;
+				while(_pool.length < _size) _pool.push(document.createDocumentFragment());
+			};
+			grow();
+			return {
+				get: () => _pool.pop() || document.createDocumentFragment(),
+				free: documentFragment => _pool.push(documentFragment),
+			};
+		})(documentFragmentCount);
+		console.log('creating documentFragmentPool took: ' + (performance.now() - now));
+		const test1 = () => {
+			iteration++;
+			for(let i = 0; i < 100; i++) {
+				const documentFragment = documentFragmentPool.get();
+				documentFragment.append(div);
+				documentFragmentPool.free(documentFragment);
+			}
+			if(iteration < numTests) window.requestAnimationFrame(test1);
+			else console.log('with pool took: ' + (performance.now() - now));
+		};
+		const test2 = () => {
+			iteration++;
+			for(let i = 0; i < 100; i++) {
+				const documentFragment = document.createDocumentFragment();
+				documentFragment.append(div);
+			}
+			if(iteration < numTests) window.requestAnimationFrame(test2);
+			else console.log('without pool took: ' + (performance.now() - now));
+		};
+		//iteration = 0;
+		//now = performance.now();
+		//test1();
+		iteration = 0;
+		now = performance.now();
+		test2();
+	</script>
+</body>
+</html>
