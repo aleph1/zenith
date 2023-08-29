@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Zenith.js Demo</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="../css/demos.css">
+	<style>
+		@keyframes fade-in {
+		    from {opacity:0;}
+		    to {opacity:1;}
+		}
+		@keyframes fade-out {
+		    from {opacity:1;}
+		    to {opacity:0;}
+		}
+		tr {
+			animation: fade-in 1s forwards;
+		}
+		tr.removed {
+			animation: fade-out 2s forwards;
+			pointer-events: none;
+		}
+	</style>
+</head>
+<body>
+	<div id="app"></div>
+	<script src="../../dist/zenith.min.js"></script>
+	<script>
+		const appEl = document.querySelector('#app');
+		const firstNames = ['Aki', 'Adam', 'Amy', 'Ang', 'Brianna', 'Bruce', 'Cassandra', 'Charles', 'Colette', 'Dae', 'Deion', 'Elijah', 'Emma', 'Han', 'Hiromi', 'Jackie', 'Jamal', 'Jin', 'Kalisha', 'Keysha', 'Lamonte', 'Liang', 'Naoki', 'Osamu'];
+		const lastNames = ['Anderson', 'Barnes', 'Chan', 'Diaz', 'Ferguson', 'Hunt', 'James', 'Lee', 'McDonald', 'Olson', 'Ramirez', 'Singh', 'Smith', 'Wood'];
+		const actualPeople = [];
+		const displayPeople = [];
+		// we track this separately as when people are removed
+		// we want the counter to update immediately
+		let actualPeopleLength = 0;
+		let personId = 0;
+		const addPerson = () => {
+			const person = {
+				id: personId++,
+				firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
+				lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
+				age: Math.floor(Math.random() * 60 + 18)
+			};
+			actualPeople.push(person);
+			displayPeople.push(person);
+			actualPeopleLength++;
+		};
+		const removePerson = index => {
+			actualPeople[index] = null;
+			actualPeopleLength--;
+		};
+		const sortPeople = sortFn => {
+			actualPeople.sort(sortFn);
+			remount();
+		};
+		for(let i = 0; i < 5; i++) {
+			addPerson();
+		};
+		const shuffle = arr => {
+			let currentIndex = arr.length, randomIndex;
+			while (currentIndex !== 0) {
+				// Pick a remaining element.
+				randomIndex = Math.floor(Math.random() * currentIndex);
+				currentIndex--;
+				// And swap it with the current element.
+				[arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
+			}
+		};
+
+		const SortableTableRow = z.compDef({
+			draw: vNode => z.elem('tr',
+				vNode.attrs.data.map(datum => z.elem('td', {
+					class: datum.class,
+				}, typeof datum.value === 'function' ? datum.value() : z.text(datum.value)))
+			),
+			remove: vNode => {
+				vNode.children[0].dom.classList.add('removed');
+				return new Promise(resolve => setTimeout(resolve, 2000));
+			},
+			destroy: vNode => {
+				//peroplperson.id
+			}
+		});
+
+		const SortableTable = z.compDef({
+			draw: vNode => {
+				console.log('KeyedList redraw');
+				return [
+					z.elem('table',
+						z.elem('thead',
+							z.elem('tr',
+								z.elem('th', {
+									class: 'sort',
+									onclick(e) {
+										sortPeople((a,b) => a.id-b.id);
+									}
+								}, z.text('ID')),
+								z.elem('th', {
+									class: 'sort',
+									onclick(e) {
+										sortPeople((a,b) => {
+											const nameA = a.firstName.toUpperCase();
+											const nameB = b.firstName.toUpperCase();
+											if (nameA < nameB) return -1;
+											if (nameA > nameB) return 1;
+											return 0;
+										});
+									}
+								}, z.text('First Name')),
+								z.elem('th', {
+									class: 'sort',
+									onclick(e) {
+										sortPeople((a,b) => {
+											const nameA = a.lastName.toUpperCase();
+											const nameB = b.lastName.toUpperCase();
+											if (nameA < nameB) return -1;
+											if (nameA > nameB) return 1;
+											return 0;
+										});
+									}
+								}, z.text('Last Name')),
+								z.elem('th', {
+									class: 'sort',
+									onclick(e) {
+										sortPeople((a,b) => a.age-b.age);
+									}
+								}, z.text('Age')),
+								z.elem('th'),
+							)
+						),
+						z.elem('tbody',
+							actualPeople.map((person, index) => person ? z.comp(SortableTableRow, {
+								data: [
+									{
+										value: person.id,
+										class: 'r',
+									},
+									{
+										value: person.firstName,
+									},
+									{
+										value: person.lastName,
+									},
+									{
+										value: person.age,
+										class: 'r',
+									},
+									{
+										value: () => z.elem('button', {
+											onclick: e => {
+												removePerson(index);
+												remount();
+											}
+										}, z.text('x')),
+										class: 'c',
+									},
+								],
+								id: person.id,
+							}) : null)
+						)
+					)
+				];
+			},
+		});
+
+		const DemoControls = z.CompDef = {
+			draw: vNode => z.elem('div',
+				z.elem('button', {
+					onclick(e) {
+						addPerson();
+						remount();
+					}
+				}, z.text('add')),
+				z.elem('button', {
+					onclick(e) {
+						shuffle(actualPeople);
+						remount();
+					}
+				}, z.text('shuffe')),
+				z.elem('button', {
+					onclick(e) {
+						actualPeople.push(actualPeople.shift());
+						remount();
+					}
+				}, z.text('move first to last')),
+				z.elem('button', {
+					onclick(e) {
+						actualPeople.unshift(actualPeople.pop());
+						remount();
+					}
+				}, z.text('move last to first')),
+				z.text('Length: ' + actualPeopleLength)
+			),
+		};
+
+		const remount = () => {
+			z.mount(appEl, [z.comp(DemoControls), z.comp(SortableTable)]);
+		};
+
+		remount();
+	</script>
+</body>
+</html>
