@@ -366,7 +366,7 @@ describe('vNode', () => {
 
     test('Returns a vNode with a frozen attrs object with the expected properties', () => {
       const compDef = z.compDef({
-        draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
+        draw: () => null
       });
       const node = z.comp(compDef, {
         id: 'test'
