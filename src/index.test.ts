@@ -2110,6 +2110,24 @@ describe('DOM', () => {
       expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
+    test('z.comp() child element namespace is correct when node changes from xhtml to math', () => {
+      const app = document.querySelector('#app');
+      let elType = 'div';
+      const compDef = z.compDef({
+        draw: vNode => z.elem(elType)
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('div');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+      elType = 'math';
+      node.redraw(true);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('math');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1998/Math/MathML');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('div', {id: null});
