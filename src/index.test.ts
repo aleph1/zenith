@@ -3027,6 +3027,24 @@ describe('DOM', () => {
       expect(removeFn).toHaveBeenCalledTimes(1);
     });
 
+    test('z.comp() with destroy is called as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const destroyFn = jest.fn();
+      const compDef = z.compDef({
+        draw: () => z.elem('div'),
+        destroy: destroyFn
+      });
+      const vNode = z.comp(compDef);
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+      z.mount(app, vNode);
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+      vNode.redraw(true);
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+      z.mount(app, null);
+      expect(destroyFn).toHaveBeenCalledTimes(1);
+    });
+
 
     test('input value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
