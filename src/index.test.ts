@@ -825,6 +825,18 @@ describe('DOM', () => {
       expect(vNode.children[1].dom).toEqual(elem2);
     });
 
+    test('z.comp() draw returns single z.text()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: () => z.text('test')
+      });
+      const vNode = z.comp(compDef);
+      const elem1 = document.createTextNode('test');
+      z.mount(app, vNode);
+      expect(vNode.children[0].dom).toEqual(elem1);
+    });
+
     });
 
     test('z.html() with single html element', () => {
