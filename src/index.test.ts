@@ -397,12 +397,12 @@ describe('vNode', () => {
     });
 
     test('Handles non-empty string', () => {
-      const vNode = z.text('test');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
-      expect(vNode.type).toBe(VNodeTypes.text);
-      expect(vNode.tag).toBe('test');
+      const node = z.text('test');
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag']);
+      expect(node.type).toBe(VNodeTypes.text);
+      expect(node.tag).toBe('test');
     });
 
     test('Handles number', () => {
