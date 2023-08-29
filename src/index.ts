@@ -487,24 +487,6 @@ const removeVNodes = (parentNode: VNodeAny, children:VNodeFlatArray, start: numb
   }
 };
 
-const removeVNode = (vNode: VNodeAny): void => {
-  switch(vNode.type) {
-    case VNodeTypes.elem:
-      if(vNode.attrs.tick) tickQueue.delete(vNode);
-      removeVNodes(vNode.children, 0, vNode.children.length);
-      break;
-    case VNodeTypes.comp:
-      if(vNode.tag.tick) tickQueue.delete(vNode);
-      
-      removeVNodes(vNode.children, 0, vNode.children.length);
-      vNode.children.length = 0;
-      break;
-    case VNodeTypes.html:
-      // *** fix this as TypeScript insists el can be a String
-      for(const index in vNode.dom) {
-        vNode.dom[index].remove();
-      }
-      break;
   }
   if (vNode.dom && (vNode.dom as Element).remove) (vNode.dom as Element).remove();
   delete vNode.dom;
