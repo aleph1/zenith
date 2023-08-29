@@ -481,12 +481,6 @@ const updateComponent = (parentNode: VNodeContainer, vNode:VNodeComp, ns?: strin
   //}
 };
 
-// *** partial implementation
-const destroyComponent = (parentNode: VNodeAny, vNode:VNodeComp): void => {
-  if (vNode.tag.destroy) vNode.tag.destroy(vNode);
-  if (vNode.tag.tick) tickQueue.delete(vNode);
-};
-
 const removeVNodes = (children:VNodeFlatArray, start: number, end: number): void => {
   while(start < end) {
     removeVNode(children[start++]);
