@@ -1068,6 +1068,20 @@ describe('DOM', () => {
       expect(node.doms[0]).toEqual(elem1);
     });
     
+    test('Create div with attribute and modify it', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {id: 'test1'});
+      const node2 = z.elem('div', {id: 'test2'});
+      const node3 = z.elem('div');
+      z.mount(app, node1);
+      expect(node1.dom.getAttribute('id')).toBe('test1');
+      z.mount(app, node2);
+      expect(node2.dom.getAttribute('id')).toBe('test2');
+      z.mount(app, node3);
+      expect(node3.dom.getAttribute('id')).toBe(null);
+    });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
