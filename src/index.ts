@@ -648,14 +648,12 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
     dom: dom
   })).get(dom);
 
-  removeVNodes(mountedNode.children, 0, mountedNode.children.length);
-  mountedNode.children.length = 0;
-  //emptyDom(dom);
-
-  if(vNodeAnyOrArray != null) {
-    updateChildren(mountedNode, Array.isArray(vNodeAnyOrArray) ? normalizeChildren(mountedNode, vNodeAnyOrArray) : [vNodeAnyOrArray], null, getClosestElementNamespace(dom));
+  if(vNodeAnyOrArray == null || (vNodeAnyOrArray as VNodeArray).length === 0) {
+    removeVNodes(mountedNode, mountedNode.children, 0, mountedNode.children.length);
+    mountedNode.children.length = 0;
+  } else {
+    updateChildren(mountedNode, normalizeChildren(mountedNode, Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
   }
-
   return mountedNode;
 };
 
