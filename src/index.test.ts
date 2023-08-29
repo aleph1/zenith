@@ -983,10 +983,10 @@ describe('DOM', () => {
     test('z.html() with <td>', () => {
       document.body.innerHTML = '<table><tbody><tr></tr></tbody><table>';
       const app = document.querySelector('tr');
-      const vNode = z.html('<td>');
+      const node = z.html('<td>');
       const elem1 = document.createElement('td');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
     });
 
     test('z.html() with <tfoot>', () => {
