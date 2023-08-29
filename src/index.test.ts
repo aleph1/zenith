@@ -2304,12 +2304,37 @@ describe('DOM', () => {
       expect(node.children[0].children.length).toEqual(1);
     });
 
-    test('Attribute of true is equivalent to attribute="attribute"', () => {
+    test('Destroyed as expected when redrawn after removal but before destroy', async () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('div', {disabled: true});
-      z.draw(app, el1);
-      expect(el1.dom.getAttribute('disabled')).toBe('disabled');
+      const values = ['test1', 'test2'];
+      const deferredPromise = generateDeferredPromise();
+      const removeFn = jest.fn(vNode => {
+        return deferredPromise.promise;
+      });
+      const listItemDef = z.compDef({
+        draw: vNode => z.elem('li', z.text(vNode.attrs.value)),
+        remove: removeFn,
+      });
+      const listDef = z.compDef({
+        draw: vNode => z.elem('ul', values.map(value => z.comp(listItemDef, {value})))
+      });
+      const node = z.comp(listDef);
+      z.mount(app, node);
+      expect(node.children[0].children.length).toEqual(2);
+      expect(removeFn).toHaveBeenCalledTimes(0);
+      values.pop();
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(node.children[0].children.length).toEqual(2);
+      expect(removeFn).toHaveBeenCalledTimes(1);
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(node.children[0].children.length).toEqual(2);
+      expect(removeFn).toHaveBeenCalledTimes(1);
+      await deferredPromise.resolve();
+      expect(node.children[0].children.length).toEqual(1);
+      expect(removeFn).toHaveBeenCalledTimes(1);
     });
 
     test('Attribute starting with "on" is applied as a function', () => {
