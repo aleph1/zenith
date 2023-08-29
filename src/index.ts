@@ -660,7 +660,6 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
 };
 
 const tick = (): void => {
-  //const now = performance.now();
   tickCount++;
   for(const [vNode, value] of componentUpdateQueue) {
     updateComponent(value[0], vNode, value[1]);
@@ -669,9 +668,7 @@ const tick = (): void => {
   for(const [vNode, tick] of tickQueue) {
     tick(vNode, tickCount);
   }
-  //const elapsed = Math.floor(performance.now() - now);
-  //if (elapsed > 1) console.log(elapsed);
-  // refactor if we end up caching other vNode types
+  // *** refactor if we end up caching other vNode types
   //if (pools[VNodeTypes.elem].length > poolSizes[VNodeTypes.elem]) pools[VNodeTypes.elem].length = poolSizes[VNodeTypes.elem];
   requestAnimationFrame(tick);
 };
