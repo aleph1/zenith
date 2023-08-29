@@ -3179,6 +3179,19 @@ describe('DOM', () => {
 
   });
 
+  describe('Forms', () => {
+
+    test('input value can be set as text', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('input', {
+        value: 'test'
+      });
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLInputElement);
+      expect((el1.dom as HTMLInputElement).value).toBe('test');
+    });
+
 
     test('input value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
