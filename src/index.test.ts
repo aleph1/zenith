@@ -489,6 +489,12 @@ describe('vNode', () => {
       expect(node.tag).toBe('test');
     });
 
+    test('Handles number', () => {
+      const node = z.html(1 as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(typeof node.tag).toBe('string');
+      expect(node.tag).toBe('1');
+    });
+
     });
 
   });
