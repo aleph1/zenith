@@ -886,12 +886,12 @@ describe('DOM', () => {
     test('z.html() with multiple html elements', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const vNode = z.html('<div></div><div></div>');
+      const node = z.html('<div></div><div></div>');
       const elem1 = document.createElement('div');
       const elem2 = document.createElement('div');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
-      expect(vNode.dom[1]).toEqual(elem2);
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
+      expect(node.doms[1]).toEqual(elem2);
     });
 
     test('z.html() with multiple html elements with text', () => {
