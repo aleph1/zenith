@@ -2,7 +2,8 @@ import z from './index';
 import {
   VNodeAnyOrArray,
   VNodeComp,
-  VNodeFlatArray,
+  VNodeHTML,
+  //VNodeFlatArray,
   VNodeTypes
 } from './vNode.defs';
 
