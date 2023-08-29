@@ -2993,6 +2993,22 @@ describe('DOM', () => {
       expect(drawFn).toHaveBeenCalledTimes(2);
     });
 
+    test('z.comp() with drawn is called as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const drawnFn = jest.fn(() => z.elem('div'));
+      const compDef = z.compDef({
+        draw: () => z.elem('div'),
+        drawn: drawnFn
+      });
+      const vNode = z.comp(compDef);
+      expect(drawnFn).toHaveBeenCalledTimes(0);
+      z.mount(app, vNode);
+      expect(drawnFn).toHaveBeenCalledTimes(1);
+      vNode.redraw(true);
+      expect(drawnFn).toHaveBeenCalledTimes(2);
+    });
+
       });
       z.draw(app, el1);
 
