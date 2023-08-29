@@ -452,12 +452,12 @@ describe('vNode', () => {
     });
 
     test('Handles false', () => {
-      const vNode = z.text(false as any);
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
-      expect(vNode.type).toBe(VNodeTypes.text);
-      expect(vNode.tag).toBe('');
+      const node = z.text(false as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag']);
+      expect(node.type).toBe(VNodeTypes.text);
+      expect(node.tag).toBe('');
     });
 
     test('Handles object', () => {
