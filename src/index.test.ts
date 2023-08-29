@@ -2234,6 +2234,18 @@ describe('DOM', () => {
       });
       z.draw(app, el1);
 
+    test('Radio from z.elem("input", {type: "radio", checked: true}) is checked', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('input', {
+        type: 'radio',
+        checked: true
+      });
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLInputElement);
+      expect((el1.dom as HTMLInputElement).checked).toBe(true);
+    });
+
     test('Radio from z.elem("input", {type: "radio", checked: false}) is unchecked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
