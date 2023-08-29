@@ -1468,6 +1468,25 @@ describe('DOM', () => {
       expect(mountedNode.children[0].children[0].dom).toEqual(elem1);
     });
 
+    test('z.elem() <input> type changes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('input', {
+        type: 'text'
+      });
+      const node2 = z.elem('input', {
+        type: 'checkbox'
+      });
+      const elem1 = document.createElement('input');
+      elem1.type = 'text';
+      const elem2 = document.createElement('input');
+      elem2.type = 'checkbox';
+      let mountedNode = z.mount(app, node1);
+      expect(node1.dom).toEqual(elem1);
+      mountedNode = z.mount(app, node2);
+      expect(node2.dom).toEqual(elem2);
+    });
+
 
   });
     });
