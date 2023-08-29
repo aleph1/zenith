@@ -377,7 +377,7 @@ describe('vNode', () => {
 
     test('Returns a vNode with the component definition as .tag', () => {
       const compDef = z.compDef({
-        draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
+        draw: () => null
       })
       const node = z.comp(compDef);
       expect(node.tag).toBe(compDef);
