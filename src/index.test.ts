@@ -513,6 +513,10 @@ describe('vNode', () => {
       expect(node.tag).toBe('');
     });
 
+    test('Handles false', () => {
+      const node = z.html(false as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(typeof node.tag).toBe('string');
+      expect(node.tag).toBe('');
     });
 
   });
