@@ -1518,6 +1518,35 @@ describe('DOM', () => {
       expect(node.children[0].dom).toEqual(app.childNodes[0]);
     });
 
+    test('mounted child changes from one compDef to a different compDef', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef1 = z.compDef({
+        draw: vNode => z.elem('div', z.text(vNode.attrs.text))
+      });
+      const compDef2 = z.compDef({
+        draw: vNode => z.elem('p', z.text(vNode.attrs.text))
+      });
+      const node1 = z.comp(compDef1, {
+        text: 'test1'
+      });
+      const node2 = z.comp(compDef2, {
+        text: 'test2'
+      });
+      const elem1 = document.createElement('div');
+      elem1.innerHTML = 'test1';
+      const elem2 = document.createElement('p');
+      elem2.innerHTML = 'test2';
+      const mountedNode = z.mount(app, node1);
+      expect(mountedNode.children.length).toBe(1);
+      expect(mountedNode.children[0].tag).toEqual(compDef1);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem1);
+      z.mount(app, node2);
+      expect(mountedNode.children.length).toBe(1);
+      expect(mountedNode.children[0].tag).toEqual(compDef2);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem2);
+    });
+
 
   });
     });
