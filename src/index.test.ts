@@ -1931,6 +1931,23 @@ describe('DOM', () => {
 
     test('onchange event is called on checkbox', () => {
 
+    test('onchange is called when input value changes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const callback = jest.fn();
+      const el1 = z.elem('input', {
+        onchange: callback
+      });
+      z.mount(app, el1);
+      (el1.dom as HTMLInputElement).value = 'test';
+      el1.dom.dispatchEvent(new Event('change', {
+        bubbles: true,
+        cancelable: true
+      }));
+      expect((el1.dom as HTMLInputElement).value).toBe('test');
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
     test('onchange is called when checkbox goes from unchecked to checked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
