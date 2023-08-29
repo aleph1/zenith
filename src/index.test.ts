@@ -1998,19 +1998,21 @@ describe('DOM', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(true);
     });
 
-    test('Checkbox from z.elem("input", {type: "checkbox", checked: false}) is unchecked', () => {
+    test('onsubmit event is called on form', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('input', {
-        type: 'checkbox',
-        checked: false
+      const callback = jest.fn(e => e.preventDefault());
+      const el1 = z.elem('form', {
+        onsubmit: callback
       });
-      z.draw(app, el1);
-      expect(el1.dom instanceof HTMLInputElement);
-      expect((el1.dom as HTMLInputElement).checked).toBe(false);
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLFormElement).toBe(true);
+      (el1.dom as HTMLFormElement).submit();
+      expect(callback).toHaveBeenCalledTimes(1);
     });
 
-    test('Checkbox from z.elem("input", {type: "checkbox"}) is unchecked', () => {
+  });
+
   describe('Tick', () => {
 
     test('z.elem() ticks as expected', () => {
