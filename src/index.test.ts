@@ -1010,7 +1010,12 @@ describe('DOM', () => {
     test('z.html() with <thead>', () => {
       document.body.innerHTML = '<table><table>';
       const app = document.querySelector('table');
-      const vNode = z.html('<thead>');
+      const node = z.html('<thead>');
+      const elem1 = document.createElement('thead');
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
+    });
+
       const elem1 = document.createElement('thead');
       z.draw(app, vNode);
       expect(vNode.dom[0]).toEqual(elem1);
