@@ -2728,6 +2728,32 @@ describe('DOM', () => {
       expect(list.children[0].children[2].children[0].children[0].tag).toEqual('2');
     });
 
+    test('Keyed z.comp() sort as expected when keys added and sorted', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const ids = [0, 1];
+      const ListItem = z.compDef({
+        draw: vNode => z.elem('li', z.text(vNode.attrs.id))
+      });
+      const KeyedList = z.compDef({
+        draw: vNode => z.elem('ul', ids.map(id => z.comp(ListItem, {
+          id: id,
+          key: id
+        })))
+      });
+      const list = z.comp(KeyedList);
+      z.mount(app, list);
+      expect(list.children[0].children[0].children[0].children[0].tag).toEqual('0');
+      expect(list.children[0].children[1].children[0].children[0].tag).toEqual('1');
+      ids.push(2);
+      ids.reverse();
+      list.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(list.children[0].children[0].children[0].children[0].tag).toEqual('2');
+      expect(list.children[0].children[1].children[0].children[0].tag).toEqual('1');
+      expect(list.children[0].children[2].children[0].children[0].tag).toEqual('0');
+    });
+
   });
 
   describe('Events with z.elem()', () => {
