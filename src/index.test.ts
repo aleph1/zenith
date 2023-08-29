@@ -1392,6 +1392,31 @@ describe('DOM', () => {
       expect(mountedNode.children[0].children[0].dom).toEqual(text1);
     });
 
+    test('z.comp() with single z.elem(), redrawn immediately with single z.text()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let childType = 'elem';
+      const node1 = z.elem('div');
+      const node2 = z.text('test');
+      const compDef = z.compDef({
+        draw: () => childType === 'elem' ? node1 : node2
+      });
+      const node3 = z.comp(compDef);
+      const elem1 = document.createElement('div');
+      const text1 = document.createTextNode('test');
+      let mountedNode = z.mount(app, node3);
+      expect(mountedNode.children[0]).toBe(node3);
+      expect(mountedNode.children[0].children.length).toEqual(1);
+      expect(mountedNode.children[0].children[0]).toEqual(node1);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem1);
+      childType = 'text';
+      node3.redraw(true);
+      expect(mountedNode.children[0]).toBe(node3);
+      expect(mountedNode.children[0].children.length).toEqual(1);
+      expect(mountedNode.children[0].children[0]).toBe(node2);
+      expect(mountedNode.children[0].children[0].dom).toEqual(text1);
+    });
+
 
   });
     });
