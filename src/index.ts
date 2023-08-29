@@ -168,7 +168,6 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
   } else {
     createVNode(parentVNode, newVNode, ns);
   }
-  return newVNode;
 };
 
 const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string): void => {
