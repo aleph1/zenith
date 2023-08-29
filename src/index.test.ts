@@ -2182,6 +2182,24 @@ describe('DOM', () => {
       expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
     });
 
+    test('z.comp() child element namespace is correct when node changes from math to xhtml', () => {
+      const app = document.querySelector('#app');
+      let elType = 'math';
+      const compDef = z.compDef({
+        draw: vNode => z.elem(elType)
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('math');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1998/Math/MathML');
+      elType = 'div';
+      node.redraw(true);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('div');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('div', {id: null});
