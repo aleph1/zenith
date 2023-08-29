@@ -36,6 +36,7 @@ import {
   VNodeAny,
   VNodeAnyOrArray,
   VNodeArray,
+  VNodeDom,
   VNodeDrawable,
   VNodeFlatArray,
   VNodeElemAttributes,
