@@ -2852,6 +2852,18 @@ describe('DOM', () => {
       expect((node.dom as HTMLElement).style.backgroundColor).toEqual('red');
     });
 
+    test('Handles attribute "style" object', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node = z.elem('div', {
+        style: {
+          backgroundColor: 'red',
+        }
+      });
+      z.mount(app, node);
+      expect((node.dom as HTMLElement).style.backgroundColor).toEqual('red');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
