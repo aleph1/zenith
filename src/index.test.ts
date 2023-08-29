@@ -1930,6 +1930,8 @@ describe('DOM', () => {
     });
 
     test('onchange event is called on checkbox', () => {
+
+    test('onchange is called when checkbox goes from unchecked to checked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
@@ -1937,7 +1939,7 @@ describe('DOM', () => {
         type: 'checkbox',
         onclick: callback
       });
-      z.draw(app, el1);
+      z.mount(app, el1);
       expect(el1.dom instanceof HTMLInputElement).toBe(true);
       expect((el1.dom as HTMLInputElement).checked).toBe(false);
       expect(callback).not.toBeCalled();
