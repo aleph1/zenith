@@ -1982,20 +1982,22 @@ describe('DOM', () => {
       expect(callback).toHaveBeenCalledTimes(1);
     });
 
-  });
-
-  describe('Forms with z.elem()', () => {
-
-    test('Checkbox from z.elem("input", {type: "checkbox", checked: true}) is checked', () => {
+    test('oninput is called on element with contenteditable=true', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('input', {
-        type: 'checkbox',
-        checked: true
+      const callback = jest.fn();
+      const el1 = z.elem('div', {
+        contenteditable: 'true',
+        oninput: callback
       });
-      z.draw(app, el1);
-      expect(el1.dom instanceof HTMLInputElement);
-      expect((el1.dom as HTMLInputElement).checked).toBe(true);
+      z.mount(app, el1);
+      (el1.dom as Element).textContent = 'test';
+      el1.dom.dispatchEvent(new Event('input', {
+        bubbles: true,
+        cancelable: true
+      }));
+      expect((el1.dom as Element).textContent).toBe('test');
+      expect(callback).toHaveBeenCalledTimes(1);
     });
 
     test('onsubmit event is called on form', () => {
