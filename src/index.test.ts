@@ -1947,6 +1947,7 @@ describe('DOM', () => {
     });
 
     test('onchange event is called on radio when goes from unchecked to checked', () => {
+    test('onchange event when radio goes from unchecked to checked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
@@ -1954,13 +1955,14 @@ describe('DOM', () => {
         type: 'radio',
         onchange: callback
       });
-      z.draw(app, el1);
+      z.mount(app, el1);
       expect(el1.dom instanceof HTMLInputElement).toBe(true);
       expect((el1.dom as HTMLInputElement).checked).toBe(false);
       expect(callback).not.toBeCalled();
       (el1.dom as HTMLInputElement).click();
       expect(callback).toHaveBeenCalledTimes(1);
       expect(el1.dom instanceof HTMLInputElement).toBe(true);
+      expect((el1.dom as HTMLInputElement).checked).toBe(true);
     });
 
     test('onchange is called when textarea value changes', () => {
