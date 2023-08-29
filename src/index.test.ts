@@ -2233,6 +2233,17 @@ describe('DOM', () => {
         onclick: callback
       });
       z.draw(app, el1);
+
+  describe('Events', () => {
+
+    test('onclick event is called', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const callback = jest.fn();
+      const el1 = z.elem('div', {
+        onclick: callback
+      });
+      z.mount(app, el1);
       expect(callback).not.toBeCalled();
       expect(el1.dom instanceof HTMLElement).toBe(true);
       (el1.dom as HTMLElement).click();
