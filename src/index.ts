@@ -290,30 +290,30 @@ const createVNodes = (parentNode: VNodeContainer, children: VNodeFlatArray, star
   }
 };
 
-const insertElements = (parentDom: Element, index: number, elements:Array<ChildNode | Element | Text>): number => {
-  let i = 0;
-  let count = 0;
-  let element: Element | Text | ChildNode;
-  if (index < 0) {
-    while(i < elements.length) {
-      element = elements[i++];
-      if (element) {
-        parentDom.appendChild(element);
-        count++;
-      }
-    }
-  } else {
-    while(i < elements.length) {
-      element = elements[i++];
-      if (element) {
-        if (index > parentDom.childElementCount) parentDom.insertBefore(element, parentDom.childNodes[index]);
         else parentDom.appendChild(element);
-        index++;
-        count++;
-      }
+//const insertElements = (parentDom: Element, index: number, elements:Array<ChildNode | Element | Text>): void => {
+//  if (index < 0) {
+//    for(const element of elements) {
+//      if (element) {
+//        parentDom.appendChild(element);
+//      }
+//    }
+//  } else {
+//    for(const element of elements) {
+//      if (element) {
+//        parentDom.insertBefore(element, parentDom.childNodes[index]);
+//        index++;
+//      }
+//    }
+//  }
+//};
+
+const insertElements = (parentDom: Element, elements:Array<ChildNode | Element | Text>): void => {
+  for(const element of elements) {
+    if (element) {
+      parentDom.appendChild(element);
     }
   }
-  return count;
 };
 
 const createVNode = (parentNode: VNodeAny, vNode: VNodeAny, ns: string, index = 0): number => {
