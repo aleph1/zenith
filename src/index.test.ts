@@ -575,6 +575,16 @@ describe('DOM', () => {
       z.mount(app, node1);
       expect(node1.dom).toEqual(elem1);
     });
+
+    test('z.elem() math type element', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('mfrac', {
+        ns: z.ns.math
+      });
+      const elem1 = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'mfrac');
+      z.mount(app, node1);
+      expect(node1.dom).toEqual(elem1);
     });
 
     test('z.elem() with single z.elem() child', () => {
