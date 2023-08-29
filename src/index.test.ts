@@ -558,11 +558,12 @@ describe('DOM', () => {
     test('z.elem() with text', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const vNode = z.elem('div', z.text('test'));
+      const node = z.elem('div', z.text('test'));
       const elem1 = document.createElement('div');
       elem1.innerHTML = 'test';
-      z.draw(app, vNode);
-      expect(vNode.dom).toEqual(elem1);
+      z.mount(app, node);
+      expect(node.dom).toEqual(elem1);
+    });
     });
 
     test('z.elem() with single z.elem() child', () => {
