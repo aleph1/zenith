@@ -3009,8 +3009,24 @@ describe('DOM', () => {
       expect(drawnFn).toHaveBeenCalledTimes(2);
     });
 
+    test('z.comp() with remove is called as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const removeFn = jest.fn();
+      const compDef = z.compDef({
+        draw: () => z.elem('div'),
+        remove: removeFn
       });
-      z.draw(app, el1);
+      const vNode = z.comp(compDef);
+      expect(removeFn).toHaveBeenCalledTimes(0);
+      z.mount(app, vNode);
+      expect(removeFn).toHaveBeenCalledTimes(0);
+      vNode.redraw(true);
+      expect(removeFn).toHaveBeenCalledTimes(0);
+      z.mount(app, null);
+      expect(removeFn).toHaveBeenCalledTimes(1);
+    });
+
 
     test('input value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
