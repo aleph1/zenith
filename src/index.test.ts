@@ -3160,6 +3160,25 @@ describe('DOM', () => {
       expect(listDefDestroy1Order).toBeLessThan(listDefDestroy2Order);
     });
 
+    test('Destroying z.comp() on unmount with parent is z.elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const destroyFn = jest.fn();
+      const compDef = z.compDef({
+        draw: () => z.elem('div'),
+        destroy: destroyFn
+      });
+      const vNode = z.elem('div', z.comp(compDef));
+      const compDefDestroySpy = jest.spyOn(compDef, 'destroy');
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+      z.mount(app, vNode);
+      expect(destroyFn).toHaveBeenCalledTimes(0);
+      z.mount(app, null);
+      expect(destroyFn).toHaveBeenCalledTimes(1);
+    });
+
+  });
+
 
     test('input value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
