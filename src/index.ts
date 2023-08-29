@@ -417,6 +417,11 @@ const updateElement = (parentNode: VNodeContainer, newVNode: VNodeElem, oldVNode
   updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
 };
 
+const redrawComponent = (vNode: VNodeComp, immediate?: boolean): void => {
+  if (immediate) updateComponent(vNode.parent, vNode);
+  else deferUpdateComponent(vNode.parent, vNode);
+};
+
 const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
   vNode.redraw = immediate => {
     if (immediate) updateComponent(parentNode, vNode, ns);
