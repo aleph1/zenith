@@ -85,6 +85,7 @@ export type VNodeComp = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
   dom?: Element;
+  doms?: Array<ChildNode>;
   redraw?: (now?: boolean) => void;
   //keep?: number;
 };
@@ -92,8 +93,8 @@ export type VNodeComp = Omit<VNodeAbstract, 'type' | 'attrs'> & {
 export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
   type: VNodeTypes.html;
   tag: string;
-  dom?: Array<ChildNode>;
-  length?: number;
+  dom?: Element;
+  doms?: Array<ChildNode>;
 };
 
 export type VNodeDrawable = VNodeComp; // in case we add additional drawable types
