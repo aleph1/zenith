@@ -2396,21 +2396,23 @@ describe('DOM', () => {
       expect(list.children[0].children[1].children[0].tag).toEqual('0');
     });
 
-    test('unkeyed nodes sort as expected when redrawn immediately', () => {
+    test('Unkeyed z.elem() sort as expected when redrawn immediately', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const ids = [0,1,2];
+      const ids = [0, 1];
       const UnkeyedList = z.compDef({
         draw: vNode => z.elem('ul', ids.map(id => z.elem('li', z.text(id))))
       })
       const list = z.comp(UnkeyedList);
-      z.draw(app, list);
+      z.mount(app, list);
       expect(list.children[0].children[0].children[0].tag).toEqual('0');
       expect(list.children[0].children[1].children[0].tag).toEqual('1');
-      expect(list.children[0].children[2].children[0].tag).toEqual('2');
-      [ids[0], ids[2]] = [ids[2], ids[0]];
+      ids.reverse();
       list.redraw(true);
-      expect(list.children[0].children[0].children[0].tag).toEqual('2');
+      expect(list.children[0].children[0].children[0].tag).toEqual('1');
+      expect(list.children[0].children[1].children[0].tag).toEqual('0');
+    });
+
       expect(list.children[0].children[1].children[0].tag).toEqual('1');
       expect(list.children[0].children[2].children[0].tag).toEqual('0');
     });
