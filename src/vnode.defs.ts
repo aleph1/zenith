@@ -18,13 +18,16 @@ export const enum DrawModes {
 
 export interface VNodeElemAttributes {
   // The class name(s) for this virtual element, as a space-separated list.
-  class?: string;
+  class?: string | Array<string>;
   // A key to optionally associate with this element.
   key?: string | number;
   is?: string;
   type?: string;
   //keep?: number | boolean;
   tick?: (vNode: VNodeElem, tickCount: number) => void;
+  style?: string | {
+    [property: string]: any;
+  };
   // Any virtual element properties (attributes and event handlers).
   [property: string]: any;
 }
