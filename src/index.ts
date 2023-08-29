@@ -386,7 +386,7 @@ const setDOMAttribute = (vNode: VNodeElem, attr: string, value: boolean | number
 
 const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void => {
   vNode.events = {};
-  vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, ns), vNode.attrs.is as string);
+  vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, vNode.attrs.ns || ns), vNode.attrs.is as string);
   if (vNode.attrs.tick) tickQueue.set(vNode, vNode.attrs.tick);
   // ensure <input>s have a type before doing additional attribute manipulation
   if (vNode.tag === 'input' && vNode.attrs.type != null) vNode.dom.setAttribute('type', vNode.attrs.type);
@@ -394,7 +394,7 @@ const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void
   for(const attr in vNode.attrs) {
     setDOMAttribute(vNode, attr, vNode.attrs[attr], undefined, ns);
   }
-  createVNodes(vNode, vNode.children, 0, vNode.children.length, ns, 0);
+  createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
 };
 
 const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): void => {
