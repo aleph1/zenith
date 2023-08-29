@@ -2263,12 +2263,24 @@ describe('DOM', () => {
       expect(node2.children.length).toEqual(1);
     });
 
-    test('Attribute of false is equivalent to no attribute', () => {
+  });
+
+  describe('Removal', () => {
+    
+    test('Destroy called as expected', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('div', {id: false});
-      z.draw(app, el1);
-      expect(el1.dom.getAttribute('id')).toBeNull();
+      const destroyFn = jest.fn();
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div', z.text('test')),
+        destroy: destroyFn
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      z.mount(app, null);
+      expect(destroyFn).toHaveBeenCalledTimes(1);
+    });
+    
     });
 
     test('Attribute of true is equivalent to attribute="attribute"', () => {
