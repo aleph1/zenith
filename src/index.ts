@@ -412,9 +412,7 @@ const updateElement = (parentNode: VNodeContainer, newVNode: VNodeElem, oldVNode
   }
   // set new attributes
   for(const attr in newVNode.attrs) {
-    //console.log(attr + ': ' + newVNode.attrs[attr]);
     setDOMAttribute(newVNode, attr, newVNode.attrs[attr], oldVNode.attrs[attr], ns);
-    //console.log(newVNode.dom[attr]);
   }
   updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
 };
