@@ -3203,6 +3203,17 @@ describe('DOM', () => {
       expect((el1.dom as HTMLInputElement).value).toBe('2');
     });
 
+    test('input value of null is an empty string', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('input', {
+        value: null
+      });
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLInputElement);
+      expect((el1.dom as HTMLInputElement).value).toBe('');
+      expect((el1.dom as HTMLInputElement).getAttribute('value')).toBe(null);
+    });
 
     test('input value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
