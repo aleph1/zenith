@@ -1093,6 +1093,25 @@ describe('DOM', () => {
       expect(node2.dom.getAttribute('id')).toBe('test2');
     });
 
+    test('array of z.text()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.text('test1');
+      const node2 = z.text('test2');
+      const text1 = document.createTextNode('test1');
+      const text2 = document.createTextNode('test2');
+      const mountedNode = z.mount(app, [node1, node2]);
+      expect(mountedNode.children.length).toEqual(2);
+      expect(mountedNode.children[0]).toEqual(node1);
+      expect(mountedNode.dom.childNodes[0]).toEqual(text1);
+      expect(mountedNode.dom.childNodes[0]).toBe(node1.dom);
+      expect(node1.dom).toEqual(text1);
+      expect(mountedNode.children[1]).toEqual(node2);
+      expect(mountedNode.dom.childNodes[1]).toEqual(text2);
+      expect(mountedNode.dom.childNodes[1]).toBe(node2.dom);
+      expect(node2.dom).toEqual(text2);
+    });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
