@@ -5,10 +5,11 @@
 // 
 // Component lifecycle:
 // - fn(vNode) (calls constructor function)
-// - beforeDraw (not called until component is drawn once)
+// - beforeDraw(vNode)* (not called until component is drawn once)
 // - draw(vNode,children,oldChidren?)
 // - afterDraw(vNode)*
 // - destroy(vNode)
+// *note: not implemented
 
 // ----------------------------------------
 // GLOBALS
