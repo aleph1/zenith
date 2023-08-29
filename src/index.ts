@@ -423,16 +423,13 @@ const redrawComponent = (vNode: VNodeComp, immediate?: boolean): void => {
 };
 
 const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
-  vNode.redraw = immediate => {
-    if (immediate) updateComponent(parentNode, vNode, ns);
-    else deferUpdateComponent(parentNode, vNode, ns);
-  }
   if (vNode.tag.init) vNode.tag.init(vNode);
-  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns); //ns ? document.createElementNS(ns, parentDom.nodeName) : document.createElement(parentDom.nodeName);
-  //console.log(vNode.dom);
+  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns);
   vNode.children = drawDrawable(vNode, vNode.tag.draw);
-  createVNodes(vNode, vNode.children, 0, vNode.children.length, ns, 0);
+  createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
+  vNode.doms = [...vNode.dom.childNodes];
   if (vNode.tag.tick) tickQueue.set(vNode, vNode.tag.tick);
+  if (vNode.tag.drawn) vNode.tag.drawn(vNode);
   // *** tunnel to element?
   //if (vNode.children.length === 1 && vNode.children[0].type === VNODE_TYPE_ELEM ) {
   //  vNode.dom = vNode.children[0].dom;
