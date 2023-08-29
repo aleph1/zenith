@@ -656,6 +656,23 @@ describe('DOM', () => {
       expect(node1.dom).toEqual(elem1);
     });
 
+    test('z.elem() with multiple z.elem() children', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const vNode1 = z.elem('h1');
+      const vNode2 = z.elem('p');
+      const vNode3 = z.elem('div', vNode1, vNode2);
+      const elem1 = document.createElement('h1');
+      const elem2 = document.createElement('p');
+      const elem3 = document.createElement('div');
+      elem3.appendChild(elem1);
+      elem3.appendChild(elem2);
+      z.mount(app, vNode3);
+      expect(vNode3.dom.children.length).toEqual(2);
+      expect(vNode3.dom.children[0]).toEqual(elem1);
+      expect(vNode3.dom.children[1]).toEqual(elem2);
+    });
+
     test('z.elem() svg with z.html() child with multiple svg elements', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
