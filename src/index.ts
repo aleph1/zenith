@@ -76,7 +76,7 @@ const ELEMENT_CLONERS = {};
 const FROZEN_EMPTY_OBJECT = Object.freeze({});
 
 // used to queue component updates when drawMode is DRAW_MODE_RAF
-const componentRedrawQueue = new Map();
+const componentUpdateQueue = new Map();
 const tickQueue = new Map();
 
 //const keepVNodes: Map<number, VNodeAny> = new Map();
@@ -554,10 +554,10 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
 const tick = (): void => {
   //const now = performance.now();
   tickCount++;
-  for(const [vNode, value] of componentRedrawQueue) {
+  for(const [vNode, value] of componentUpdateQueue) {
     updateComponent(value[0], vNode, value[1]);
   }
-  componentRedrawQueue.clear();
+  componentUpdateQueue.clear();
   for(const [vNode, tick] of tickQueue) {
     tick(vNode, tickCount);
   }
