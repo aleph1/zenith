@@ -676,16 +676,17 @@ describe('DOM', () => {
     test('z.elem() svg with z.html() child with multiple svg elements', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const vNode1 = z.html('<g></g><rect/>');
-      const vNode2 = z.elem('svg', vNode1);
-      z.draw(app, vNode2);
-      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      expect(vNode1.dom[0].nodeName).toEqual('g');
-      expect(vNode1.dom[0] instanceof SVGElement);
-      expect((vNode1.dom[0] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
-      expect(vNode1.dom[1].nodeName).toEqual('rect');
-      expect(vNode1.dom[1] instanceof SVGElement);
-      expect((vNode1.dom[1] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      const node1 = z.html('<g></g><rect/>');
+      const node2 = z.elem('svg', node1);
+      z.mount(app, node2);
+      expect(node1.doms[0].nodeName).toEqual('g');
+      expect(node1.doms[0] instanceof SVGElement);
+      expect((node1.doms[0] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      expect(node1.doms[1].nodeName).toEqual('rect');
+      expect(node1.doms[1] instanceof SVGElement);
+      expect((node1.doms[1] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+    });
+
     });
 
     test('z.html() with single html element', () => {
