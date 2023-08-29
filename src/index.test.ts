@@ -2234,6 +2234,18 @@ describe('DOM', () => {
       });
       z.draw(app, el1);
 
+    test('Checkbox from z.elem("input", {type: "checkbox", checked: false}) is unchecked', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('input', {
+        type: 'checkbox',
+        checked: false
+      });
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLInputElement);
+      expect((el1.dom as HTMLInputElement).checked).toBe(false);
+    });
+
     test('Checkbox from z.elem("input", {type: "checkbox"}) is unchecked', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
