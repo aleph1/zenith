@@ -487,9 +487,67 @@ const removeVNodes = (parentNode: VNodeAny, children:VNodeFlatArray, start: numb
   }
 };
 
+const destroyVNode = (vNode: VNodeAny): void => {
+  if(vNode.type === VNodeTypes.comp) {
+    if(vNode.tag.destroy) vNode.tag.destroy(vNode);
+    vNode.removing = null;
   }
-  if (vNode.dom && (vNode.dom as Element).remove) (vNode.dom as Element).remove();
+  if((vNode as VNodeContainer).children) {
+    removeVNodes(vNode, vNode.children, 0, vNode.children.length, true);
+    vNode.children.length = 0;
+  } else if(vNode.dom && (vNode.dom as Element).remove) (vNode.dom as Element).remove();
+  if((vNode as VNodeComp).doms) {
+    for(const childDom of (vNode as VNodeComp).doms) childDom.remove()
+  } else if(vNode.dom && (vNode.dom as Element).remove) (vNode.dom as Element).remove();
   delete vNode.dom;
+  vNode.parent = null;
+};
+
+const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean): void => {
+  if(vNode != null) {
+    let remove = true;
+    switch(vNode.type) {
+      case VNodeTypes.elem:
+        if(vNode.attrs.tick) tickQueue.delete(vNode);
+        break;
+      case VNodeTypes.comp:
+        if(vNode.tag.tick) tickQueue.delete(vNode);
+        if(vNode.removing === true) {
+          remove = false;
+        } else if(immediate !== true && typeof vNode.tag.remove === 'function') {
+          const delayed = vNode.tag.remove(vNode);
+          if(delayed != null && typeof delayed.then === 'function') {
+            remove = false;
+            vNode.removing = true;
+            const destroy = () => {
+              vNode.removing = false;
+              vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
+              destroyVNode(vNode as VNodeComp);
+            };
+            delayed.then(destroy, destroy);
+          }
+          //if(typeof deferred === 'number' && isFinite(deferred)) {
+          //  vNode.removing = true;
+          //  setTimeout(() => {
+          //    vNode.removing = false;
+          //    vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
+          //    destroyVNode(vNode as VNodeComp);
+          //  }, deferred);
+          //  remove = false;
+          //}
+        }
+        break;
+      case VNodeTypes.html:
+        // *** fix this as TypeScript insists el can be a String
+        for(const index in vNode.doms) {
+          vNode.doms[index].remove();
+        }
+        break;
+    }
+    if(remove) {
+      destroyVNode(vNode);
+    }
+  }
 };
 
 const drawDrawable = (vNode: VNodeDrawable, drawFn: (vNode: VNodeDrawable, oldChildren: VNodeFlatArray) => VNodeAnyOrArray, oldChildren?:VNodeFlatArray) => {
