@@ -32,4 +32,4 @@ describe('pooling', () => {
   //  expect(pools[VNodeTypes.elem]).toEqual(0);
   //});
 
-}); 
+});
