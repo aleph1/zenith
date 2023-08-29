@@ -1049,6 +1049,16 @@ describe('DOM', () => {
       expect(node.doms[0]).toEqual(elem1);
     });
 
+    test('z.html() with single svg element within elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.html('<g></g>');
+      const node2 = z.elem('svg', node1);
+      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      z.mount(app, node2);
+      expect(node1.doms[0]).toEqual(elem1);
+    });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
