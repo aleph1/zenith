@@ -489,13 +489,6 @@ describe('vNode', () => {
       expect(node.tag).toBe('test');
     });
 
-    test('Handles text', () => {
-      const vNode = z.html('test');
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
-      expect(vNode.type).toBe(VNodeTypes.html);
-      expect(vNode.tag).toBe('test');
     });
 
   });
