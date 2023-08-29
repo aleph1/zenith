@@ -2351,9 +2351,27 @@ describe('DOM', () => {
           values.splice(vNode.attrs.index, 1);
         }
       });
-      z.draw(app, el1);
-      expect(el1.dom instanceof HTMLElement).toBe(true);
-      expect(typeof (el1.dom as HTMLElement).onclick).toBe('function');
+      const listDef = z.compDef({
+        draw: vNode => values.map((value, index) => value && z.comp(listItemDef, {
+          id: value,
+          index: index,
+        }))
+      });
+      const node = z.comp(listDef);
+      z.mount(app, node);
+      expect(node.children.length).toEqual(2);
+      // when we nullify the index and redraw, the old node will be maintained
+      // due to its remove method returning a timeout
+      values[0] = null;
+      node.redraw(true);
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      // at this point there should still be two nodes left, with the node
+      // being removed still displaying its prior state
+      expect(node.children.length).toEqual(2);
+      expect((node.children[0].children[0].dom as Element).id).toEqual('test1');
+      await deferredPromise.resolve();
+      expect(node.children.length).toEqual(1);
+      expect((node.children[0].children[0].dom as Element).id).toEqual('test2');
     });
 
   });
