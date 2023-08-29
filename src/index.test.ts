@@ -74,12 +74,12 @@ describe('Component definition, z.compDef()', () => {
   });
 
   test('Returned object has destroy if passed', () => {
-    const destroy = (vNode: VNodeComp): void => null;
-    const node = z.compDef({
-      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+    const destroy = () => null;
+    const compDef = z.compDef({
+      draw: (): VNodeAnyOrArray => null,
       destroy
     });
-    expect(node.destroy).toBe(destroy);
+    expect(compDef.destroy).toBe(destroy);
   });
 
 });
