@@ -1270,6 +1270,29 @@ describe('DOM', () => {
       expect(mountedNode.children[1].dom).toEqual(elem1);
     });
 
+    test('array of z.text() mounted, and remounted with different nodes', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.text('test1');
+      const node2 = z.text('test2');
+      const node3 = z.text('test3');
+      const elem1 = document.createTextNode('test1');
+      const elem2 = document.createTextNode('test2');
+      const elem3 = document.createTextNode('test3');
+      let mountedNode = z.mount(app, [node1, node2]);
+      expect(mountedNode.children.length).toEqual(2);
+      expect(mountedNode.children[0]).toBe(node1);
+      expect(mountedNode.children[0].dom).toEqual(elem1);
+      expect(mountedNode.children[1]).toBe(node2);
+      expect(mountedNode.children[1].dom).toEqual(elem2);
+      mountedNode = z.mount(app, [node2, node3]);
+      expect(mountedNode.children.length).toEqual(2);
+      expect(mountedNode.children[0]).toBe(node2);
+      expect(mountedNode.children[0].dom).toEqual(elem2);
+      expect(mountedNode.children[1]).toBe(node3);
+      expect(mountedNode.children[1].dom).toEqual(elem3);
+    });
+
 
   });
     });
