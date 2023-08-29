@@ -761,6 +761,17 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(1);
     });
 
+    test('z.comp() draw returns array of null', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: () => [null]
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toEqual(1);
+    });
+
     });
 
     test('z.html() with single html element', () => {
