@@ -348,7 +348,7 @@ describe('vNode', () => {
 
     test('Returns a vNode with the correct type when an incorrect type is passed', () => {
       const compDef = z.compDef({
-        draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+        draw: () => null,
         type: 0
       });
       const node = z.comp(compDef);
