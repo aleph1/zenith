@@ -473,7 +473,15 @@ describe('vNode', () => {
 
   describe('z.html()', () => {
 
-  });
+    test('Returns the expected object', () => {
+      const node = z.html('test');
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag']);
+      expect(node.type).toBe(VNodeTypes.html);
+      expect(typeof node.tag).toBe('string');
+      expect(node.tag).toBe('test');
+    });
 
   describe('z.html()', () => {
 
