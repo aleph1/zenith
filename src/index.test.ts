@@ -1172,6 +1172,10 @@ describe('DOM', () => {
 
   });
 
+  describe('Updating', () => {
+
+
+  });
     });
 
     test('z.html() with all other HTML5 tags', () => {
