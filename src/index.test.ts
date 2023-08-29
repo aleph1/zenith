@@ -2001,7 +2001,41 @@ describe('DOM', () => {
       expect((listNode.children[0].children[1] as VNodeComp).doms[0]).toEqual(elem1);
     });
 
-  });
+    // this test is a recreation of the demo that
+    // causes issues when nested components are reordered
+    test('z.comp() with nested z.comp() draws correctly after adding z.comp()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const values = ['test1', 'test2'];
+      const app = document.querySelector('#app');
+      const ListItem = z.compDef({
+        draw: vNode => z.elem('li',
+          z.text(vNode.attrs.value),
+        )
+      });
+      const List = z.compDef({
+        draw: vNode => z.elem('ul',
+          values.map(value => z.comp(ListItem, {value}))
+        )
+      });
+      const listNode = z.comp(List);
+      const elem1 = document.createElement('li');
+      elem1.innerHTML = 'test1';
+      const elem2 = document.createElement('li');
+      elem2.innerHTML = 'test2';
+      const elem3 = document.createElement('li');
+      elem3.innerHTML = 'test3';
+      z.mount(app, listNode);
+      expect(listNode.children[0].children.length).toEqual(2);
+      expect((listNode.children[0].children[0] as VNodeComp).doms[0]).toEqual(elem1);
+      expect((listNode.children[0].children[1] as VNodeComp).doms[0]).toEqual(elem2);
+      values.push('test3');
+      listNode.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(listNode.children[0].children.length).toEqual(3);
+      expect((listNode.children[0].children[0] as VNodeComp).doms[0]).toEqual(elem1);
+      expect((listNode.children[0].children[1] as VNodeComp).doms[0]).toEqual(elem2);
+      expect((listNode.children[0].children[2] as VNodeComp).doms[0]).toEqual(elem3);
+    });
 
   describe('Attributes with z.elem()', () => {
 
