@@ -6,13 +6,15 @@ Object.defineProperty(window, 'userAgent', {value: 'node'});
 Object.defineProperty(window, 'requestAnimationFrame', {value: (callback:any) =>{}});
 
 jest.useFakeTimers();
-const spiedRequestAnimationFrame = jest.spyOn(window, 'requestAnimationFrame');
-spiedRequestAnimationFrame.mockImplementation((callback: FrameRequestCallback): number => {
-  return window.setTimeout(callback, global.FRAME_TIME);
-});
+
+//const spiedRequestAnimationFrame = jest.spyOn(window, 'requestAnimationFrame');
+//spiedRequestAnimationFrame.mockImplementation((callback: FrameRequestCallback): number => {
+//  return window.setTimeout(callback, global.FRAME_TIME);
+//});
+//
 
 afterAll(() => {
-  spiedRequestAnimationFrame.mockRestore();
+//  spiedRequestAnimationFrame.mockRestore();
   jest.clearAllTimers();
 });
 
