@@ -290,7 +290,6 @@ const createVNodes = (parentNode: VNodeContainer, children: VNodeFlatArray, star
   }
 };
 
-        else parentDom.appendChild(element);
 //const insertElements = (parentDom: Element, index: number, elements:Array<ChildNode | Element | Text>): void => {
 //  if (index < 0) {
 //    for(const element of elements) {
