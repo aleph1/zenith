@@ -2907,6 +2907,23 @@ describe('DOM', () => {
       expect(typeof (el1.dom as HTMLElement).onclick).toBe('function');
     });
 
+    test('Attribute starting with "on" is removed as expected when redrawn immediately', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let enabled = true;
+      const callback = jest.fn();
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div', {
+          onclick: enabled ? callback : null
+        })
+      })
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      // *** add tests!!!
+      enabled = false;
+      node.redraw(true);
+    });
+
       });
       z.draw(app, el1);
 
