@@ -170,18 +170,16 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
   }
 };
 
-const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string): void => {
-  //console.log('updateChildren()');
-  //console.log(newChildren);
-  if (oldChildren != null) {
-    //console.log('has old children');
-    //console.log(oldChildren);
-    const newChildrenLength = newChildren.length;
-    const oldChildrenLength = oldChildren.length;
-    // *** 
-    if (newChildrenLength > 0) {
-      // determine if children are keyed
-      //Object.prototype.hasOwnProperty.call
+const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string): void => {
+  const newChildrenLength = newChildren.length;
+  // *** in theory updateChildren is always called with an oldChildren array,
+  // but we should make sure of this
+  //const oldChildrenLength = oldChildren == null ? 0 : oldChildren.length;
+  const oldChildrenLength = oldChildren.length;
+  if (newChildrenLength > 0) {
+    if(oldChildrenLength > 0) {
+      let oldChild;
+      const doms = [];
       const isNewKeyed = newChildren[0] && newChildren[0].attrs && Object.prototype.hasOwnProperty.call(newChildren[0].attrs, 'key') && newChildren[0].attrs.key != null;
       const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && Object.prototype.hasOwnProperty.call(oldChildren[0].attrs, 'key') && oldChildren[0].attrs.key != null;
       // keyed diff
@@ -190,7 +188,6 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
       // 3) get IDs for old children
       // 4) iterate through new children IDs and ***
       if (isNewKeyed && isOldKeyed) {
-        //console.log('keyed');
         //const tempDom = getElement(parentDom.nodeName, ns);
         const doms = [];
         const newChildrenByKey = {};
@@ -215,15 +212,15 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
           // otherwise, nullify the node and delete its DOM
           } else {
             // removeNode returns null
-            removeVNode(child);
+            removeVNode(parentNode, child);
             //oldKeyOrder.push(-1);
             delete oldChildrenByKey[key];
           }
         }
 
         // iterate through new children and diff with old children
+        //let index = 0;
         for(const child of newChildren) {
-          // *** newChildren[child as number] = updateVNode(parentDom, child, oldChildrenByKey[child.attrs.key as string], ns);
           if(child != null) {
             //child.index = index;
             updateChild(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
@@ -240,24 +237,49 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
             //}
           }
         }
-        insertElements(parentNode.dom as Element, -1, doms);
+        insertElements(parentNode.dom as Element, doms);
 
       // non-keyed diff
-      // 1) remove all old children ***
+      // 1) remove nodes that have an index greater than newChildrenLength
+      // 2) loop through the oldChildren and store references to their DOM
+      // 3) 
       } else {
-        if (newChildrenLength < oldChildrenLength) {
-          removeVNodes(oldChildren, newChildrenLength, oldChildrenLength);
-        }
+        const reusedDoms = new Set();
+        //if(oldChildrenLength > newChildrenLength) {
+          // iterate through old nodes and keep any that have been destroyed, but deferred
+          for(let i = newChildrenLength; i < oldChildrenLength; i++) {
+            oldChild = oldChildren[i];
+            removeVNode(parentNode, oldChild);
+            // if old node is in the process of being removed, keep it in the tree
+            if(oldChild.removing === true) {
+              oldChild.parent = parentNode;
+              newChildren[i] = oldChild;
+            }
+          }
+        //}
         for(let i = 0; i < newChildrenLength; i++ ) {
-          updateVNode(parentNode, newChildren[i], oldChildren[i], ns);
+          oldChild = oldChildren[i];
+          if(newChildren[i] == null && oldChild != null) {
+            removeVNode(parentNode, oldChild);
+            if(oldChild.removing === true) {
+              oldChild.parent = parentNode;
+              newChildren[i] = oldChild;
+              reusedDoms.add(newChildren[i].dom);
+            }
+          } else if(oldChild == null || oldChild.dom == null || reusedDoms.has(oldChild.dom)) {
+            createVNode(parentNode, newChildren[i], ns);
+            reusedDoms.add(newChildren[i].dom);
+          } else if(oldChild.removing == null) {
+            updateChild(parentNode, newChildren[i], oldChild, ns);
+            reusedDoms.add(newChildren[i].dom);
+          }
         }
       }
     } else {
-      removeVNodes(oldChildren, 0, oldChildrenLength);
+      createVNodes(parentNode, newChildren, 0, newChildrenLength, ns);
     }
   } else {
-    //console.log('does not have old children');
-    createVNodes(parentNode, newChildren, 0, newChildren.length, ns, 0);
+    removeVNodes(parentNode, oldChildren, 0, oldChildrenLength);
   }
   parentNode.children = newChildren;
 };
