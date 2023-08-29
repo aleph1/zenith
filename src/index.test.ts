@@ -2822,6 +2822,16 @@ describe('DOM', () => {
       expect(el1.dom.getAttribute('id')).toBe('test');
     });
 
+    test('Handles attribute "class" string', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node = z.elem('div', {
+        class: 'test',
+      });
+      z.mount(app, node);
+      expect(node.dom.className).toEqual('test');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
