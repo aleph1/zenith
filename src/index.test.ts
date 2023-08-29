@@ -2337,11 +2337,19 @@ describe('DOM', () => {
       expect(removeFn).toHaveBeenCalledTimes(1);
     });
 
-    test('Attribute starting with "on" is applied as a function', () => {
+    test('Component with deferred removal is drawn in correct location', async () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('div', {
-        onclick: vNode => {}
+      const values = ['test1', 'test2'];
+      const deferredPromise = generateDeferredPromise();
+      const listItemDef = z.compDef({
+        draw: vNode => z.elem('li', {
+          id: vNode.attrs.id
+        }),
+        remove: vNode => deferredPromise.promise,
+        destroy: vNode => {
+          values.splice(vNode.attrs.index, 1);
+        }
       });
       z.draw(app, el1);
       expect(el1.dom instanceof HTMLElement).toBe(true);
