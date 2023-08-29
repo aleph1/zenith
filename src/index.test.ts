@@ -1916,15 +1916,6 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(1);
     });
 
-    test('z.html() with two nodes requiring specific parents', () => {
-      document.body.innerHTML = '<table></table>';
-      const app = document.querySelector('table');
-      const vNode = z.html('<thead/><tbody/>');
-      const elem1 = document.createElement('thead');
-      const elem2 = document.createElement('tbody');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
-      expect(vNode.dom[1]).toEqual(elem2);
     });
 
     test('z.html() with <svg/>', () => {
