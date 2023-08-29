@@ -1159,6 +1159,19 @@ describe('DOM', () => {
       expect(mountedNode.dom.childNodes[2]).toEqual(elem3);
     });
 
+    test('Error when trying to mount to a dom element that is part of an existing zenith tree', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div');
+      const node2 = z.elem('div');
+      z.mount(app, node1);
+      expect(() => {
+        z.mount(node1.dom, node2);
+      }).toThrow(Error);
+    });
+
+  });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
