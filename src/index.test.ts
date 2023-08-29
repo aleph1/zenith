@@ -49,10 +49,10 @@ describe('Component definition, z.compDef()', () => {
   });
 
   test('Returns an object with the correct type', () => {
-    const node = z.compDef({
-      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null
+    const compDef = z.compDef({
+      draw: () => null
     });
-    expect(node.type).toBe(VNodeTypes.compDef);
+    expect(compDef.type).toBe(VNodeTypes.compDef);
   });
 
   test('Returned object has init if passed', () => {
