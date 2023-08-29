@@ -113,35 +113,56 @@ const getElement = (name:string, ns?:string, is?:string): Element => {
   return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? {is} : null) : document.createElement(name, is ? {is} : null))).cloneNode();
 };
 
-const updateVNode = (parentVNode: VNodeAny, newVNode: VNodeAny, oldVNode?: VNodeAny, ns?: string): VNodeAny => {
-  if (oldVNode != null) {
+const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: VNodeAny, ns: string): void => {
+  if (oldVNode != null && oldVNode.dom != null) {
     const newVNodeType = newVNode.type;
     const oldVNodeType = oldVNode.type;
+    newVNode.parent = parentVNode;
     if (newVNodeType === oldVNodeType) {
-      newVNode.dom = oldVNode.dom;
       // *** should we reenable .diff check?
       //if ((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
         switch(newVNodeType) {
           case VNodeTypes.elem:
-            updateElement(parentVNode, newVNode, oldVNode as VNodeElem, ns);
-            break;
-          case VNodeTypes.comp:
-            //(newVNode as VNodeComp).dom = (oldVNode as VNodeComp).dom;
-            if (newVNode.tag === oldVNode.tag) {
-              updateComponent(parentVNode, newVNode, ns);
-            } else {
-              removeVNode(oldVNode);
+            if(newVNode.tag !== oldVNode.tag) {
+              const oldDomIndex = parentVNode.type === VNodeTypes.comp ? (parentVNode as VNodeComp).doms.indexOf(oldVNode.dom as Element) : -1;
               createVNode(parentVNode, newVNode, ns);
+              (oldVNode.dom as Element).replaceWith(newVNode.dom as Element);
+              removeVNode(parentVNode, oldVNode);
+              if(oldDomIndex !== -1) (parentVNode as VNodeComp).doms[oldDomIndex] = newVNode.dom as Element;
+            } else {
+              newVNode.dom = oldVNode.dom as Element;
+              updateElement(parentVNode, newVNode, oldVNode as VNodeElem, ns);
             }
             break;
           case VNodeTypes.text:
+            newVNode.dom = (oldVNode as VNodeText).dom;
             if (newVNode.tag !== oldVNode.tag) {
               (newVNode.dom as Text).replaceWith(newVNode.dom = document.createTextNode(newVNode.tag));
+            }
+            break;
+          case VNodeTypes.comp:
+            if (newVNode.tag !== oldVNode.tag) {
+              removeVNode(parentVNode, oldVNode);
+              createVNode(parentVNode, newVNode, ns);
+            } else {
+              newVNode.dom = oldVNode.dom as Element;
+              newVNode.doms = (oldVNode as VNodeComp).doms;
+              newVNode.children = (oldVNode as VNodeComp).children;
+              updateComponent(parentVNode, newVNode, ns);
+            }
+            break;
+          case VNodeTypes.html:
+            if (newVNode.tag !== oldVNode.tag) {
+              removeVNode(parentVNode, oldVNode);
+              createVNode(parentVNode, newVNode, ns);
+            } else {
+              newVNode.dom = (oldVNode as VNodeHTML).dom;
+              newVNode.doms = (oldVNode as VNodeHTML).doms;
             }
         }
       //}
     } else {
-      removeVNode(oldVNode);
+      removeVNode(parentVNode, oldVNode);
       createVNode(parentVNode, newVNode, ns);
     }
   } else {
@@ -205,7 +226,8 @@ const updateChildren = (parentNode: VNodeAny, newChildren:VNodeFlatArray, oldChi
         for(const child of newChildren) {
           // *** newChildren[child as number] = updateVNode(parentDom, child, oldChildrenByKey[child.attrs.key as string], ns);
           if(child != null) {
-            updateVNode(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
+            //child.index = index;
+            updateChild(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
             doms.push(child.dom);
             (child.dom as Element).remove();
             //if (Array.isArray(child.dom)) {
