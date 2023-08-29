@@ -720,6 +720,21 @@ describe('DOM', () => {
       expect(node1.dom).toEqual(elem1);
     });
 
+    test('z.elem() number of children decreases', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', z.text('test1'));
+      const node2 = z.elem('div', z.text('test2'));
+      let mountedNode = z.mount(app, [node1, node2]);
+      expect(mountedNode.children.length).toEqual(2);
+      expect(mountedNode.children[0]).toEqual(node1);
+      expect(mountedNode.children[1]).toEqual(node2);
+      mountedNode = z.mount(app, [node1]);
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(mountedNode.children.length).toEqual(1);
+      expect(mountedNode.children[0]).toEqual(node1);
+    });
+
     });
 
     test('z.html() with single html element', () => {
