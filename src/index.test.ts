@@ -1503,6 +1503,21 @@ describe('DOM', () => {
       expect(node.children.length).toBe(0);
     });
 
+    test('mounting, unmounting, and then remounting z.comp() works as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div')
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      z.mount(app, null);
+      z.mount(app, node);
+      expect(app.childNodes.length).toBe(1);
+      expect(node.children.length).toBe(1);
+      expect(node.children[0].dom).toEqual(app.childNodes[0]);
+    });
+
 
   });
     });
