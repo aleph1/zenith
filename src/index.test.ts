@@ -2233,6 +2233,22 @@ describe('DOM', () => {
         onclick: callback
       });
       z.draw(app, el1);
+
+    test('input value is updated when DOM value differs from vNode value', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('input', {
+        value: 'test',
+      });
+      const node2 = z.elem('input', {
+        value: 'test2',
+      });
+      z.mount(app, node1);
+      (node1.dom as HTMLInputElement).value += '1';
+      z.mount(app, node2);
+      expect((node1.dom as HTMLInputElement).value).toBe('test2');
+    });
+
     test('textarea value can be set as text', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
