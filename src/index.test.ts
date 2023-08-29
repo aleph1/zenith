@@ -697,6 +697,17 @@ describe('DOM', () => {
       expect(node1.dom).toBe(undefined);
     });
 
+    test('Mounting z.elem() while already mounted works as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div');
+      const elem1 = document.createElement('div');
+      z.mount(app, node1);
+      z.mount(app, node1);
+      expect(app.childNodes.length).toBe(1);
+      expect(node1.dom).toEqual(elem1);
+    });
+
     });
 
     test('z.html() with single html element', () => {
