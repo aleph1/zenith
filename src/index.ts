@@ -636,6 +636,7 @@ const html = (value: string): VNodeHTML => {
 };
 
 const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem => {
+  if(dom == null) throw new Error('dom must be an Element');
   // first check to see if DOM is a child node of a mounted node
   let ancestor = dom.parentNode;
   while(ancestor) {
