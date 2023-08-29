@@ -51,13 +51,14 @@ export interface VNodeCompDefinition {
 
 interface VNodeAbstract {
   type: VNodeTypes.none;
-  parent?: VNodeAny;
-  index?: number;
   children?: VNodeFlatArray;
-  keys?: boolean;
+  //index?: number;
+  //keys?: boolean;
   attrs?: {
     [property: string]: string | number | ((event?: Event) => void);
   };
+  parent?: VNodeContainer;
+  removing?: boolean;
 }
 
 export type VNodeElem = Omit<VNodeAbstract, 'type' | 'attrs'> & {
