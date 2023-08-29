@@ -85,7 +85,6 @@ const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlat
   const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
   const firstChild = normalizedChildren[0];
   const isKeyed = !firstChild || typeof firstChild === 'boolean' || (firstChild.type !== VNodeTypes.elem && firstChild.type !== VNodeTypes.comp) || !Object.prototype.hasOwnProperty.call(firstChild.attrs, 'key') ? false : true;
-  if (isKeyed) vNode.keys = true;
   for(const [index, child] of normalizedChildren.entries()) {
     // convert all falsy children to null
     if (!child || typeof child === 'boolean') {
