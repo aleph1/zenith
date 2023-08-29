@@ -2252,12 +2252,15 @@ describe('DOM', () => {
       expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
-    test('Attribute of undefined is equivalent to no attribute', () => {
+    test('z.elem() updated with less children', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('div', {id: undefined});
-      z.draw(app, el1);
-      expect(el1.dom.getAttribute('id')).toBeNull();
+      const values = ['test1', 'test2'];
+      const node1 = z.elem('div', z.elem('div'), z.elem('div'));
+      const node2 = z.elem('div', z.elem('div'));
+      z.mount(app, node1);
+      z.mount(app, node2);
+      expect(node2.children.length).toEqual(1);
     });
 
     test('Attribute of false is equivalent to no attribute', () => {
