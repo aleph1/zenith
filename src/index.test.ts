@@ -56,12 +56,12 @@ describe('Component definition, z.compDef()', () => {
   });
 
   test('Returned object has init if passed', () => {
-    const init = (vNode: VNodeComp): void => null;
-    const node = z.compDef({
-      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+    const init = () => null;
+    const compDef = z.compDef({
+      draw: (): VNodeAnyOrArray => null,
       init
     });
-    expect(node.init).toBe(init);
+    expect(compDef.init).toBe(init);
   });
 
   test('Returned object has tick if passed', () => {
