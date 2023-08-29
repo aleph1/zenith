@@ -501,6 +501,12 @@ describe('vNode', () => {
       expect(node.tag).toBe('9007199254740991');
     });
 
+    test('Handles null', () => {
+      const node = z.html(null as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(typeof node.tag).toBe('string');
+      expect(node.tag).toBe('');
+    });
+
     });
 
   });
