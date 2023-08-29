@@ -687,6 +687,16 @@ describe('DOM', () => {
       expect((node1.doms[1] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
+    test('Unmounting z.elem() works as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div');
+      z.mount(app, node1);
+      z.mount(app, null);
+      expect(app.childNodes.length).toBe(0);
+      expect(node1.dom).toBe(undefined);
+    });
+
     });
 
     test('z.html() with single html element', () => {
