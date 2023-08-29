@@ -65,12 +65,12 @@ describe('Component definition, z.compDef()', () => {
   });
 
   test('Returned object has tick if passed', () => {
-    const tick = (vNode: VNodeComp, tickCount: number): void => null;
-    const node = z.compDef({
-      draw: (vNode: VNodeComp, oldChildren: VNodeFlatArray): VNodeAnyOrArray => null,
+    const tick = () => null;
+    const compDef = z.compDef({
+      draw: (): VNodeAnyOrArray => null,
       tick
     });
-    expect(node.tick).toBe(tick);
+    expect(compDef.tick).toBe(tick);
   });
 
   test('Returned object has destroy if passed', () => {
