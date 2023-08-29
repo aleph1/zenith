@@ -527,6 +527,13 @@ describe('DOM', () => {
 
   describe('z.mount()', () => {
 
+    test('error when dom is null', () => {
+      const node1 = z.elem('div');
+      expect(() => {
+        z.mount(null, node1);
+      }).toThrow(Error);
+    });
+
     test('z.elem() with no attributes', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
