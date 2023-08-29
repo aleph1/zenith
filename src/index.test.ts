@@ -1487,6 +1487,22 @@ describe('DOM', () => {
       expect(node2.dom).toEqual(elem2);
     });
 
+    test('unmounting z.comp() works as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div')
+      });
+      const node = z.comp(compDef);
+      let mountedNode = z.mount(app, node);
+      expect(mountedNode.children.length).toBe(1);
+      expect(app.childNodes.length).toBe(1);
+      z.mount(app, null);
+      expect(mountedNode.children.length).toBe(0);
+      expect(app.childNodes.length).toBe(0);
+      expect(node.children.length).toBe(0);
+    });
+
 
   });
     });
