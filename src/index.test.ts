@@ -36,7 +36,7 @@ describe('Component definition, z.compDef()', () => {
 
   test('Throws error on missing draw function', () => {
     expect(() => {
-      const node = z.compDef({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      z.compDef({} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
     }).toThrow(Error);
   });
 
