@@ -1417,6 +1417,32 @@ describe('DOM', () => {
       expect(mountedNode.children[0].children[0].dom).toEqual(text1);
     });
 
+    test('z.comp() with single z.text(), redrawn deffered with single z.elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let childType = 'text';
+      const node1 = z.text('test');
+      const node2 = z.elem('div');
+      const compDef = z.compDef({
+        draw: vNode => childType === 'text' ? node1 : node2
+      });
+      const node3 = z.comp(compDef);
+      const elem1 = document.createElement('div');
+      const text1 = document.createTextNode('test');
+      const mountedNode = z.mount(app, node3);
+      expect(mountedNode.children[0]).toBe(node3);
+      expect(mountedNode.children[0].children.length).toEqual(1);
+      expect(mountedNode.children[0].children[0]).toBe(node1);
+      expect(mountedNode.children[0].children[0].dom).toEqual(text1);
+      childType = 'elem';
+      node3.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(mountedNode.children[0]).toBe(node3);
+      expect(mountedNode.children[0].children.length).toEqual(1);
+      expect(mountedNode.children[0].children[0]).toEqual(node2);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem1);
+    });
+
 
   });
     });
