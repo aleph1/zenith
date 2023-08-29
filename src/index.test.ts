@@ -2958,6 +2958,26 @@ describe('DOM', () => {
       expect((node2.dom as HTMLElement).onclick).toEqual(null);
     });
 
+  });
+
+  describe('Lifecycle', () => {
+
+    test('z.comp() with init is called as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const initFn = jest.fn();
+      const compDef = z.compDef({
+        init: initFn,
+        draw: () => z.elem('div'),
+      });
+      const vNode = z.comp(compDef);
+      expect(initFn).toHaveBeenCalledTimes(0);
+      z.mount(app, vNode);
+      expect(initFn).toHaveBeenCalledTimes(1);
+      vNode.redraw(true);
+      expect(initFn).toHaveBeenCalledTimes(1);
+    });
+
       });
       z.draw(app, el1);
 
