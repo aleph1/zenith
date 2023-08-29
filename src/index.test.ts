@@ -1951,16 +1951,21 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(2);
     });
 
-    test('z.html() with single svg element within elem()', () => {
+    test('z.comp() number of children increases when redrawn immediately', () => {
       document.body.innerHTML = '<div id="app"></div>';
+      const values = ['test1'];
       const app = document.querySelector('#app');
-      const vNode1 = z.html('<g></g>');
-      const vNode2 = z.elem('svg', vNode1);
-      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      z.draw(app, vNode2);
-      expect(vNode1.dom[0].nodeName).toEqual('g');
-      expect(vNode1.dom[0] instanceof SVGElement);
-      expect((vNode1.dom[0] as SVGElement).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      const compDef = z.compDef({
+        draw: vNode => vNode.attrs.values.map(label => z.text(label))
+      });
+      const node = z.comp(compDef, {
+        values
+      });
+      z.mount(app, node);
+      expect(node.children.length).toEqual(1);
+      values.push('test2');
+      node.redraw(true);
+      expect(node.children.length).toEqual(2);
     });
 
     test('z.html() with <math/>', () => {
