@@ -415,16 +415,15 @@ describe('vNode', () => {
     });
 
     test('Handles BigInt', () => {
-      const vNode = z.text(BigInt(9007199254740991));
-      expect(vNode).not.toBeNull();
-      expect(typeof vNode).toBe('object');
-      expect(vNode).toHaveOnlyProperties(['type', 'tag']);
-      expect(vNode.type).toBe(VNodeTypes.text);
-      expect(vNode.tag).toBe('9007199254740991');
+      const node = z.text(BigInt(9007199254740991));
+      expect(node).not.toBeNull();
+      expect(typeof node).toBe('object');
+      expect(node).toHaveOnlyProperties(['type', 'tag']);
+      expect(node.type).toBe(VNodeTypes.text);
+      expect(node.tag).toBe('9007199254740991');
     });
 
     test('Handles null', () => {
-      const vNode = z.text(null as any);
       expect(vNode).not.toBeNull();
       expect(typeof vNode).toBe('object');
       expect(vNode).toHaveOnlyProperties(['type', 'tag']);
