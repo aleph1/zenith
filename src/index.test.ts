@@ -2233,6 +2233,17 @@ describe('DOM', () => {
         onclick: callback
       });
       z.draw(app, el1);
+    test('textarea value of null is an empty string', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('textarea', {
+        value: null
+      });
+      z.mount(app, el1);
+      expect(el1.dom instanceof HTMLTextAreaElement);
+      expect((el1.dom as HTMLTextAreaElement).value).toBe('');
+      expect((el1.dom as HTMLTextAreaElement).getAttribute('value')).toBe(null);
+    });
 
     test('textarea value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
