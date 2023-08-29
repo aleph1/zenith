@@ -62,10 +62,10 @@ let tickCount = 0;
 const mountedNodes = new Map();
 
 // for createElementNS calls
-const ELEMENT_NAMESPACES = {
+const ELEMENT_NAMESPACES = Object.freeze({
   math: 'http://www.w3.org/1998/Math/MathML',
   svg: 'http://www.w3.org/2000/svg'
-};
+});
 
 // for finding namespace for createElement(NS) calls
 const ELEMENT_NAMESPACES_QUERY = Object.keys(ELEMENT_NAMESPACES).join(',');
