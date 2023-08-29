@@ -1916,6 +1916,21 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(1);
     });
 
+    test('z.comp() number of children decreases when redrawn immediately', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const values = ['test1', 'test2'];
+      const compDef = z.compDef({
+        draw: vNode => vNode.attrs.values.map(label => z.text(label))
+      });
+      const node = z.comp(compDef, {
+        values
+      });
+      z.mount(app, node);
+      expect(node.children.length).toEqual(2);
+      values.pop();
+      node.redraw(true);
+      expect(node.children.length).toEqual(1);
     });
 
     test('z.html() with <svg/>', () => {
