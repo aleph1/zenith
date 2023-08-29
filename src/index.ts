@@ -189,7 +189,6 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
       // 4) iterate through new children IDs and ***
       if (isNewKeyed && isOldKeyed) {
         //const tempDom = getElement(parentDom.nodeName, ns);
-        const doms = [];
         const newChildrenByKey = {};
         const oldChildrenByKey = {};
         //const oldKeyOrder = [];
@@ -236,6 +235,7 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
             //  child.dom.remove();
             //}
           }
+          //index++;
         }
         insertElements(parentNode.dom as Element, doms);
 
