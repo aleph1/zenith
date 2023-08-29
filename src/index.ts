@@ -702,5 +702,6 @@ export default {
     text: VNodeTypes.text,
     comp: VNodeTypes.comp,
     html: VNodeTypes.html,
-  })
+  }),
+  ns: ELEMENT_NAMESPACES
 };
