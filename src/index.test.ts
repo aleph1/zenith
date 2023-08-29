@@ -2073,19 +2073,23 @@ describe('DOM', () => {
       expect(listNode.children[0].children[2]).toEqual(undefined);
     });
 
-    test('z.elem() handles string attribute', () => {
+    test('z.comp() child element namespace is correct when node name changes', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('div');
-      const el2 = z.elem('div', {id: 'test'});
-      const el3 = z.elem('div');
-      z.draw(app, el1);
-      expect(el1.dom.hasAttribute('id')).toBe(false);
-      z.draw(app, el2);
-      expect(el2.dom.hasAttribute('id')).toBe(true);
-      expect(el2.dom.getAttribute('id')).toBe('test');
-      z.draw(app, el3);
-      expect(el3.dom.hasAttribute('id')).toBe(false);
+      let elType = 'div';
+      const compDef = z.compDef({
+        draw: vNode => z.elem(elType)
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('div');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+      elType = 'section';
+      node.redraw(true);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('section');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
     });
 
     test('Attribute of null is equivalent to no attribute', () => {
