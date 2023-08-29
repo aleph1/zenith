@@ -1029,9 +1029,17 @@ describe('DOM', () => {
       });
     });
 
+    test('z.html() with two nodes requiring specific parents', () => {
+      document.body.innerHTML = '<table></table>';
+      const app = document.querySelector('table');
+      const node = z.html('<thead/><tbody/>');
       const elem1 = document.createElement('thead');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      const elem2 = document.createElement('tbody');
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
+      expect(node.doms[1]).toEqual(elem2);
+    });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
