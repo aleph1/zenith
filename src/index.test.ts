@@ -564,6 +564,17 @@ describe('DOM', () => {
       z.mount(app, node);
       expect(node.dom).toEqual(elem1);
     });
+
+    test('z.elem() svg type element', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('rect', {
+        ns: z.ns.svg
+      });
+      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      z.mount(app, node1);
+      expect(node1.dom).toEqual(elem1);
+    });
     });
 
     test('z.elem() with single z.elem() child', () => {
