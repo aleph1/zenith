@@ -2021,16 +2021,18 @@ describe('DOM', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(false);
     });
 
-    test('Radio from z.elem("input", {type: "radio", checked: true}) is checked', () => {
+    test('z.elem() stops ticking when destroyed', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('input', {
-        type: 'radio',
-        checked: true
+      const tick = jest.fn();
+      const el1 = z.elem('div', {
+        tick
       });
-      z.draw(app, el1);
-      expect(el1.dom instanceof HTMLInputElement);
-      expect((el1.dom as HTMLInputElement).checked).toBe(true);
+      const el2 = z.elem('div');
+      z.mount(app, el1);
+      z.mount(app, null);
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(tick).not.toBeCalled();
     });
 
     test('z.comp() ticks as expected', () => {
