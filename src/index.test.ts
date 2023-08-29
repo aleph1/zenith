@@ -1963,14 +1963,14 @@ describe('DOM', () => {
       expect(el1.dom instanceof HTMLInputElement).toBe(true);
     });
 
-    test('onchange event is called on textarea', () => {
+    test('onchange is called when textarea value changes', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
       const el1 = z.elem('textarea', {
         onchange: callback
       });
-      z.draw(app, el1);
+      z.mount(app, el1);
       expect(el1.dom instanceof HTMLTextAreaElement).toBe(true);
       expect((el1.dom as HTMLTextAreaElement).value).toBe('');
       (el1.dom as HTMLTextAreaElement).value = 'test';
