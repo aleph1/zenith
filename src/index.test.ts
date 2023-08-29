@@ -546,13 +546,13 @@ describe('DOM', () => {
     test('z.elem() with attributes', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const vNode = z.elem('div', {
+      const node = z.elem('div', {
         id: 'test'
       });
       const elem1 = document.createElement('div');
       elem1.id = 'test';
-      z.draw(app, vNode);
-      expect(vNode.dom).toEqual(elem1);
+      z.mount(app, node);
+      expect(node.dom).toEqual(elem1);
     });
 
     test('z.elem() with text', () => {
