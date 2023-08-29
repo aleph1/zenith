@@ -593,13 +593,9 @@ const elem: {
   }
   while(index < args.length) {
     const child = args[index++];
-    const childType = typeof child;
-    children.push(!child || childType === 'undefined' || childType === 'boolean' ? null : childType === 'object' ? child : text(child));
+    children.push(child != null && typeof child === 'object' ? child : null);
   }
-  //const vNode = Object.assign(pools[VNodeTypes.elem].pop() || {type: VNodeTypes.elem}, {
-  //  tag: selector,
-  //  attrs
-  //});
+  // *** consider implementing object pooling
   const vNode:VNodeElem = {
     type: VNodeTypes.elem,
     tag: selector,
@@ -609,15 +605,13 @@ const elem: {
   return vNode;
 };
 
-const deferUpdateComponent = (parentNode: VNodeAny, vNode:VNodeAny, ns: string) => componentRedrawQueue.set(vNode, [parentNode, ns]);
+const deferUpdateComponent = (parentNode: VNodeAny, vNode:VNodeAny) => componentUpdateQueue.set(vNode, [parentNode]);
 
 //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
 const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
-  //if (DEBUG) {
-    if (typeof inputDef.draw !== 'function') throw new Error('component definition requires draw function');
-  //}
+  if (typeof inputDef.draw !== 'function') throw new Error('compDef requires draw function');
   return Object.assign({}, inputDef, {type: VNodeTypes.compDef});
-}
+};
 
 // A component should include:
 // - optional state (ideally reactive)
