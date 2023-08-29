@@ -2433,6 +2433,23 @@ describe('DOM', () => {
       expect(list.children[0].children[1].children[0].tag).toEqual('0');
     });
 
+    test('Keyed z.elem() sort as expected when redrawn immediately', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const ids = [0, 1];
+      const UnkeyedList = z.compDef({
+        draw: vNode => z.elem('ul', ids.map(id => z.elem('li', {
+          key: id
+        }, z.text(id))))
+      })
+      const list = z.comp(UnkeyedList);
+      z.mount(app, list);
+      expect(list.children[0].children[0].children[0].tag).toEqual('0');
+      expect(list.children[0].children[1].children[0].tag).toEqual('1');
+      ids.reverse();
+      list.redraw(true);
+      expect(list.children[0].children[0].children[0].tag).toEqual('1');
+      expect(list.children[0].children[1].children[0].tag).toEqual('0');
     });
 
     test('keyed nodes sort as expected when redrawn deferred', () => {
