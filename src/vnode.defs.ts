@@ -35,7 +35,7 @@ export interface VNodeElemAttributes {
 export interface VNodeCompAttributes {
   key?: string | number;
   // Any virtual element properties (e.g., attributes and event handlers).
-  [property: string]: string | number;
+  [property: string]: any;
 }
 
 export interface VNodeCompDefinition {
@@ -44,6 +44,7 @@ export interface VNodeCompDefinition {
   //drawOnce?: boolean; // defaults to false
   tick?: (vNode: VNodeComp, tickCount: number) => void;
   drawn?: (vNode: VNodeComp) => void;
+  remove?: (vNode: VNodeComp) => Promise<any>;
   destroy?: (vNode: VNodeComp) => void;
   type?: VNodeTypes.compDef;
 }
