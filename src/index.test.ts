@@ -2033,16 +2033,19 @@ describe('DOM', () => {
       expect((el1.dom as HTMLInputElement).checked).toBe(true);
     });
 
-    test('Radio from z.elem("input", {type: "radio", checked: false}) is unchecked', () => {
+    test('z.comp() ticks as expected', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('input', {
-        type: 'radio',
-        checked: false
+      const tick = jest.fn();
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div'),
+        tick
       });
-      z.draw(app, el1);
-      expect(el1.dom instanceof HTMLInputElement);
-      expect((el1.dom as HTMLInputElement).checked).toBe(false);
+      const comp1 = z.comp(compDef);
+      z.mount(app, comp1);
+      expect(tick).not.toBeCalled();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(tick).toHaveBeenCalledTimes(1);
     });
 
     test('z.comp() stops ticking when destroyed', () => {
