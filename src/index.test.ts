@@ -1001,10 +1001,10 @@ describe('DOM', () => {
     test('z.html() with <th>', () => {
       document.body.innerHTML = '<table><tbody><tr></tr></tbody><table>';
       const app = document.querySelector('tr');
-      const vNode = z.html('<th>');
+      const node = z.html('<th>');
       const elem1 = document.createElement('th');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
     });
 
     test('z.html() with <thead>', () => {
