@@ -2812,9 +2812,16 @@ describe('DOM', () => {
 
   });
 
-  describe('Events with z.elem()', () => {
+  describe('DOM Attributes with z.elem()', () => {
 
-    test('onclick event is called', () => {
+    test('Handles string attribute', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('div', {id: 'test'});
+      z.mount(app, el1);
+      expect(el1.dom.getAttribute('id')).toBe('test');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
