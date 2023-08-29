@@ -600,6 +600,19 @@ describe('DOM', () => {
       expect(node2.dom).toEqual(elem2);
     });
 
+    test('z.elem() is xhtml custom type', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {
+        is: 'custom-type',
+      });
+      const elem1 = document.createElement('div', {
+        is: 'custom-type',
+      });
+      z.mount(app, node1);
+      expect(node1.dom).toEqual(elem1);
+    });
+
     test('z.elem() svg with z.html() child with multiple svg elements', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
