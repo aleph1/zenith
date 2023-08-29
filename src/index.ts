@@ -481,9 +481,9 @@ const updateComponent = (parentNode: VNodeContainer, vNode:VNodeComp, ns?: strin
   //}
 };
 
-const removeVNodes = (children:VNodeFlatArray, start: number, end: number): void => {
+const removeVNodes = (parentNode: VNodeAny, children:VNodeFlatArray, start: number, end: number, noBeforeDestroy?: boolean): void => {
   while(start < end) {
-    removeVNode(children[start++]);
+    removeVNode(parentNode, children[start++], noBeforeDestroy);
   }
 };
 
