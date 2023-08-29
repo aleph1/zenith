@@ -2164,6 +2164,24 @@ describe('DOM', () => {
       expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
+    test('z.comp() child element namespace is correct when node changes from svg to xhtml', () => {
+      const app = document.querySelector('#app');
+      let elType = 'svg';
+      const compDef = z.compDef({
+        draw: vNode => z.elem(elType)
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('svg');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      elType = 'div';
+      node.redraw(true);
+      expect(node.children.length).toBe(1);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('div');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('div', {id: null});
