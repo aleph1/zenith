@@ -1059,6 +1059,15 @@ describe('DOM', () => {
       expect(node1.doms[0]).toEqual(elem1);
     });
 
+    test('z.html() with <math/>', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node = z.html('<math/>');
+      const elem1 = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'math');
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
+    });
+    
     });
 
     test('z.html() with all other HTML5 tags', () => {
