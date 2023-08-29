@@ -1184,6 +1184,16 @@ describe('DOM', () => {
       expect(node1.dom).toEqual(node2.dom);
     });
 
+    test('DOM is not reused when nodeName is different', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {id: 'test1'});
+      const node2 = z.elem('p', {id: 'test2'});
+      z.mount(app, node1);
+      z.mount(app, node2);
+      expect(node1.dom).not.toEqual(node2.dom);
+    });
+
 
   });
     });
