@@ -2942,6 +2942,22 @@ describe('DOM', () => {
       jest.advanceTimersByTime(global.FRAME_TIME);
     });
 
+    test('Attribute starting with "on" is removed as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {
+        onclick: e => e.stopImmediatePropagation()
+      });
+      const node2 = z.elem('div', {
+      });
+      z.mount(app, node1);
+      expect(node1.dom instanceof HTMLElement).toEqual(true);
+      expect(typeof (node1.dom as HTMLElement).onclick).toEqual('function');
+      z.mount(app, node2);
+      expect(node2.dom instanceof HTMLElement).toEqual(true);
+      expect((node2.dom as HTMLElement).onclick).toEqual(null);
+    });
+
       });
       z.draw(app, el1);
 
