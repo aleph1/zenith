@@ -1040,6 +1040,15 @@ describe('DOM', () => {
       expect(node.doms[1]).toEqual(elem2);
     });
 
+    test('z.html() with <svg/>', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node = z.html('<svg/>');
+      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
+    });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
