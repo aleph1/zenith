@@ -3100,6 +3100,37 @@ describe('DOM', () => {
       expect(removeOrder).toBeLessThan(destroyOrder);
     });
 
+    test('Destroying z.comp() on unmount when parent z.comp() has GUI', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const destroyFn1 = jest.fn();
+      const destroyFn2 = jest.fn();
+      const listItemDef = z.compDef({
+        draw: () => z.elem('div'),
+        destroy: destroyFn2
+      });
+      const listDef = z.compDef({
+        draw: () => z.elem('div',
+          z.comp(listItemDef)
+        ),
+        destroy: destroyFn1
+      });
+      const vNode = z.comp(listDef);
+      const listDefDestroy1Spy = jest.spyOn(listDef, 'destroy');
+      const listDefDestroy2Spy = jest.spyOn(listItemDef, 'destroy');
+      expect(destroyFn1).toHaveBeenCalledTimes(0);
+      expect(destroyFn2).toHaveBeenCalledTimes(0);
+      z.mount(app, vNode);
+      expect(destroyFn1).toHaveBeenCalledTimes(0);
+      expect(destroyFn2).toHaveBeenCalledTimes(0);
+      z.mount(app, null);
+      expect(destroyFn1).toHaveBeenCalledTimes(1);
+      expect(destroyFn2).toHaveBeenCalledTimes(1);
+      const listDefDestroy1Order = listDefDestroy1Spy.mock.invocationCallOrder[0];
+      const listDefDestroy2Order = listDefDestroy2Spy.mock.invocationCallOrder[0];
+      expect(listDefDestroy1Order).toBeLessThan(listDefDestroy2Order);
+    });
+
 
     test('input value is updated when DOM value differs from vNode value', () => {
       document.body.innerHTML = '<div id="app"></div>';
