@@ -346,10 +346,10 @@ const createVNode = (parentNode: VNodeAny, vNode: VNodeAny, ns: string, index = 
 };
 
 const createHTML = (parentNode: VNodeAny, vNode: VNodeHTML, ns: string): void => {
-  const tempDom = getElement((parentNode.dom as Element).nodeName, ns);
-  tempDom.innerHTML = vNode.tag;
-  vNode.dom = [...tempDom.childNodes];
-  vNode.length = vNode.dom.length;
+  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns);
+  vNode.dom.innerHTML = vNode.tag;
+  vNode.doms = [...vNode.dom.childNodes];
+  //vNode.length = vNode.dom.length;
 };
 
 const setDOMAttribute = (vNode: VNodeElem, attr: string, newValue: boolean | number | string | ((event?: Event) => void), oldValue: boolean | number | string | ((event?: Event) => void), ns: string): void => {
