@@ -1677,6 +1677,34 @@ describe('DOM', () => {
       expect(mountedNode.children[0].dom).toEqual(elem2);
     });
 
+    test('z.comp() child changes from one compDef to a different compDef when redrawn deferred', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let compType = 'div';
+      const compDef1 = z.compDef({
+        draw: vNode => z.elem('div', z.text(vNode.attrs.text))
+      });
+      const compDef2 = z.compDef({
+        draw: vNode => z.elem('p', z.text(vNode.attrs.text))
+      });
+      const compDef3 = z.compDef({
+        draw: vNode => z.comp(compType === 'div' ? compDef1 : compDef2, {
+          text: vNode.attrs.text
+        })
+      });
+      const node = z.comp(compDef3, {
+        text: 'test'
+      });
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect(node.children[0].tag).toEqual(compDef1);
+      compType = 'p';
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(node.children.length).toBe(1);
+      expect(node.children[0].tag).toEqual(compDef2);
+    });
+
 
   });
     });
