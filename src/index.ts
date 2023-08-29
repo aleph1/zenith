@@ -349,36 +349,38 @@ const createHTML = (parentNode: VNodeAny, vNode: VNodeHTML, ns: string): void =>
   //vNode.length = vNode.dom.length;
 };
 
-const setDOMAttribute = (vNode: VNodeElem, attr: string, newValue: boolean | number | string | ((event?: Event) => void), oldValue: boolean | number | string | ((event?: Event) => void), ns: string): void => {
-  // Skip values that are undefined or null
-  // this is faster than newValue !== null && newValue !== undefined
-  // *** benchmark to prove it
-  if (newValue != null && attr !== 'type' && attr !== 'key' && attr !== 'tick') {
-    if (attr === 'value') {
-      if (vNode.tag === 'input' || vNode.tag === 'textarea') (vNode.dom as HTMLInputElement).value = newValue + '';
-    } else if (typeof newValue === 'boolean') {
-      if (newValue === true) {
-        vNode.dom.setAttribute(attr, attr);
-      } else {
-        vNode.dom.removeAttribute(attr);
-      }
-    } else if (attr === 'class') {
-      vNode.dom.setAttribute(attr, Array.isArray(newValue) ? newValue.join(' ') : newValue as string);
-    // Setting on* handlers using setAttribute does not work,
-    // so we need a conditional to detect on*.
-    // Benchmark to compare various approaches:
-    // https://www.measurethat.net/Benchmarks/Show/19171/0/compare-detecting-object-keys-starting-with-on
-    // Array access performs better in most current browsers,
-    // however, it might be worth considering a couple of other
-    // approaches:
-    // - nested object: attrs = { on:{ click(){}, etc. } };
-    // - object containing all on* attributes that has a property
-    //   added when a new match is made
-    } else if (attr[0] === 'o' && attr[1] === 'n') {
-      vNode.events[attr.slice(2)] = vNode.dom[attr] = newValue;
+const setDOMAttribute = (vNode: VNodeElem, attr: string, value: boolean | number | string | object | ((event?: Event) => void), oldValue: boolean | number | string | object | ((event?: Event) => void), ns: string): void => {
+  if (value == null || attr === 'type' || attr === 'key' || attr === 'is' || attr === 'ns') return;
+  if (attr === 'class') {
+    vNode.dom.setAttribute(attr, Array.isArray(value) ? value.join(' ') : value as string);
+  } else if (attr === 'style') {
+    if(typeof value === 'string') {
+      vNode.dom.setAttribute(attr, value as string);
     } else {
-      vNode.dom.setAttribute(attr, newValue as string);
+      for(const style in value as object) {
+        (vNode.dom as HTMLElement).style[style] = value[style];
+      }
     }
+  } else if (attr === 'value') {
+    if (vNode.tag === 'input' || vNode.tag === 'textarea') (vNode.dom as HTMLInputElement).value = value + '';
+  } else if (typeof value === 'boolean') {
+    if (value === true) {
+      vNode.dom.setAttribute(attr, attr);
+    } else {
+      vNode.dom.removeAttribute(attr);
+    }
+  // Setting "on*" handlers using setAttribute does not work,
+  // so we need a conditional to detect those attrs
+  // Benchmarking the following shows that array access is faster
+  // https://www.measurethat.net/Benchmarks/Show/26286/0/strings-starts-with-using-startswith-array-access-slice
+  // - String.substr
+  // - String.startsWith
+  // - attr[0] === 'o' && attr[1] === 'n'
+  // - nested object: attrs = { on:{ click(){}, etc. } };
+  } else if (attr[0] === 'o' && attr[1] === 'n') {
+    vNode.events[attr] = vNode.dom[attr] = value;
+  } else {
+    vNode.dom.setAttribute(attr, value as string);
   }
 };
 
