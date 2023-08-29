@@ -938,10 +938,10 @@ describe('DOM', () => {
     test('z.html() with <caption>', () => {
       document.body.innerHTML = '<table></table>';
       const app = document.querySelector('table');
-      const vNode = z.html('<caption>');
+      const node = z.html('<caption>');
       const elem1 = document.createElement('caption');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
     });
 
     test('z.html() with <col>', () => {
