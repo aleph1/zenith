@@ -1082,6 +1082,17 @@ describe('DOM', () => {
       expect(node3.dom.getAttribute('id')).toBe(null);
     });
 
+    test('array of z.elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('div', {id: 'test1'});
+      const node2 = z.elem('div', {id: 'test2'});
+      const mountedNode = z.mount(app, [node1, node2]);
+      expect(mountedNode.children.length).toEqual(2);
+      expect(node1.dom.getAttribute('id')).toBe('test1');
+      expect(node2.dom.getAttribute('id')).toBe('test2');
+    });
+
     });
 
     test('z.html() with all other HTML5 tags', () => {
