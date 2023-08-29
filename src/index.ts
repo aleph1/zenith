@@ -436,9 +436,47 @@ const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): vo
   //}
 };
 
-const updateComponent = (parentNode: VNodeAny, vNode:VNodeComp, ns: string): void => {
+//const getActualDom = (vNode: VNodeContainer):Element => {
+//  if((vNode as VNodeComp).doms) return getActualDom(vNode.parent);
+//  return vNode.dom;
+//};
+//
+//const getNodeDom = (vNode: VNodeAny, childDom:Array<ChildNode | Element | Text>): Array<ChildNode | Element | Text> => {
+//  if(vNode.children) {
+//    for(const child of vNode.children) {
+//      switch(child.type) {
+//        case VNodeTypes.elem:
+//        case VNodeTypes.text:
+//          childDom.push(child.dom);
+//          break;
+//        case VNodeTypes.comp:
+//          getNodeDom(child, childDom);
+//          break;
+//        case VNodeTypes.html:
+//          childDom.push.apply(childDom, child.dom);
+//          break;
+//      }
+//    }
+//  }
+//  return childDom;
+//};
+
+const updateComponent = (parentNode: VNodeContainer, vNode:VNodeComp, ns?: string): void => {
   //if (!vNode.tag.drawOnce) {
-    updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns);
+    //console.log(vNode.dom.namespaceURI);
+    //if(ns != null && ns != vNode.dom.namespaceURI) {
+    //  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns = ns || vNode.dom.namespaceURI);
+    //}
+    updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
+    // *** this might be slow
+    //if(vNode.dom.children.length) {
+    //  const actualDom = getActualDom(parentNode);
+    //  const nodeDom = getNodeDom(parentNode, []);
+    //  while(actualDom.lastChild) actualDom.lastChild.remove();
+    //  vNode.doms.length = 0;
+    //  vNode.doms.push.apply(vNode.doms, nodeDom);
+    //  insertElements(actualDom, nodeDom);
+    //}
     if (vNode.tag.drawn) vNode.tag.drawn(vNode);
   //}
 };
