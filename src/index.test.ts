@@ -923,13 +923,13 @@ describe('DOM', () => {
     test('z.html() with text and html element', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const vNode = z.html('test1<div>test2</div>');
+      const node = z.html('test1<div>test2</div>');
       const elem1 = document.createTextNode('test1');
       const elem2 = document.createElement('div');
       elem2.innerHTML = 'test2';
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
-      expect(vNode.dom[1]).toEqual(elem2);
+      z.mount(app, node);
+      expect(node.doms[0]).toEqual(elem1);
+      expect(node.doms[1]).toEqual(elem2);
     });
 
     // some elements can only be children of specific elements,
