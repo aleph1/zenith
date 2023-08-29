@@ -1,0 +1,13 @@
+{
+  "ts-standard": {
+    "ignore": [
+    	"benchmark/**",
+    	"convive/**",
+    	"coverage/**",
+    	"demo/**",
+    	"dist/**",
+    	"mithril/**",
+    	"node_modules/**",
+    ]
+  }
+}
