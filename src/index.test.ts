@@ -2011,14 +2011,19 @@ describe('DOM', () => {
     });
 
     test('Checkbox from z.elem("input", {type: "checkbox"}) is unchecked', () => {
+  describe('Tick', () => {
+
+    test('z.elem() ticks as expected', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const el1 = z.elem('input', {
-        type: 'checkbox'
+      const tick = jest.fn();
+      const el1 = z.elem('div', {
+        tick
       });
-      z.draw(app, el1);
-      expect(el1.dom instanceof HTMLInputElement);
-      expect((el1.dom as HTMLInputElement).checked).toBe(false);
+      z.mount(app, el1);
+      expect(tick).not.toBeCalled();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(tick).toHaveBeenCalledTimes(1);
     });
 
     test('z.elem() stops ticking when destroyed', () => {
