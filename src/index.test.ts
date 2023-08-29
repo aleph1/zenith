@@ -1968,13 +1968,37 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(2);
     });
 
-    test('z.html() with <math/>', () => {
+    // this test is a recreation of the demo that
+    // causes issues when nested components are reordered
+    test('z.comp() with nested z.comp() draws correctly after reordering', () => {
       document.body.innerHTML = '<div id="app"></div>';
+      const values = ['test1', 'test2'];
       const app = document.querySelector('#app');
-      const vNode = z.html('<math/>');
-      const elem1 = document.createElementNS('http://www.w3.org/1998/Math/MathML', 'math');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      const ListItem = z.compDef({
+        draw: vNode => z.elem('li',
+          z.text(vNode.attrs.value),
+        )
+      });
+      const List = z.compDef({
+        draw: vNode => z.elem('ul',
+          values.map(value => z.comp(ListItem, {value}))
+        )
+      });
+      const listNode = z.comp(List);
+      const elem1 = document.createElement('li');
+      elem1.innerHTML = 'test1';
+      const elem2 = document.createElement('li');
+      elem2.innerHTML = 'test2';
+      z.mount(app, listNode);
+      expect(listNode.children[0].children.length).toEqual(2);
+      expect((listNode.children[0].children[0] as VNodeComp).doms[0]).toEqual(elem1);
+      expect((listNode.children[0].children[1] as VNodeComp).doms[0]).toEqual(elem2);
+      values.reverse();
+      listNode.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(listNode.children[0].children.length).toEqual(2);
+      expect((listNode.children[0].children[0] as VNodeComp).doms[0]).toEqual(elem2);
+      expect((listNode.children[0].children[1] as VNodeComp).doms[0]).toEqual(elem1);
     });
 
   });
