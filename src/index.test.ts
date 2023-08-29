@@ -2200,6 +2200,34 @@ describe('DOM', () => {
       expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
     });
 
+    test('z.comp() children namespaces namespaces change correctly', () => {
+      const app = document.querySelector('#app');
+      let elTypes = ['div', 'svg', 'math'];
+      const compDef = z.compDef({
+        draw: vNode => elTypes.map(elType => z.elem(elType))
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect(node.children.length).toBe(3);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('div');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+      expect(node.doms[1].nodeName.toLowerCase()).toBe('svg');
+      expect((node.doms[1] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      expect(node.doms[2].nodeName.toLowerCase()).toBe('math');
+      expect((node.doms[2] as Element).namespaceURI).toEqual('http://www.w3.org/1998/Math/MathML');
+      elTypes[0] = 'math';
+      elTypes[1] = 'div';
+      elTypes[2] = 'svg';
+      node.redraw(true);
+      expect(node.children.length).toBe(3);
+      expect(node.doms[0].nodeName.toLowerCase()).toBe('math');
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1998/Math/MathML');
+      expect(node.doms[1].nodeName.toLowerCase()).toBe('div');
+      expect((node.doms[1] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
+      expect(node.doms[2].nodeName.toLowerCase()).toBe('svg');
+      expect((node.doms[2] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const el1 = z.elem('div', {id: null});
