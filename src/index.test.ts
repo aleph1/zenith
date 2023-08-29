@@ -1293,6 +1293,41 @@ describe('DOM', () => {
       expect(mountedNode.children[1].dom).toEqual(elem3);
     });
 
+    test('array of z.comp() mounted, unmounted, and remounted with different order', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div', z.text(vNode.attrs.text))
+      });
+      const node1 = z.comp(compDef, {
+        text: 'test1'
+      });
+      const node2 = z.comp(compDef, {
+        text: 'test2'
+      });
+      const elem1 = document.createElement('div');
+      const elem2 = document.createElement('div');
+      const text1 = document.createTextNode('test1');
+      const text2 = document.createTextNode('test2');
+      elem1.append(text1);
+      elem2.append(text2);
+      let mountedNode = z.mount(app, [node1, node2]);
+      expect(mountedNode.children.length).toEqual(2);
+      expect(mountedNode.children[0]).toBe(node1);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem1);
+      expect(mountedNode.children[1]).toBe(node2);
+      expect(mountedNode.children[1].children[0].dom).toEqual(elem2);
+      mountedNode = z.mount(app, null);
+      expect(mountedNode.children.length).toEqual(0);
+      expect(node1.dom).toEqual(undefined);
+      expect(node2.dom).toEqual(undefined);
+      mountedNode = z.mount(app, [node2, node1]);
+      expect(mountedNode.children[0]).toBe(node2);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem2);
+      expect(mountedNode.children[1]).toBe(node1);
+      expect(mountedNode.children[1].children[0].dom).toEqual(elem1);
+    });
+
 
   });
     });
