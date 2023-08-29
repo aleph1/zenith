@@ -2778,6 +2778,38 @@ describe('DOM', () => {
       expect(list.children[0].children[1].children[0].children[0].tag).toEqual('1');
     });
 
+    test('Keyed z.comp() that returns z.html()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const ids = [0, 1];
+      const ListItem = z.compDef({
+        draw: vNode => z.html('<li>' + vNode.attrs.id + '</li>')
+      });
+      const KeyedList = z.compDef({
+        draw: vNode => z.elem('ul', ids.map(id => z.comp(ListItem, {
+          id: id,
+          key: id
+        })))
+      });
+      const elem1 = document.createElement('li');
+      elem1.innerHTML = '0';
+      const elem2 = document.createElement('li');
+      elem2.innerHTML = '1';
+      const list = z.comp(KeyedList);
+      z.mount(app, list);
+      expect(list.children[0].children[0].children[0].type).toEqual(VNodeTypes.html);
+      expect((list.children[0].children[0].children[0] as VNodeHTML).doms[0]).toEqual(elem1);
+      expect(list.children[0].children[1].children[0].type).toEqual(VNodeTypes.html);
+      expect((list.children[0].children[1].children[0] as VNodeHTML).doms[0]).toEqual(elem2);
+      ids.reverse();
+      list.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(list.children[0].children[0].children[0].type).toEqual(VNodeTypes.html);
+      expect((list.children[0].children[0].children[0] as VNodeHTML).doms[0]).toEqual(elem2);
+      expect(list.children[0].children[1].children[0].type).toEqual(VNodeTypes.html);
+      expect((list.children[0].children[1].children[0] as VNodeHTML).doms[0]).toEqual(elem1);
+    });
+
   });
 
   describe('Events with z.elem()', () => {
