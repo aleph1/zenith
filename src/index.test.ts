@@ -525,7 +525,7 @@ describe('vNode', () => {
 
 describe('DOM', () => {
 
-  describe('Creation with z.draw()', () => {
+  describe('z.mount()', () => {
 
     test('z.elem() with no attributes', () => {
       document.body.innerHTML = '<div id="app"></div>';
