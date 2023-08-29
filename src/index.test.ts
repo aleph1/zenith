@@ -2872,6 +2872,14 @@ describe('DOM', () => {
       expect(el1.dom.getAttribute('id')).toBeNull();
     });
 
+    test('Attribute of undefined is equivalent to no attribute', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('div', {id: undefined});
+      z.mount(app, el1);
+      expect(el1.dom.getAttribute('id')).toBeNull();
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
