@@ -397,7 +397,7 @@ const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void
   createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
 };
 
-const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): void => {
+const updateElement = (parentNode: VNodeContainer, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): void => {
   newVNode.events = oldVNode.events;
   //if (newVNode.attrs === oldVNode.attrs && newVNode.attrs !== FROZEN_EMPTY_OBJECT) throw new Error('must not reuse attrs object across calls to z.elem()');
   // input type must be set before other attributes
@@ -405,8 +405,8 @@ const updateElement = (parentNode: VNodeAny, newVNode: VNodeElem, oldVNode: VNod
   // remove old attrs
   for(const attr in oldVNode.attrs) {
     if (attr[0] === 'o' && attr[1] === 'n') {
-      newVNode.events[attr.slice(2)] = newVNode.dom[attr] = null;
-    } else {
+      newVNode.events[attr] = newVNode.dom[attr] = null;
+    } else if(attr !== 'type') {
       newVNode.dom.removeAttribute(attr);
     }
   }
