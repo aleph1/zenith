@@ -1821,6 +1821,35 @@ describe('DOM', () => {
       expect(node3.children[0].dom).toEqual(elem2);
     });
 
+    test('z.comp() child changes from z.text() to z.comp()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let compType = 'text';
+      const compDef1 = z.compDef({
+        draw: vNode => z.elem('div', z.text(vNode.attrs.text))
+      });
+      const node1 = z.text('test1');
+      const node2 = z.comp(compDef1, {
+        text: 'test2'
+      });
+      const elem1 = document.createTextNode('test1');
+      const elem2 = document.createElement('div');
+      elem2.innerHTML = 'test2';
+      const compDef2 = z.compDef({
+        draw: vNode => compType === 'text' ? node1 : node2
+      });
+      const node3 = z.comp(compDef2);
+      z.mount(app, node3);
+      expect(node3.children.length).toBe(1);
+      expect(node3.children[0]).toEqual(node1);
+      expect(node3.children[0].dom).toEqual(elem1);
+      compType = 'comp';
+      node3.redraw(true);
+      expect(node3.children.length).toBe(1);
+      expect(node3.children[0]).toEqual(node2);
+      expect(node3.children[0].children[0].dom).toEqual(elem2);
+    });
+
 
   });
     });
