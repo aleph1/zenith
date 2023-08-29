@@ -2924,6 +2924,24 @@ describe('DOM', () => {
       node.redraw(true);
     });
 
+    test('Attribute starting with "on" is removed as expected when redrawn deferred', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let enabled = true;
+      const callback = jest.fn();
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div', {
+          onclick: enabled ? callback : null
+        })
+      })
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      // *** add tests!!!
+      enabled = false;
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+    });
+
       });
       z.draw(app, el1);
 
