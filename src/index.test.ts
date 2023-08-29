@@ -1931,6 +1931,22 @@ describe('DOM', () => {
 
     test('onchange event is called on checkbox', () => {
 
+    test('onclick removed when null', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const callback = jest.fn();
+      const el1 = z.elem('div', {
+        onclick: callback
+      });
+      const el2 = z.elem('div', {
+        onclick: null
+      });
+      z.mount(app, el1);
+      z.mount(app, el2);
+      (el2.dom as HTMLElement).click();
+      expect(callback).toHaveBeenCalledTimes(0);
+    });
+
     test('onclick removed when undefined', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
