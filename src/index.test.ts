@@ -1547,6 +1547,30 @@ describe('DOM', () => {
       expect(mountedNode.children[0].children[0].dom).toEqual(elem2);
     });
 
+    test('mounted child changes from z.comp() to z.elem()', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const compDef = z.compDef({
+        draw: vNode => z.elem('div', z.text(vNode.attrs.text))
+      });
+      const node1 = z.comp(compDef, {
+        text: 'test1'
+      });
+      const node2 = z.elem('div', z.text('test2'));
+      const elem1 = document.createElement('div');
+      elem1.innerHTML = 'test1';
+      const elem2 = document.createElement('div');
+      elem2.innerHTML = 'test2';
+      const mountedNode = z.mount(app, node1);
+      expect(mountedNode.children.length).toBe(1);
+      expect(mountedNode.children[0].tag).toEqual(compDef);
+      expect(mountedNode.children[0].children[0].dom).toEqual(elem1);
+      z.mount(app, node2);
+      expect(mountedNode.children.length).toBe(1);
+      expect(mountedNode.children[0]).toEqual(node2);
+      expect(mountedNode.children[0].dom).toEqual(elem2);
+    });
+
 
   });
     });
