@@ -1933,13 +1933,22 @@ describe('DOM', () => {
       expect(node.children.length).toEqual(1);
     });
 
-    test('z.html() with <svg/>', () => {
+    test('z.comp() number of children increases when redrawn deferred', () => {
       document.body.innerHTML = '<div id="app"></div>';
+      const values = ['test1'];
       const app = document.querySelector('#app');
-      const vNode = z.html('<svg/>');
-      const elem1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      z.draw(app, vNode);
-      expect(vNode.dom[0]).toEqual(elem1);
+      const compDef = z.compDef({
+        draw: vNode => vNode.attrs.values.map(label => z.text(label))
+      });
+      const node = z.comp(compDef, {
+        values
+      });
+      z.mount(app, node);
+      expect(node.children.length).toEqual(1);
+      values.push('test2');
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(node.children.length).toEqual(2);
     });
 
     test('z.html() with single svg element within elem()', () => {
