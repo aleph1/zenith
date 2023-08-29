@@ -590,28 +590,15 @@ describe('DOM', () => {
     test('z.elem() with single z.elem() child', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
-      const vNode1 = z.elem('p');
-      const vNode2 = z.elem('div', vNode1);
+      const node1 = z.elem('p');
+      const node2 = z.elem('div', node1);
       const elem1 = document.createElement('p');
       const elem2 = document.createElement('div');
       elem2.appendChild(elem1);
-      z.draw(app, vNode2);
-      expect(vNode1.dom).toEqual(elem1);
-      expect(vNode2.dom).toEqual(elem2);
+      z.mount(app, node2);
+      expect(node1.dom).toEqual(elem1);
+      expect(node2.dom).toEqual(elem2);
     });
-
-    //test('z.elem() with multiple z.elem() children', () => {
-    //  document.body.innerHTML = '<div id="app"></div>';
-    //  const app = document.querySelector('#app');
-    //  const vNode1 = z.elem('p');
-    //  const vNode2 = z.elem('div', vNode1);
-    //  const elem1 = document.createElement('p');
-    //  const elem2 = document.createElement('div');
-    //  elem2.appendChild(elem1);
-    //  z.draw(app, vNode2);
-    //  expect(vNode1.dom).toEqual(elem1);
-    //  expect(vNode2.dom).toEqual(elem2);
-    //});
 
     test('z.elem() svg with z.html() child with multiple svg elements', () => {
       document.body.innerHTML = '<div id="app"></div>';
