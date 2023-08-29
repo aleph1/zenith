@@ -495,6 +495,12 @@ describe('vNode', () => {
       expect(node.tag).toBe('1');
     });
 
+    test('Handles BigInt', () => {
+      const node = z.html(BigInt(9007199254740991) as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+      expect(typeof node.tag).toBe('string');
+      expect(node.tag).toBe('9007199254740991');
+    });
+
     });
 
   });
