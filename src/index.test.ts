@@ -1705,6 +1705,33 @@ describe('DOM', () => {
       expect(node.children[0].tag).toEqual(compDef2);
     });
 
+    test('z.comp() child changes from one compDef to a different compDef when redrawn immediately', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      let compType = 'div';
+      const compDef1 = z.compDef({
+        draw: vNode => z.elem('div', z.text(vNode.attrs.text))
+      });
+      const compDef2 = z.compDef({
+        draw: vNode => z.elem('p', z.text(vNode.attrs.text))
+      });
+      const compDef3 = z.compDef({
+        draw: vNode => z.comp(compType === 'div' ? compDef1 : compDef2, {
+          text: vNode.attrs.text
+        })
+      });
+      const node = z.comp(compDef3, {
+        text: 'test'
+      });
+      z.mount(app, node);
+      expect(node.children.length).toBe(1);
+      expect(node.children[0].tag).toEqual(compDef1);
+      compType = 'p';
+      node.redraw(true);
+      expect(node.children.length).toBe(1);
+      expect(node.children[0].tag).toEqual(compDef2);
+    });
+
 
   });
     });
@@ -1929,7 +1956,19 @@ describe('DOM', () => {
       expect(callback).toHaveBeenCalledTimes(1);
     });
 
-    test('onchange event is called on checkbox', () => {
+    test('onclick removed when missing', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const callback = jest.fn();
+      const el1 = z.elem('div', {
+        onclick: callback
+      });
+      const el2 = z.elem('div');
+      z.mount(app, el1);
+      z.mount(app, el2);
+      (el2.dom as HTMLElement).click();
+      expect(callback).toHaveBeenCalledTimes(0);
+    });
 
     test('onclick removed when null', () => {
       document.body.innerHTML = '<div id="app"></div>';
