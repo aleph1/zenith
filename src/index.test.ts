@@ -2281,6 +2281,27 @@ describe('DOM', () => {
       expect(destroyFn).toHaveBeenCalledTimes(1);
     });
     
+    test('Destroyed as expected when destruction is deferred', async () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const values = ['test1', 'test2'];
+      const deferredPromise = generateDeferredPromise();
+      const listItemDef = z.compDef({
+        draw: vNode => z.elem('li', z.text(vNode.attrs.value)),
+        remove: vNode => deferredPromise.promise,
+      });
+      const listDef = z.compDef({
+        draw: vNode => z.elem('ul', values.map(value => z.comp(listItemDef, {value})))
+      });
+      const node = z.comp(listDef);
+      z.mount(app, node);
+      expect(node.children[0].children.length).toEqual(2);
+      values.pop();
+      node.redraw();
+      jest.advanceTimersByTime(global.FRAME_TIME);
+      expect(node.children[0].children.length).toEqual(2);
+      await deferredPromise.resolve();
+      expect(node.children[0].children.length).toEqual(1);
     });
 
     test('Attribute of true is equivalent to attribute="attribute"', () => {
