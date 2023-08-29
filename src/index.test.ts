@@ -2864,6 +2864,14 @@ describe('DOM', () => {
       expect((node.dom as HTMLElement).style.backgroundColor).toEqual('red');
     });
 
+    test('Attribute of null is equivalent to no attribute', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('div', {id: null});
+      z.mount(app, el1);
+      expect(el1.dom.getAttribute('id')).toBeNull();
+    });
+
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
       const callback = jest.fn();
