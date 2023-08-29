@@ -483,7 +483,6 @@ describe('vNode', () => {
       expect(node.tag).toBe('test');
     });
 
-  describe('z.html()', () => {
 
     test('Handles text', () => {
       const vNode = z.html('test');
