@@ -6,6 +6,8 @@ Its virtual dom and diffing algorithm function on an entire page or on specific 
 
 Zenith is fast, flexible, fully tested, and doesn’t require a build step.
 
+**Additional examples and sample code can be found at <https://aleph-1.com/zenith>**
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
