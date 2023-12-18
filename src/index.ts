@@ -362,7 +362,7 @@ const setDOMAttribute = (vNode: VNodeElem, attr: string, value: boolean | number
       }
     }
   } else if (attr === 'value') {
-    if (vNode.tag === 'input' || vNode.tag === 'textarea') (vNode.dom as HTMLInputElement).value = value + '';
+    if (vNode.tag === 'input' || vNode.tag === 'option' || vNode.tag === 'textarea') (vNode.dom as HTMLInputElement).value = value + '';
   } else if (typeof value === 'boolean') {
     if (value === true) {
       vNode.dom.setAttribute(attr, attr);
