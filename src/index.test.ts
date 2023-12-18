@@ -3230,6 +3230,62 @@ describe('DOM', () => {
       expect((node1.dom as HTMLInputElement).value).toBe('test2');
     });
 
+    test('<option> value can be set as text', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const el1 = z.elem('option', {
+        value: 'test'
+      });
+      const el2 = z.elem('select',
+        el1
+      );
+      z.mount(app, el2);
+      expect(el1.dom instanceof HTMLOptionElement);
+      expect((el1.dom as HTMLOptionElement).value).toBe('test');
+    });
+
+    test('<option> value can be set as a number', () => {
+      const app = document.querySelector('#app');
+      const el1 = z.elem('option', {
+        value: 2
+      });
+      const el2 = z.elem('select',
+        el1
+      );
+      z.mount(app, el2);
+      expect(el1.dom instanceof HTMLOptionElement);
+      expect((el1.dom as HTMLOptionElement).value).toBe('2');
+    });
+
+    test('<option> value of null is an empty string', () => {
+      const app = document.querySelector('#app');
+      const el1 = z.elem('option', {
+        value: null
+      });
+      const el2 = z.elem('select',
+        el1
+      );
+      z.mount(app, el2);
+      expect(el1.dom instanceof HTMLOptionElement);
+      expect((el1.dom as HTMLInputElement).value).toBe('');
+      expect((el1.dom as HTMLInputElement).getAttribute('value')).toBe(null);
+    });
+
+    test('<option> value is updated when DOM value differs from vNode value', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const node1 = z.elem('option', {
+        value: 'test',
+      });
+      const node2 = z.elem('option', {
+        value: 'test2',
+      });
+      z.mount(app, node1);
+      (node1.dom as HTMLOptionElement).value += '1';
+      z.mount(app, node2);
+      expect((node1.dom as HTMLOptionElement).value).toBe('test2');
+    });
+
     test('textarea value can be set as text', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
