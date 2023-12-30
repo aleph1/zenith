@@ -68,7 +68,7 @@ const ELEMENT_NAMESPACES = Object.freeze({
 });
 
 // for finding namespace for createElement(NS) calls
-const ELEMENT_NAMESPACES_QUERY = Object.keys(ELEMENT_NAMESPACES).join(',');
+const ELEMENT_NAMESPACES_QUERY = 'math,svg';
 
 const ELEMENT_CLONERS = {};
 
