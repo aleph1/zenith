@@ -4,22 +4,21 @@ Zenith is a tiny yet powerful reactive JavaScript framework that is under 2.5kb 
 
 Its virtual dom and diffing algorithm function on an entire page or on specific nodes — especially useful in cases where you know that only a portion of the (v)dom tree will change. It allows for granular control over components that need to govern themselves and their own content, such as canvas, WebGL, or SVG. Additionally, it includes an opt-in object pool to minimize garbage collection.
 
-Zenith is fast, flexible, fully tested, and doesn’t require a build step.
+Zenith is fast, flexible, fully tested, and doesn’t require a build step. It wouldn’t exist without [Mithril.js](https://github.com/MithrilJS/mithril.js).
 
-<<<<<<< Updated upstream
-**Additional examples and sample code can be found at <https://aleph-1.com/zenith>**
-=======
+**The current release release is alpha, and depsite being used in production, it is still evolving.**
+
 ## Installation
 
 TBC
 
 ## Additional Information
 
-[Zenith site](https://aleph-1.com/zenith)
-[Zenith docs](https://aleph-1.com/zenith/docs)
+WIP: [Zenith site](https://aleph-1.com/zenith)
+
+Documentation coming soon.
 
 ## Simple Use Case
->>>>>>> Stashed changes
 
 ```html
 <!DOCTYPE html>
