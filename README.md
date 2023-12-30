@@ -29,7 +29,7 @@ Documentation coming soon.
   </head>
   <body>
     <main id="app"></main>
-    <script src="https://unpkg.com/zenith"></script>
+    <script src="js/zenith.min.js"></script>
     <script>
       let counter = 0;
       const CounterDef = z.compDef({
