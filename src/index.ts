@@ -387,7 +387,7 @@ const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void
   vNode.events = {};
   vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, vNode.attrs.ns || ns), vNode.attrs.is as string);
   if (vNode.attrs.tick) tickQueue.set(vNode, vNode.attrs.tick);
-  // ensure <input>s have a type before doing additional attribute manipulation
+  // ensure <input> has a type before doing additional attribute manipulation
   if (vNode.tag === 'input' && vNode.attrs.type != null) vNode.dom.setAttribute('type', vNode.attrs.type);
   // iterate attributes
   for(const attr in vNode.attrs) {
