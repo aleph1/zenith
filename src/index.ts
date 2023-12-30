@@ -262,14 +262,14 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
             if(oldChild.removing === true) {
               oldChild.parent = parentNode;
               newChildren[i] = oldChild;
-              reusedDoms.add(newChildren[i].dom);
+              newChildren[i] && reusedDoms.add(newChildren[i].dom);
             }
           } else if(oldChild == null || oldChild.dom == null || reusedDoms.has(oldChild.dom)) {
             createVNode(parentNode, newChildren[i], ns);
-            reusedDoms.add(newChildren[i].dom);
+            newChildren[i] && reusedDoms.add(newChildren[i].dom);
           } else if(oldChild.removing == null) {
             updateChild(parentNode, newChildren[i], oldChild, ns);
-            reusedDoms.add(newChildren[i].dom);
+            newChildren[i] && reusedDoms.add(newChildren[i].dom);
           }
         }
       }
