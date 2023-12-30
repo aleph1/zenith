@@ -99,7 +99,7 @@ export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
 
 export type VNodeDom = Element | Text | Array<ChildNode>;
 export type VNodeDrawable = VNodeComp; // in case we add additional drawable types
-export type VNodeContainer = VNodeElem | VNodeComp;
+export type VNodeContainer = VNodeComp | VNodeElem;
 export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
 export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray | boolean | undefined | string | number>;
 export type VNodeFlatArray = Array<VNodeAny>;
