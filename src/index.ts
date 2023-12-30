@@ -317,28 +317,27 @@ const insertElements = (parentDom: Element, elements:Array<ChildNode | Element |
 
 const createVNode = (parentNode: VNodeContainer, vNode: VNodeAny, ns: string): void => {
   //if(typeof vNode === 'number') vNode = keepVNodes.get(vNode);
-  if(vNode != null) {
-    vNode.parent = parentNode;
-    //let elements;
-    switch(vNode.type) {
-      case VNodeTypes.elem:
-        createElement(parentNode, vNode as VNodeElem, ns);
-        insertElements(parentNode.dom as Element, [vNode.dom]);
-        break;
-      case VNodeTypes.text:
-        vNode = vNode as VNodeText;
-        vNode.dom = document.createTextNode(vNode.tag);
-        insertElements(parentNode.dom as Element, [vNode.dom]);
-        break;
-      case VNodeTypes.comp:
-        createComponent(parentNode, vNode as VNodeComp, ns);
-        insertElements(parentNode.dom as Element, vNode.doms);
-        break;
-      case VNodeTypes.html:
-        createHTML(parentNode, vNode as VNodeHTML, ns);
-        insertElements(parentNode.dom as Element, vNode.doms);
-        break;
-    }
+  if(vNode == null) return;
+  vNode.parent = parentNode;
+  //let elements;
+  switch(vNode.type) {
+    case VNodeTypes.elem:
+      createElement(parentNode, vNode as VNodeElem, ns);
+      insertElements(parentNode.dom as Element, [vNode.dom]);
+      break;
+    case VNodeTypes.text:
+      vNode = vNode as VNodeText;
+      vNode.dom = document.createTextNode(vNode.tag);
+      insertElements(parentNode.dom as Element, [vNode.dom]);
+      break;
+    case VNodeTypes.comp:
+      createComponent(parentNode, vNode as VNodeComp, ns);
+      insertElements(parentNode.dom as Element, vNode.doms);
+      break;
+    case VNodeTypes.html:
+      createHTML(parentNode, vNode as VNodeHTML, ns);
+      insertElements(parentNode.dom as Element, vNode.doms);
+      break;
   }
 };
 
