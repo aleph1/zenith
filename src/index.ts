@@ -178,8 +178,8 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
     if(oldChildrenLength > 0) {
       let oldChild;
       const doms = [];
-      const isNewKeyed = newChildren[0] && newChildren[0].attrs && Object.prototype.hasOwnProperty.call(newChildren[0].attrs, 'key') && newChildren[0].attrs.key != null;
-      const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && Object.prototype.hasOwnProperty.call(oldChildren[0].attrs, 'key') && oldChildren[0].attrs.key != null;
+      const isNewKeyed = newChildren[0] && newChildren[0].attrs && 'key' in newChildren[0].attrs && newChildren[0].attrs.key != null;
+      const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && 'key' in oldChildren[0].attrs && oldChildren[0].attrs.key != null;
       // keyed diff
       // 1) get IDs for new children
       // 2) get IDs for old children
