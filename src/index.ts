@@ -76,7 +76,7 @@ const ELEMENT_CLONERS = {};
 const FROZEN_EMPTY_OBJECT = Object.freeze({});
 
 // used to queue component updates when drawMode is DRAW_MODE_RAF
-const componentUpdateQueue = new Map();
+const redrawableUpdateQueue = new Map();
 const tickQueue = new Map();
 
 //const keepVNodes: Map<number, VNodeAny> = new Map();
@@ -416,7 +416,7 @@ const updateElement = (parentNode: VNodeContainer, newVNode: VNodeElem, oldVNode
 
 const redrawComponent = (vNode: VNodeComp, immediate?: boolean): void => {
   if (immediate) updateComponent(vNode.parent, vNode);
-  else deferUpdateComponent(vNode.parent, vNode);
+  else deferUpdateRedrawable(vNode.parent, vNode);
 };
 
 const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
@@ -601,7 +601,7 @@ const elem: {
   return vNode;
 };
 
-const deferUpdateComponent = (parentNode: VNodeAny, vNode:VNodeAny) => componentUpdateQueue.set(vNode, [parentNode]);
+const deferUpdateRedrawable = (parentNode: VNodeAny, vNode: VNodeComp) => redrawableUpdateQueue.set(vNode, [parentNode]);
 
 //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
 const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
@@ -617,9 +617,9 @@ const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
 //   - destroy: called once upon destruction
 const comp = (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes): VNodeComp => {
   const vNode:VNodeComp = {
-    redraw: now => redrawComponent(vNode, now),
     type: VNodeTypes.comp,
     tag: componentDefinition,
+    redraw: now => redrawComponent(vNode, now),
     attrs: attrs ? Object.freeze(attrs) : FROZEN_EMPTY_OBJECT
   };
   return vNode;
@@ -657,10 +657,10 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
 
 const tick = (): void => {
   tickCount++;
-  for(const [vNode, value] of componentUpdateQueue) {
-    updateComponent(value[0], vNode, value[1]);
+  for(const [vNode, value] of redrawableUpdateQueue) {
+    if(vNode.type === VNodeTypes.comp) updateComponent(value[0], vNode, value[1]);
   }
-  componentUpdateQueue.clear();
+  redrawableUpdateQueue.clear();
   for(const [vNode, tick] of tickQueue) {
     tick(vNode, tickCount);
   }
