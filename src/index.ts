@@ -90,9 +90,7 @@ const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlat
     if (!child || typeof child === 'boolean') {
       normalizedChildren[index] = null;
     } else {
-      if ((child as VNodeComp).type === VNodeTypes.comp || (child as VNodeElem).type === VNodeTypes.elem ) {
-        if (isKeyed !== Object.prototype.hasOwnProperty.call((child as VNodeContainer).attrs, 'key')) throw new Error('children must be keyed or keyless');
-      }
+      if((child.type === VNodeTypes.elem || child.type === VNodeTypes.comp) && isKeyed !== 'key' in child.attrs) throw new Error('children must be keyed or keyless');
     }
   }
   return normalizedChildren;

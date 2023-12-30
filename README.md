@@ -6,7 +6,20 @@ Its virtual dom and diffing algorithm function on an entire page or on specific 
 
 Zenith is fast, flexible, fully tested, and doesn’t require a build step.
 
+<<<<<<< Updated upstream
 **Additional examples and sample code can be found at <https://aleph-1.com/zenith>**
+=======
+## Installation
+
+TBC
+
+## Additional Information
+
+[Zenith site](https://aleph-1.com/zenith)
+[Zenith docs](https://aleph-1.com/zenith/docs)
+
+## Simple Use Case
+>>>>>>> Stashed changes
 
 ```html
 <!DOCTYPE html>
@@ -17,24 +30,15 @@ Zenith is fast, flexible, fully tested, and doesn’t require a build step.
     <main id="app"></main>
     <script src="https://unpkg.com/zenith"></script>
     <script>
-      const counter = {
-        value: 0,
-        interval: null
-      };
+      let counter = 0;
       const CounterDef = z.compDef({
-        init: vNode => {
-          counter.interval = setInterval(() => {
-            counter.value++;
-            vNode.redraw();
-          }, 1000);
-        }
-        draw: vNode => z.elem('div', z.text('Counter: ' + counter.value)),
-        destroy: vNode => {
-          clearInterval(counter.interval);
-          counter.interval = null;
+        draw: vNode => z.elem('div', z.text(`Counter: {$counter}`)),
+        tick: vNode => {
+          counter++;
+          vNode.redraw();
         }
       });
-      z.draw(document.querySelector('#app'), z.comp(CounterDef));
+      z.mount(document.querySelector('#app'), z.comp(CounterDef));
     </script>
   </body>
 </html>
