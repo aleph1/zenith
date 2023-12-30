@@ -17,7 +17,7 @@ of contexts. Writing the tests this way allows for slightly shorter code.
 Refer to the documentation and examples for proper coding practices.
 */
 
-// jest’s handling of promises with setTimeout is not function,
+// jest’s handling of promises with setTimeout is not functional,
 // so we create a deferred prommise and simulate the setTimeout
 // using jest.advanceTimersByTime outside of the promise
 function generateDeferredPromise() {
