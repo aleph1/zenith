@@ -504,7 +504,6 @@ const destroyVNode = (vNode: VNodeAny): void => {
 
 const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean): void => {
   if(vNode == null) return;
-  let remove = true;
   switch(vNode.type) {
     case VNodeTypes.elem:
       if(vNode.attrs.tick) tickQueue.delete(vNode);
@@ -512,11 +511,10 @@ const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean)
     case VNodeTypes.comp:
       if(vNode.tag.tick) tickQueue.delete(vNode);
       if(vNode.removing === true) {
-        remove = false;
+        return;
       } else if(immediate !== true && typeof vNode.tag.remove === 'function') {
         const delayed = vNode.tag.remove(vNode);
         if(delayed != null && typeof delayed.then === 'function') {
-          remove = false;
           vNode.removing = true;
           const destroy = () => {
             vNode.removing = false;
@@ -524,6 +522,7 @@ const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean)
             destroyVNode(vNode as VNodeComp);
           };
           delayed.then(destroy, destroy);
+          return;
         }
         //if(typeof deferred === 'number' && isFinite(deferred)) {
         //  vNode.removing = true;
@@ -543,9 +542,7 @@ const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean)
       }
       break;
   }
-  if(remove) {
-    destroyVNode(vNode);
-  }
+  destroyVNode(vNode);
 };
 
 const drawDrawable = (vNode: VNodeDrawable, drawFn: (vNode: VNodeDrawable, oldChildren: VNodeFlatArray) => VNodeAnyOrArray, oldChildren?:VNodeFlatArray) => {
