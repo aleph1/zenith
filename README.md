@@ -10,7 +10,9 @@ Zenith is fast, flexible, fully tested, and doesn’t require a build step. It w
 
 ## Installation
 
-TBC
+For now, use the .js files in /dist/.
+
+Will be available on npm soon.
 
 ## Additional Information
 
