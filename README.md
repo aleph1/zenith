@@ -6,7 +6,7 @@ Its virtual dom and diffing algorithm function on an entire page or on specific 
 
 Zenith is fast, flexible, fully tested, and doesn’t require a build step. It wouldn’t exist without [Mithril.js](https://github.com/MithrilJS/mithril.js).
 
-**The current release release is alpha, and depsite being used in production, it is still evolving.**
+**The current release release is alpha. It is used in production, but is still rapidly evolving. Consider the API relatively safe.**
 
 ## Installation
 
