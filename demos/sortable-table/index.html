@@ -31,29 +31,39 @@
 		const appEl = document.querySelector('#app');
 		const firstNames = ['Aki', 'Adam', 'Amy', 'Ang', 'Brianna', 'Bruce', 'Cassandra', 'Charles', 'Colette', 'Dae', 'Deion', 'Elijah', 'Emma', 'Han', 'Hiromi', 'Jackie', 'Jamal', 'Jin', 'Kalisha', 'Keysha', 'Lamonte', 'Liang', 'Naoki', 'Osamu'];
 		const lastNames = ['Anderson', 'Barnes', 'Chan', 'Diaz', 'Ferguson', 'Hunt', 'James', 'Lee', 'McDonald', 'Olson', 'Ramirez', 'Singh', 'Smith', 'Wood'];
-		const actualPeople = [];
-		const displayPeople = [];
+		const people = [];
 		// we track this separately as when people are removed
 		// we want the counter to update immediately
-		let actualPeopleLength = 0;
+		let peopleLength = 0;
 		let personId = 0;
 		const addPerson = () => {
 			const person = {
-				id: personId++,
+				id: ++personId,
 				firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
 				lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
 				age: Math.floor(Math.random() * 60 + 18)
 			};
-			actualPeople.push(person);
-			displayPeople.push(person);
-			actualPeopleLength++;
+			people.push(person);
+			peopleLength++;
 		};
-		const removePerson = index => {
-			actualPeople[index] = null;
-			actualPeopleLength--;
+		const removePerson = id => {
+			for(let i = people.length - 1; i >= 0; i--) {
+				if(people[i] && people[i].id === id) {
+					people[i] = null;
+					peopleLength--;
+					break;
+				}
+			}
+		};
+		const deletePerson = id => {
+			for(let i = people.length - 1; i >= 0; i--) {
+				if(!people[i]) {
+					people.splice(i, 1);
+				}
+			}
 		};
 		const sortPeople = sortFn => {
-			actualPeople.sort(sortFn);
+			people.sort(sortFn);
 			remount();
 		};
 		for(let i = 0; i < 5; i++) {
@@ -77,11 +87,14 @@
 				}, typeof datum.value === 'function' ? datum.value() : z.text(datum.value)))
 			),
 			remove: vNode => {
-				vNode.children[0].dom.classList.add('removed');
-				return new Promise(resolve => setTimeout(resolve, 2000));
+				if(vNode.children) vNode.children[0].dom.classList.add('removed');
+				return new Promise(resolve => setTimeout(() => {
+					deletePerson(vNode.attrs.id);
+					resolve();
+					remount();
+				}, 2000));
 			},
 			destroy: vNode => {
-				//peroplperson.id
 			}
 		});
 
@@ -132,7 +145,7 @@
 							)
 						),
 						z.elem('tbody',
-							actualPeople.map((person, index) => person ? z.comp(SortableTableRow, {
+							people.map((person, index) => person ? z.comp(SortableTableRow, {
 								data: [
 									{
 										value: person.id,
@@ -151,7 +164,7 @@
 									{
 										value: () => z.elem('button', {
 											onclick: e => {
-												removePerson(index);
+												removePerson(person.id);
 												remount();
 											}
 										}, z.text('x')),
@@ -176,23 +189,23 @@
 				}, z.text('add')),
 				z.elem('button', {
 					onclick(e) {
-						shuffle(actualPeople);
+						shuffle(people);
 						remount();
 					}
 				}, z.text('shuffe')),
 				z.elem('button', {
 					onclick(e) {
-						actualPeople.push(actualPeople.shift());
+						people.push(people.shift());
 						remount();
 					}
 				}, z.text('move first to last')),
 				z.elem('button', {
 					onclick(e) {
-						actualPeople.unshift(actualPeople.pop());
+						people.unshift(people.pop());
 						remount();
 					}
 				}, z.text('move last to first')),
-				z.text('Length: ' + actualPeopleLength)
+				z.text('Length: ' + peopleLength)
 			),
 		};
 
