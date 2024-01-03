@@ -84,10 +84,11 @@ const tickQueue = new Map();
 const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlatArray => {
   const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
   const firstChild = normalizedChildren[0];
-  const isKeyed = !firstChild || typeof firstChild === 'boolean' || (firstChild.type !== VNodeTypes.elem && firstChild.type !== VNodeTypes.comp) || !('key' in firstChild.attrs) ? false : true;
+  const isKeyed = firstChild != null && typeof firstChild !== 'boolean' && (firstChild.type === VNodeTypes.elem || firstChild.type === VNodeTypes.comp) && 'key' in firstChild.attrs;
   for(const [index, child] of normalizedChildren.entries()) {
     // convert all falsy children to null
-    if (!child || typeof child === 'boolean') {
+    // if (!child || child as unknown as boolean === true) {
+    if (child == null || typeof child === 'boolean') {
       normalizedChildren[index] = null;
     } else {
       if((child.type === VNodeTypes.elem || child.type === VNodeTypes.comp) && isKeyed !== 'key' in child.attrs) throw new Error('children must be keyed or keyless');
