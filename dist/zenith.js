@@ -32,11 +32,11 @@ const z = (function () {
     const normalizeChildren = (vNode, children) => {
         const normalizedChildren = children.flat(Infinity);
         const firstChild = normalizedChildren[0];
-        const isKeyed = !firstChild || typeof firstChild === 'boolean' || (firstChild.type !== 2 /* elem */ && firstChild.type !== 4 /* comp */) || !('key' in firstChild.attrs) ? false : true;
+        const isKeyed = firstChild != null && typeof firstChild !== 'boolean' && (firstChild.type === 2 /* elem */ || firstChild.type === 4 /* comp */) && 'key' in firstChild.attrs;
         for (const [index, child] of normalizedChildren.entries()) {
             // convert all falsy children to null
             // if (!child || child as unknown as boolean === true) {
-            if (!child || typeof child === 'boolean') {
+            if (child == null || typeof child === 'boolean') {
                 normalizedChildren[index] = null;
             }
             else {
