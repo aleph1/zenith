@@ -2252,6 +2252,23 @@ describe('DOM', () => {
       expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
+    test('Nested z.comp() returning z.html updates as expected', () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const html1 = '<div>Test 1</div>';
+      const html2 = '<div>Test 2</div>';
+      let html = html1;
+      const compDef = z.compDef({
+        draw: vNode => z.html(html)
+      });
+      const node = z.comp(compDef);
+      z.mount(app, node);
+      expect((node.doms[0] as HTMLElement).outerHTML).toEqual(html1);
+      html = html2;
+      node.redraw(true);
+      expect((node.doms[0] as HTMLElement).outerHTML).toEqual(html2);
+    });
+
     test('z.elem() updated with less children', () => {
       document.body.innerHTML = '<div id="app"></div>';
       const app = document.querySelector('#app');
