@@ -2200,7 +2200,7 @@ describe('DOM', () => {
       expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
     });
 
-    test('z.comp() children namespaces namespaces change correctly', () => {
+    test('z.comp() children namespaces change correctly', () => {
       const app = document.querySelector('#app');
       let elTypes = ['div', 'svg', 'math'];
       const compDef = z.compDef({
