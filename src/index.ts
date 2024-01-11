@@ -81,7 +81,7 @@ const tickQueue = new Map();
 
 //const keepVNodes: Map<number, VNodeAny> = new Map();
 
-const normalizeChildren = (vNode:VNodeContainer, children:VNodeArray): VNodeFlatArray => {
+const normalizeChildren = (children:VNodeArray): VNodeFlatArray => {
   const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
   const firstChild = normalizedChildren[0];
   const isKeyed = firstChild != null && typeof firstChild !== 'boolean' && (firstChild.type === VNodeTypes.elem || firstChild.type === VNodeTypes.comp) && 'key' in firstChild.attrs;
@@ -112,11 +112,20 @@ const getElement = (name:string, ns?:string, is?:string): Element => {
   return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? {is} : null) : document.createElement(name, is ? {is} : null))).cloneNode();
 };
 
-const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: VNodeAny, ns: string): void => {
+//const getNextSibling = (vNodes: VNodeFlatArray, start: number, end: number, nextSibling?: Element): Element => {
+//  while(start < end) {
+//    if (vNodes[start] != null && vNodes[start].dom != null) return vNodes[start].dom as Element;
+//    start++;
+//  }
+//  return nextSibling;
+//}
+
+const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: VNodeAny, index: number, ns: string): void => {
+  parentVNode.children[index] = newVNode;
   if (oldVNode != null && oldVNode.dom != null) {
     const newVNodeType = newVNode.type;
     const oldVNodeType = oldVNode.type;
-    newVNode.parent = parentVNode;
+    //newVNode.parent = parentVNode;
     if (newVNodeType === oldVNodeType) {
       // *** should we reenable .diff check?
       //if ((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
@@ -175,7 +184,7 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
   // but we should make sure of this
   //const oldChildrenLength = oldChildren == null ? 0 : oldChildren.length;
   const oldChildrenLength = oldChildren.length;
-  if (newChildrenLength > 0) {
+  if(newChildrenLength > 0) {
     if(oldChildrenLength > 0) {
       let oldChild;
       const doms = [];
@@ -219,11 +228,11 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
         }
 
         // iterate through new children and diff with old children
-        //let index = 0;
+        let index = 0;
         for(const child of newChildren) {
           if(child != null) {
             //child.index = index;
-            updateChild(parentNode, child, oldChildrenByKey[child.attrs.key as string], ns);
+            updateChild(parentNode, child, oldChildrenByKey[child.attrs.key as string], index, ns);
             doms.push(child.dom);
             (child.dom as Element).remove();
             //if (Array.isArray(child.dom)) {
@@ -236,7 +245,7 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
             //  child.dom.remove();
             //}
           }
-          //index++;
+          index++;
         }
         insertElements(parentNode.dom as Element, doms);
 
@@ -271,7 +280,7 @@ const updateChildren = (parentNode: VNodeContainer, newChildren:VNodeFlatArray, 
             createVNode(parentNode, newChildren[i], ns);
             newChildren[i] && reusedDoms.add(newChildren[i].dom);
           } else if(oldChild.removing == null) {
-            updateChild(parentNode, newChildren[i], oldChild, ns);
+            updateChild(parentNode, newChildren[i], oldChild, i, ns);
             newChildren[i] && reusedDoms.add(newChildren[i].dom);
           }
         }
@@ -291,23 +300,6 @@ const createVNodes = (parentNode: VNodeContainer, children: VNodeFlatArray, star
   }
 };
 
-//const insertElements = (parentDom: Element, index: number, elements:Array<ChildNode | Element | Text>): void => {
-//  if (index < 0) {
-//    for(const element of elements) {
-//      if (element) {
-//        parentDom.appendChild(element);
-//      }
-//    }
-//  } else {
-//    for(const element of elements) {
-//      if (element) {
-//        parentDom.insertBefore(element, parentDom.childNodes[index]);
-//        index++;
-//      }
-//    }
-//  }
-//};
-
 const insertElements = (parentDom: Element, elements:Array<ChildNode | Element | Text>): void => {
   for(const element of elements) {
     if (element) {
@@ -324,7 +316,6 @@ const createVNode = (parentNode: VNodeContainer, vNode: VNodeAny, ns: string): v
   switch(vNode.type) {
     case VNodeTypes.elem:
       createElement(parentNode, vNode as VNodeElem, ns);
-      insertElements(parentNode.dom as Element, [vNode.dom]);
       break;
     case VNodeTypes.text:
       vNode = vNode as VNodeText;
@@ -333,20 +324,19 @@ const createVNode = (parentNode: VNodeContainer, vNode: VNodeAny, ns: string): v
       break;
     case VNodeTypes.comp:
       createComponent(parentNode, vNode as VNodeComp, ns);
-      insertElements(parentNode.dom as Element, vNode.doms);
       break;
     case VNodeTypes.html:
       createHTML(parentNode, vNode as VNodeHTML, ns);
-      insertElements(parentNode.dom as Element, vNode.doms);
       break;
   }
 };
 
 const createHTML = (parentNode: VNodeAny, vNode: VNodeHTML, ns: string): void => {
-  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns);
-  vNode.dom.innerHTML = vNode.tag;
-  vNode.doms = [...vNode.dom.childNodes];
-  //vNode.length = vNode.dom.length;
+  const tmpDom = getElement((parentNode.dom as Element).nodeName, ns);
+  tmpDom.innerHTML = vNode.tag;
+  vNode.doms = [...tmpDom.childNodes];
+  vNode.dom = vNode.doms[0] as Element;
+  insertElements(parentNode.dom as Element, vNode.doms);
 };
 
 const setDOMAttribute = (vNode: VNodeElem, attr: string, value: boolean | number | string | object | ((event?: Event) => void), oldValue: boolean | number | string | object | ((event?: Event) => void), ns: string): void => {
@@ -395,6 +385,7 @@ const createElement = (parentNode: VNodeAny, vNode: VNodeElem, ns: string): void
     setDOMAttribute(vNode, attr, vNode.attrs[attr], undefined, ns);
   }
   createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
+  insertElements(parentNode.dom as Element, [vNode.dom]);
 };
 
 const updateElement = (parentNode: VNodeContainer, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): void => {
@@ -417,10 +408,32 @@ const updateElement = (parentNode: VNodeContainer, newVNode: VNodeElem, oldVNode
   updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
 };
 
+const tempUpdateComponent = (parentNode: VNodeContainer, vNode: VNodeComp): void => {
+  const oldChildren = vNode.children;
+  updateComponent(parentNode, vNode);
+  let reinsert = vNode.doms.length > 0;
+  for(const dom of vNode.doms) {
+    if(dom.parentNode) {
+      reinsert = false;
+      break;
+    }
+  }
+  if(reinsert) {
+    vNode.doms = [...vNode.dom.childNodes];
+    vNode.dom = vNode.doms[0] as Element;
+    insertElements(parentNode.dom, vNode.doms);
+  }
+};
+
 const redrawComponent = (vNode: VNodeComp, immediate?: boolean): void => {
-  if (immediate) updateComponent(vNode.parent, vNode);
+  if (immediate) tempUpdateComponent(vNode.parent, vNode);
   else deferUpdateRedrawable(vNode.parent, vNode);
 };
+
+//const redrawFunction = (vNode: VNodeFunc, immediate?: boolean): void => {
+//  if (immediate) updateFunction(vNode.parent, vNode);
+//  else deferUpdateRedrawable(vNode.parent, vNode);
+//};
 
 const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): void => {
   if (vNode.tag.init) vNode.tag.init(vNode);
@@ -428,57 +441,19 @@ const createComponent = (parentNode: VNodeAny, vNode: VNodeComp, ns: string): vo
   vNode.children = drawDrawable(vNode, vNode.tag.draw);
   createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
   vNode.doms = [...vNode.dom.childNodes];
+  vNode.dom = vNode.doms[0] as Element;
+  insertElements(parentNode.dom as Element, vNode.doms);
   if (vNode.tag.tick) tickQueue.set(vNode, vNode.tag.tick);
   if (vNode.tag.drawn) vNode.tag.drawn(vNode);
-  // *** tunnel to element?
-  //if (vNode.children.length === 1 && vNode.children[0].type === VNODE_TYPE_ELEM ) {
-  //  vNode.dom = vNode.children[0].dom;
-  //}
 };
 
-//const getActualDom = (vNode: VNodeContainer):Element => {
-//  if((vNode as VNodeComp).doms) return getActualDom(vNode.parent);
-//  return vNode.dom;
-//};
-//
-//const getNodeDom = (vNode: VNodeAny, childDom:Array<ChildNode | Element | Text>): Array<ChildNode | Element | Text> => {
-//  if(vNode.children) {
-//    for(const child of vNode.children) {
-//      switch(child.type) {
-//        case VNodeTypes.elem:
-//        case VNodeTypes.text:
-//          childDom.push(child.dom);
-//          break;
-//        case VNodeTypes.comp:
-//          getNodeDom(child, childDom);
-//          break;
-//        case VNodeTypes.html:
-//          childDom.push.apply(childDom, child.dom);
-//          break;
-//      }
-//    }
-//  }
-//  return childDom;
-//};
-
 const updateComponent = (parentNode: VNodeContainer, vNode:VNodeComp, ns?: string): void => {
-  //if (!vNode.tag.drawOnce) {
-    //console.log(vNode.dom.namespaceURI);
-    //if(ns != null && ns != vNode.dom.namespaceURI) {
-    //  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns = ns || vNode.dom.namespaceURI);
-    //}
-    updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
-    // *** this might be slow
-    //if(vNode.dom.children.length) {
-    //  const actualDom = getActualDom(parentNode);
-    //  const nodeDom = getNodeDom(parentNode, []);
-    //  while(actualDom.lastChild) actualDom.lastChild.remove();
-    //  vNode.doms.length = 0;
-    //  vNode.doms.push.apply(vNode.doms, nodeDom);
-    //  insertElements(actualDom, nodeDom);
-    //}
-    if (vNode.tag.drawn) vNode.tag.drawn(vNode);
-  //}
+  //if (vNode.tag.drawOnce != null) return;
+  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns);
+  updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
+  //vNode.doms = [...vNode.dom.childNodes];
+  //vNode.dom = vNode.doms[0] as Element;
+  if(vNode.tag.drawn) vNode.tag.drawn(vNode);
 };
 
 const removeVNodes = (parentNode: VNodeAny, children:VNodeFlatArray, start: number, end: number, noBeforeDestroy?: boolean): void => {
@@ -548,7 +523,7 @@ const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean)
 
 const drawDrawable = (vNode: VNodeDrawable, drawFn: (vNode: VNodeDrawable, oldChildren: VNodeFlatArray) => VNodeAnyOrArray, oldChildren?:VNodeFlatArray) => {
   const children = drawFn(vNode, oldChildren);
-  return normalizeChildren(vNode, Array.isArray(children) ? children : [children]);
+  return normalizeChildren(Array.isArray(children) ? children : [children]);
 };
 
 // *** unused
@@ -592,13 +567,12 @@ const elem: {
     children.push(child != null && typeof child === 'object' ? child : null);
   }
   // *** consider implementing object pooling
-  const vNode:VNodeElem = {
+  return {
     type: VNodeTypes.elem,
     tag: selector,
-    attrs
-  };
-  vNode.children = normalizeChildren(vNode, children);
-  return vNode;
+    attrs,
+    children: normalizeChildren(children),
+  } as VNodeElem;
 };
 
 const deferUpdateRedrawable = (parentNode: VNodeAny, vNode: VNodeComp) => redrawableUpdateQueue.set(vNode, [parentNode]);
@@ -650,7 +624,7 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
     removeVNodes(mountedNode, mountedNode.children, 0, mountedNode.children.length);
     mountedNode.children.length = 0;
   } else {
-    updateChildren(mountedNode, normalizeChildren(mountedNode, Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
+    updateChildren(mountedNode, normalizeChildren(Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
   }
   return mountedNode;
 };
@@ -658,7 +632,7 @@ const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem 
 const tick = (): void => {
   tickCount++;
   for(const [vNode, value] of redrawableUpdateQueue) {
-    if(vNode.type === VNodeTypes.comp) updateComponent(value[0], vNode, value[1]);
+    if(vNode.type === VNodeTypes.comp) tempUpdateComponent(value[0], vNode);
   }
   redrawableUpdateQueue.clear();
   for(const [vNode, tick] of tickQueue) {
@@ -680,6 +654,7 @@ export default {
   text,
   comp,
   html,
+  //func,
   compDef,
   mount,
   //diff: {
