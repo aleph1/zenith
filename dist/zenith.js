@@ -1,4 +1,4 @@
-/*! Zenith v1.0.0-alpha.0 | MIT License | © 2022 Aleph1 Technologies Inc */
+/*! Zenith v1.0.0-alpha.4 | MIT License | © 2022 Aleph1 Technologies Inc */
 const z = (function () {
     'use strict';
 
@@ -29,7 +29,7 @@ const z = (function () {
     const redrawableUpdateQueue = new Map();
     const tickQueue = new Map();
     //const keepVNodes: Map<number, VNodeAny> = new Map();
-    const normalizeChildren = (vNode, children) => {
+    const normalizeChildren = (children) => {
         const normalizedChildren = children.flat(Infinity);
         const firstChild = normalizedChildren[0];
         const isKeyed = firstChild != null && typeof firstChild !== 'boolean' && (firstChild.type === 2 /* elem */ || firstChild.type === 4 /* comp */) && 'key' in firstChild.attrs;
@@ -58,11 +58,19 @@ const z = (function () {
         const fullName = name + ':' + (ns || '') + ':' + (is || '');
         return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? { is } : null) : document.createElement(name, is ? { is } : null))).cloneNode();
     };
-    const updateChild = (parentVNode, newVNode, oldVNode, ns) => {
+    //const getNextSibling = (vNodes: VNodeFlatArray, start: number, end: number, nextSibling?: Element): Element => {
+    //  while(start < end) {
+    //    if (vNodes[start] != null && vNodes[start].dom != null) return vNodes[start].dom as Element;
+    //    start++;
+    //  }
+    //  return nextSibling;
+    //}
+    const updateChild = (parentVNode, newVNode, oldVNode, index, ns) => {
+        parentVNode.children[index] = newVNode;
         if (oldVNode != null && oldVNode.dom != null) {
             const newVNodeType = newVNode.type;
             const oldVNodeType = oldVNode.type;
-            newVNode.parent = parentVNode;
+            //newVNode.parent = parentVNode;
             if (newVNodeType === oldVNodeType) {
                 // *** should we reenable .diff check?
                 //if ((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
@@ -170,11 +178,11 @@ const z = (function () {
                         }
                     }
                     // iterate through new children and diff with old children
-                    //let index = 0;
+                    let index = 0;
                     for (const child of newChildren) {
                         if (child != null) {
                             //child.index = index;
-                            updateChild(parentNode, child, oldChildrenByKey[child.attrs.key], ns);
+                            updateChild(parentNode, child, oldChildrenByKey[child.attrs.key], index, ns);
                             doms.push(child.dom);
                             child.dom.remove();
                             //if (Array.isArray(child.dom)) {
@@ -187,7 +195,7 @@ const z = (function () {
                             //  child.dom.remove();
                             //}
                         }
-                        //index++;
+                        index++;
                     }
                     insertElements(parentNode.dom, doms);
                     // non-keyed diff
@@ -224,7 +232,7 @@ const z = (function () {
                             newChildren[i] && reusedDoms.add(newChildren[i].dom);
                         }
                         else if (oldChild.removing == null) {
-                            updateChild(parentNode, newChildren[i], oldChild, ns);
+                            updateChild(parentNode, newChildren[i], oldChild, i, ns);
                             newChildren[i] && reusedDoms.add(newChildren[i].dom);
                         }
                     }
@@ -244,22 +252,6 @@ const z = (function () {
             createVNode(parentNode, children[start++], ns);
         }
     };
-    //const insertElements = (parentDom: Element, index: number, elements:Array<ChildNode | Element | Text>): void => {
-    //  if (index < 0) {
-    //    for(const element of elements) {
-    //      if (element) {
-    //        parentDom.appendChild(element);
-    //      }
-    //    }
-    //  } else {
-    //    for(const element of elements) {
-    //      if (element) {
-    //        parentDom.insertBefore(element, parentDom.childNodes[index]);
-    //        index++;
-    //      }
-    //    }
-    //  }
-    //};
     const insertElements = (parentDom, elements) => {
         for (const element of elements) {
             if (element) {
@@ -276,7 +268,6 @@ const z = (function () {
         switch (vNode.type) {
             case 2 /* elem */:
                 createElement(parentNode, vNode, ns);
-                insertElements(parentNode.dom, [vNode.dom]);
                 break;
             case 3 /* text */:
                 vNode = vNode;
@@ -285,19 +276,18 @@ const z = (function () {
                 break;
             case 4 /* comp */:
                 createComponent(parentNode, vNode, ns);
-                insertElements(parentNode.dom, vNode.doms);
                 break;
             case 5 /* html */:
                 createHTML(parentNode, vNode, ns);
-                insertElements(parentNode.dom, vNode.doms);
                 break;
         }
     };
     const createHTML = (parentNode, vNode, ns) => {
-        vNode.dom = getElement(parentNode.dom.nodeName, ns);
-        vNode.dom.innerHTML = vNode.tag;
-        vNode.doms = [...vNode.dom.childNodes];
-        //vNode.length = vNode.dom.length;
+        const tmpDom = getElement(parentNode.dom.nodeName, ns);
+        tmpDom.innerHTML = vNode.tag;
+        vNode.doms = [...tmpDom.childNodes];
+        vNode.dom = vNode.doms[0];
+        insertElements(parentNode.dom, vNode.doms);
     };
     const setDOMAttribute = (vNode, attr, value, oldValue, ns) => {
         if (value == null || attr === 'type' || attr === 'key' || attr === 'is' || attr === 'ns')
@@ -355,6 +345,7 @@ const z = (function () {
             setDOMAttribute(vNode, attr, vNode.attrs[attr]);
         }
         createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
+        insertElements(parentNode.dom, [vNode.dom]);
     };
     const updateElement = (parentNode, newVNode, oldVNode, ns) => {
         newVNode.events = oldVNode.events;
@@ -377,9 +368,25 @@ const z = (function () {
         }
         updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
     };
+    const tempUpdateComponent = (parentNode, vNode) => {
+        vNode.children;
+        updateComponent(parentNode, vNode);
+        let reinsert = vNode.doms.length > 0;
+        for (const dom of vNode.doms) {
+            if (dom.parentNode) {
+                reinsert = false;
+                break;
+            }
+        }
+        if (reinsert) {
+            vNode.doms = [...vNode.dom.childNodes];
+            vNode.dom = vNode.doms[0];
+            insertElements(parentNode.dom, vNode.doms);
+        }
+    };
     const redrawComponent = (vNode, immediate) => {
         if (immediate)
-            updateComponent(vNode.parent, vNode);
+            tempUpdateComponent(vNode.parent, vNode);
         else
             deferUpdateRedrawable(vNode.parent, vNode);
     };
@@ -394,58 +401,21 @@ const z = (function () {
         vNode.children = drawDrawable(vNode, vNode.tag.draw);
         createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
         vNode.doms = [...vNode.dom.childNodes];
+        vNode.dom = vNode.doms[0];
+        insertElements(parentNode.dom, vNode.doms);
         if (vNode.tag.tick)
             tickQueue.set(vNode, vNode.tag.tick);
         if (vNode.tag.drawn)
             vNode.tag.drawn(vNode);
-        // *** tunnel to element?
-        //if (vNode.children.length === 1 && vNode.children[0].type === VNODE_TYPE_ELEM ) {
-        //  vNode.dom = vNode.children[0].dom;
-        //}
     };
-    //const getActualDom = (vNode: VNodeContainer):Element => {
-    //  if((vNode as VNodeComp).doms) return getActualDom(vNode.parent);
-    //  return vNode.dom;
-    //};
-    //
-    //const getNodeDom = (vNode: VNodeAny, childDom:Array<ChildNode | Element | Text>): Array<ChildNode | Element | Text> => {
-    //  if(vNode.children) {
-    //    for(const child of vNode.children) {
-    //      switch(child.type) {
-    //        case VNodeTypes.elem:
-    //        case VNodeTypes.text:
-    //          childDom.push(child.dom);
-    //          break;
-    //        case VNodeTypes.comp:
-    //          getNodeDom(child, childDom);
-    //          break;
-    //        case VNodeTypes.html:
-    //          childDom.push.apply(childDom, child.dom);
-    //          break;
-    //      }
-    //    }
-    //  }
-    //  return childDom;
-    //};
     const updateComponent = (parentNode, vNode, ns) => {
-        //if (!vNode.tag.drawOnce) {
-        //console.log(vNode.dom.namespaceURI);
-        //if(ns != null && ns != vNode.dom.namespaceURI) {
-        //  vNode.dom = getElement((parentNode.dom as Element).nodeName, ns = ns || vNode.dom.namespaceURI);
-        //}
+        //if (vNode.tag.drawOnce != null) return;
+        vNode.dom = getElement(parentNode.dom.nodeName, ns);
         updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
-        // *** this might be slow
-        //if(vNode.dom.children.length) {
-        //  const actualDom = getActualDom(parentNode);
-        //  const nodeDom = getNodeDom(parentNode, []);
-        //  while(actualDom.lastChild) actualDom.lastChild.remove();
-        //  vNode.doms.length = 0;
-        //  vNode.doms.push.apply(vNode.doms, nodeDom);
-        //  insertElements(actualDom, nodeDom);
-        //}
+        //vNode.doms = [...vNode.dom.childNodes];
+        //vNode.dom = vNode.doms[0] as Element;
         if (vNode.tag.drawn)
             vNode.tag.drawn(vNode);
-        //}
     };
     const removeVNodes = (parentNode, children, start, end, noBeforeDestroy) => {
         while (start < end) {
@@ -521,7 +491,7 @@ const z = (function () {
     };
     const drawDrawable = (vNode, drawFn, oldChildren) => {
         const children = drawFn(vNode, oldChildren);
-        return normalizeChildren(vNode, Array.isArray(children) ? children : [children]);
+        return normalizeChildren(Array.isArray(children) ? children : [children]);
     };
     // *** unused
     //const emptyDom = (dom: Element): void => {
@@ -558,13 +528,12 @@ const z = (function () {
             children.push(child != null && typeof child === 'object' ? child : null);
         }
         // *** consider implementing object pooling
-        const vNode = {
+        return {
             type: 2 /* elem */,
             tag: selector,
-            attrs
+            attrs,
+            children: normalizeChildren(children),
         };
-        vNode.children = normalizeChildren(vNode, children);
-        return vNode;
     };
     const deferUpdateRedrawable = (parentNode, vNode) => redrawableUpdateQueue.set(vNode, [parentNode]);
     //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
@@ -614,7 +583,7 @@ const z = (function () {
             mountedNode.children.length = 0;
         }
         else {
-            updateChildren(mountedNode, normalizeChildren(mountedNode, Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
+            updateChildren(mountedNode, normalizeChildren(Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
         }
         return mountedNode;
     };
@@ -622,7 +591,7 @@ const z = (function () {
         tickCount++;
         for (const [vNode, value] of redrawableUpdateQueue) {
             if (vNode.type === 4 /* comp */)
-                updateComponent(value[0], vNode, value[1]);
+                tempUpdateComponent(value[0], vNode);
         }
         redrawableUpdateQueue.clear();
         for (const [vNode, tick] of tickQueue) {
