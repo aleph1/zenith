@@ -121,7 +121,6 @@ const getNextSibling = (vNodes: VNodeFlatArray, start: number, end: number, next
 }
 
 const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: VNodeAny, index: number, ns: string): void => {
-  const nextSibling = getNextSibling(parentVNode.children, index + 1, parentVNode.children.length);
   if (oldVNode != null && oldVNode.dom != null) {
     const newVNodeType = newVNode.type;
     const oldVNodeType = oldVNode.type;
@@ -132,11 +131,8 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
         switch(newVNodeType) {
           case VNodeTypes.elem:
             if(newVNode.tag !== oldVNode.tag) {
-              //const oldDomIndex = parentVNode.type === VNodeTypes.comp ? (parentVNode as VNodeComp).doms.indexOf(oldVNode.dom as Element) : -1;
-              createVNode(parentVNode, newVNode, ns, nextSibling);
-              insertElement(parentVNode.dom, newVNode.dom, nextSibling);
+              createVNode(parentVNode, newVNode, ns, (oldVNode as VNodeElem).dom);
               removeVNode(parentVNode, oldVNode);
-              //if(oldDomIndex !== -1) (parentVNode as VNodeComp).doms[oldDomIndex] = newVNode.dom as Element;
             } else {
               newVNode.dom = oldVNode.dom as Element;
               updateElement(parentVNode, newVNode, oldVNode as VNodeElem, ns);
@@ -145,7 +141,7 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
           case VNodeTypes.text:
             if (newVNode.tag !== oldVNode.tag) {
               newVNode.dom = document.createTextNode(newVNode.tag);
-              insertElement(parentVNode.dom, newVNode.dom, nextSibling);
+              insertElement(parentVNode.dom, newVNode.dom, oldVNode.dom as Element);
               oldVNode.dom.remove();
             } else {
               newVNode.dom = (oldVNode as VNodeText).dom;
@@ -153,7 +149,7 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
             break;
           case VNodeTypes.comp:
             if (newVNode.tag !== oldVNode.tag) {
-              createVNode(parentVNode, newVNode, ns, nextSibling);
+              createVNode(parentVNode, newVNode, ns, getNextSibling(parentVNode.children, index + 1, parentVNode.children.length));
               removeVNode(parentVNode, oldVNode);
             } else {
               newVNode.dom = oldVNode.dom as Element;
@@ -164,7 +160,7 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
             break;
           case VNodeTypes.html:
             if (newVNode.tag !== oldVNode.tag) {
-              createVNode(parentVNode, newVNode, ns, nextSibling);
+              createVNode(parentVNode, newVNode, ns, getNextSibling(parentVNode.children, index + 1, parentVNode.children.length));
               removeVNode(parentVNode, oldVNode);
             } else {
               newVNode.dom = (oldVNode as VNodeHTML).dom;
@@ -173,11 +169,11 @@ const updateChild = (parentVNode: VNodeContainer, newVNode: VNodeAny, oldVNode: 
         }
       //}
     } else {
-      createVNode(parentVNode, newVNode, ns, nextSibling);
+      createVNode(parentVNode, newVNode, ns, getNextSibling(parentVNode.children, index + 1, parentVNode.children.length));
       removeVNode(parentVNode, oldVNode);
     }
   } else {
-    createVNode(parentVNode, newVNode, ns, nextSibling);
+    createVNode(parentVNode, newVNode, ns, getNextSibling(parentVNode.children, index + 1, parentVNode.children.length));
   }
 };
 
@@ -437,6 +433,7 @@ const updateComponent = (parentNode: VNodeContainer, vNode:VNodeComp, ns?: strin
   updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
   //vNode.doms = [...vNode.dom.childNodes];
   //vNode.dom = vNode.doms[0] as Element;
+  //insertElements
   if(vNode.tag.drawn) vNode.tag.drawn(vNode);
 };
 
