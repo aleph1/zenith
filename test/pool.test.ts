@@ -1,12 +1,12 @@
 import {
   VNodeTypes,
-} from './vNode.defs';
+} from '../src/vNode.defs';
 
 import {
   grow,
   pools,
   poolSizes,
-} from './pool';
+} from '../src/pool';
 
 describe('pooling', () => {
 
