@@ -4,11 +4,14 @@ export const DEF_TYPE_COMP: DefTypeComp = 1;
 
 export const enum VNodeTypes {
   none,
-  compDef,
+  root,
   elem,
   text,
   comp,
+  node,
   html,
+  //func,
+  compDef,
 }
 
 export const enum DrawModes {
@@ -58,8 +61,17 @@ interface VNodeAbstract {
     [property: string]: string | number | ((event?: Event) => void);
   };
   parent?: VNodeContainer;
-  removing?: boolean;
+  removed?: boolean;
+  root?: VNodeRoot;
 }
+
+export type VNodeRoot = Omit<VNodeAbstract, 'type' | 'attrs'> & {
+  type: VNodeTypes.root;
+  tag: string;
+  attrs: VNodeElemAttributes;
+  dom: Element;
+  redraw?: boolean;
+};
 
 export type VNodeElem = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   type: VNodeTypes.elem;
@@ -69,9 +81,6 @@ export type VNodeElem = Omit<VNodeAbstract, 'type' | 'attrs'> & {
     [property: string]: any;
   };
   dom?: Element;
-  state?: {
-    [property: string]: any;
-  }
 };
 
 export type VNodeText = Omit<VNodeAbstract, 'type'> & {
@@ -86,8 +95,16 @@ export type VNodeComp = Omit<VNodeAbstract, 'type' | 'attrs'> & {
   attrs?: VNodeCompAttributes;
   dom?: Element;
   doms?: Array<ChildNode>;
-  redraw?: (now?: boolean) => void;
+  draw?: (now?: boolean) => void;
+  //redraw?: boolean;
+  //redrawn?: boolean;
   //keep?: number;
+};
+
+export type VNodeNode = Omit<VNodeAbstract, 'type'> & {
+  type: VNodeTypes.node;
+  tag: string;
+  dom?: Element;
 };
 
 export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
@@ -100,7 +117,7 @@ export type VNodeHTML = Omit<VNodeAbstract, 'type'> & {
 export type VNodeDom = Element | Text | Array<ChildNode>;
 export type VNodeDrawable = VNodeComp; // in case we add additional drawable types
 export type VNodeContainer = VNodeComp | VNodeElem;
-export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML;
-export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeArray | boolean | undefined | string | number>;
+export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeNode;
+export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeHTML | VNodeNode | VNodeArray | boolean | undefined | string | number>;
 export type VNodeFlatArray = Array<VNodeAny>;
 export type VNodeAnyOrArray = VNodeAny | VNodeArray;
