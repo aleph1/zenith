@@ -1,4 +1,4 @@
-/*! Zenith v1.0.0-alpha.4 | MIT License | © 2022 Aleph1 Technologies Inc */
+/*! Zenith v1.0.0-alpha.5 | MIT License | © 2022 Aleph1 Technologies Inc */
 const z = (function () {
     'use strict';
 
@@ -15,6 +15,8 @@ const z = (function () {
     let tickCount = 0;
     //let keepCount = 0;
     const mountedNodes = new Map();
+    const tickQueue = new Map();
+    //const propSetters = {};
     // for createElementNS calls
     const ELEMENT_NAMESPACES = Object.freeze({
         math: 'http://www.w3.org/1998/Math/MathML',
@@ -26,8 +28,7 @@ const z = (function () {
     // used on elements with no attrs to avoid creating new objects
     const FROZEN_EMPTY_OBJECT = Object.freeze({});
     // used to queue component updates when drawMode is DRAW_MODE_RAF
-    const redrawableUpdateQueue = new Map();
-    const tickQueue = new Map();
+    //const redrawableUpdateQueue = new Map();
     //const keepVNodes: Map<number, VNodeAny> = new Map();
     const normalizeChildren = (children) => {
         const normalizedChildren = children.flat(Infinity);
@@ -52,102 +53,145 @@ const z = (function () {
     const getNamespace = (vNode, ns) => {
         return vNode.attrs && vNode.attrs.xmlns || ELEMENT_NAMESPACES[vNode.tag] || ns;
     };
+    const getChildrenDoms = (children) => {
+        const doms = [];
+        for (const child of children) {
+            if (child == null)
+                continue;
+            else if (child.type === 4 /* comp */ || child.type === 6 /* html */)
+                doms.push(...child.doms);
+            else
+                doms.push(child.dom);
+        }
+        return doms;
+    };
     // cloning elements is faster than creating them in most browsers:
     // https://www.measurethat.net/Benchmarks/Show/25003/0/create-versus-clone-element
     const getElement = (name, ns, is) => {
         const fullName = name + ':' + (ns || '') + ':' + (is || '');
         return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? { is } : null) : document.createElement(name, is ? { is } : null))).cloneNode();
     };
-    //const getNextSibling = (vNodes: VNodeFlatArray, start: number, end: number, nextSibling?: Element): Element => {
-    //  while(start < end) {
-    //    if (vNodes[start] != null && vNodes[start].dom != null) return vNodes[start].dom as Element;
-    //    start++;
-    //  }
-    //  return nextSibling;
-    //}
-    const updateChild = (parentVNode, newVNode, oldVNode, index, ns) => {
-        parentVNode.children[index] = newVNode;
+    const getNextSibling = (vNodes, start, end) => {
+        while (start < end) {
+            if (vNodes[start] != null && vNodes[start].dom != null)
+                return vNodes[start].dom;
+            start++;
+        }
+    };
+    const insertElements = (parentDom, nextSibling, elements) => {
+        if (nextSibling != null && nextSibling.parentNode === parentDom) {
+            for (const element of elements) {
+                if (element)
+                    parentDom.insertBefore(element, nextSibling);
+            }
+        }
+        else {
+            for (const element of elements) {
+                if (element)
+                    parentDom.appendChild(element);
+            }
+        }
+    };
+    const insertElement = (parentDom, nextSibling, element) => {
+        if (nextSibling == null)
+            parentDom.appendChild(element);
+        else
+            parentDom.insertBefore(element, nextSibling);
+    };
+    const updateChild = (parentNode, parentDom, nextSibling, newVNode, oldVNode, index, ns) => {
         if (oldVNode != null && oldVNode.dom != null) {
+            newVNode.parent = oldVNode.parent;
+            newVNode.root = oldVNode.root;
             const newVNodeType = newVNode.type;
             const oldVNodeType = oldVNode.type;
-            //newVNode.parent = parentVNode;
+            //newVNode.parent = parentNode;
             if (newVNodeType === oldVNodeType) {
                 // *** should we reenable .diff check?
                 //if ((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
                 switch (newVNodeType) {
                     case 2 /* elem */:
                         if (newVNode.tag !== oldVNode.tag) {
-                            const oldDomIndex = parentVNode.type === 4 /* comp */ ? parentVNode.doms.indexOf(oldVNode.dom) : -1;
-                            createVNode(parentVNode, newVNode, ns);
-                            oldVNode.dom.replaceWith(newVNode.dom);
-                            removeVNode(parentVNode, oldVNode);
-                            if (oldDomIndex !== -1)
-                                parentVNode.doms[oldDomIndex] = newVNode.dom;
+                            // *** we don't pass the namespace in case the node type has changed from xhtml/svg/math
+                            // but should we consider extracting it from the vNode tag and passing it as ns?
+                            createVNode(parentNode, parentDom, oldVNode.dom, newVNode); //, ns);
+                            removeVNode(parentNode, oldVNode);
                         }
                         else {
-                            newVNode.dom = oldVNode.dom;
-                            updateElement(parentVNode, newVNode, oldVNode, ns);
+                            updateElement(parentNode, parentDom, nextSibling, newVNode, oldVNode, ns);
+                            // *** adding this fixes a test but breaks the demos
+                            //insertElement(parentDom, newVNode.dom, getNextSibling(parentNode.children, index + 1, parentNode.children.length));
                         }
                         break;
                     case 3 /* text */:
-                        newVNode.dom = oldVNode.dom;
                         if (newVNode.tag !== oldVNode.tag) {
-                            newVNode.dom.replaceWith(newVNode.dom = document.createTextNode(newVNode.tag));
+                            newVNode.dom = document.createTextNode(newVNode.tag);
+                            insertElement(parentDom, oldVNode.dom, newVNode.dom);
+                            oldVNode.dom.remove();
+                        }
+                        else {
+                            newVNode.dom = oldVNode.dom;
                         }
                         break;
                     case 4 /* comp */:
                         if (newVNode.tag !== oldVNode.tag) {
-                            removeVNode(parentVNode, oldVNode);
-                            createVNode(parentVNode, newVNode, ns);
+                            //, getNextSibling(parentNode.children, index + 1, parentNode.children.length)
+                            createVNode(parentNode, parentDom, nextSibling, newVNode, ns);
+                            removeVNode(parentNode, oldVNode);
                         }
                         else {
                             newVNode.dom = oldVNode.dom;
                             newVNode.doms = oldVNode.doms;
                             newVNode.children = oldVNode.children;
-                            updateComponent(parentVNode, newVNode, ns);
+                            updateComponent(parentNode, parentDom, nextSibling, newVNode, ns);
+                            //insertElements(parentDom, newVNode.doms, getNextSibling(parentNode.children, index + 1, parentNode.children.length))
                         }
                         break;
-                    case 5 /* html */:
+                    case 6 /* html */:
                         if (newVNode.tag !== oldVNode.tag) {
-                            removeVNode(parentVNode, oldVNode);
-                            createVNode(parentVNode, newVNode, ns);
+                            //getNextSibling(parentNode.children, index + 1, parentNode.children.length)
+                            createVNode(parentNode, parentDom, nextSibling, newVNode, ns);
+                            removeVNode(parentNode, oldVNode);
                         }
                         else {
                             newVNode.dom = oldVNode.dom;
                             newVNode.doms = oldVNode.doms;
                         }
+                        break;
+                    case 5 /* node */:
+                        if (newVNode.dom !== oldVNode.dom) {
+                            insertElement(parentDom, oldVNode.dom, newVNode.dom);
+                            oldVNode.dom.remove();
+                        }
                 }
                 //}
             }
             else {
-                removeVNode(parentVNode, oldVNode);
-                createVNode(parentVNode, newVNode, ns);
+                //getNextSibling(parentNode.children, index + 1, parentNode.children.length)
+                createVNode(parentNode, parentDom, nextSibling, newVNode, ns);
+                removeVNode(parentNode, oldVNode);
             }
         }
         else {
-            createVNode(parentVNode, newVNode, ns);
+            //getNextSibling(parentNode.children, index + 1, parentNode.children.length)
+            createVNode(parentNode, parentDom, nextSibling, newVNode, ns);
         }
     };
-    const updateChildren = (parentNode, newChildren, oldChildren, ns) => {
+    const updateChildren = (parentNode, parentDom, nextSibling, newChildren, oldChildren, ns) => {
         const newChildrenLength = newChildren.length;
-        // *** in theory updateChildren is always called with an oldChildren array,
-        // but we should make sure of this
-        //const oldChildrenLength = oldChildren == null ? 0 : oldChildren.length;
         const oldChildrenLength = oldChildren.length;
         if (newChildrenLength > 0) {
             if (oldChildrenLength > 0) {
                 let oldChild;
+                let newChild;
                 const doms = [];
-                //const isNewKeyed = newChildren[0] && newChildren[0].attrs && 'key' in newChildren[0].attrs && newChildren[0].attrs.key != null;
                 const isNewKeyed = newChildren[0] && newChildren[0].attrs && newChildren[0].attrs.key != null;
-                //const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && 'key' in oldChildren[0].attrs && oldChildren[0].attrs.key != null;
                 const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && oldChildren[0].attrs.key != null;
                 // keyed diff
                 // 1) get IDs for new children
                 // 2) get IDs for old children
                 // 3) get IDs for old children
                 // 4) iterate through new children IDs and ***
-                if (isNewKeyed && isOldKeyed) {
+                if (isNewKeyed === true && isOldKeyed === true) {
                     //const tempDom = getElement(parentDom.nodeName, ns);
                     const newChildrenByKey = {};
                     const oldChildrenByKey = {};
@@ -157,89 +201,94 @@ const z = (function () {
                     //let lisIndex = 0;
                     // get keys for all new children
                     //let now = performance.now();
-                    for (const child of newChildren) {
+                    for (newChild of newChildren) {
                         //newChildrenByKey[child.attrs.key] = child;
-                        newChildrenByKey[child.attrs.key] = true;
+                        newChildrenByKey[newChild.attrs.key] = true;
                     }
                     // get keys for all old children
-                    for (const child of oldChildren) {
-                        const key = child.attrs.key;
+                    for (oldChild of oldChildren) {
+                        const key = oldChild.attrs.key;
                         // when old key is still in use, keep the old node
                         if (newChildrenByKey[key]) {
-                            oldChildrenByKey[key] = child;
+                            oldChildrenByKey[key] = oldChild;
                             //oldKeyOrder.push(key);
                             // otherwise, nullify the node and delete its DOM
                         }
                         else {
                             // removeNode returns null
-                            removeVNode(parentNode, child);
+                            removeVNode(parentNode, oldChild);
                             //oldKeyOrder.push(-1);
                             delete oldChildrenByKey[key];
                         }
                     }
                     // iterate through new children and diff with old children
                     let index = 0;
-                    for (const child of newChildren) {
-                        if (child != null) {
-                            //child.index = index;
-                            updateChild(parentNode, child, oldChildrenByKey[child.attrs.key], index, ns);
-                            doms.push(child.dom);
-                            child.dom.remove();
-                            //if (Array.isArray(child.dom)) {
-                            //  for(const index in child.dom) {
-                            //    doms.push(child.dom[index]);
-                            //    child.dom[index].remove();
-                            //  }
-                            //} else {
-                            //  doms.push(child.dom);
-                            //  child.dom.remove();
-                            //}
+                    for (newChild of newChildren) {
+                        if (newChild != null) {
+                            //newChild.index = index;
+                            updateChild(parentNode, parentDom, nextSibling, newChild, oldChildrenByKey[newChild.attrs.key], index, ns);
+                            if (newChild.type === 4 /* comp */ || newChild.type === 6 /* html */)
+                                doms.push(...newChild.doms);
+                            else
+                                doms.push(newChild.dom);
                         }
                         index++;
                     }
-                    insertElements(parentNode.dom, doms);
+                    insertElements(parentDom, null, doms);
                     // non-keyed diff
-                    // 1) remove nodes that have an index greater than newChildrenLength
-                    // 2) loop through the oldChildren and store references to their DOM
-                    // 3) 
+                    // 1) iterate through oldChildren starting at index newChildrenLength
+                    //    - attempt to remove node
+                    //    - keep nodes that are being removed in the tree
+                    // 2) iterate through newChildren starting at 0 up to newChildrenLength
+                    //    - 
                 }
                 else {
+                    //console.log('non-keyed diff');
                     const reusedDoms = new Set();
-                    //if(oldChildrenLength > newChildrenLength) {
-                    // iterate through old nodes and keep any that have been destroyed, but deferred
+                    // 1iterate through old nodes and keep any that have been destroyed, but deferred
                     for (let i = newChildrenLength; i < oldChildrenLength; i++) {
                         oldChild = oldChildren[i];
-                        removeVNode(parentNode, oldChild);
                         // if old node is in the process of being removed, keep it in the tree
-                        if (oldChild.removing === true) {
+                        if (removeVNode(parentNode, oldChild) === false) {
+                            //console.log('node is being removed, keep it in tree');
+                            //console.log(oldChild.root);
                             oldChild.parent = parentNode;
+                            oldChild.root = parentNode.root;
                             newChildren[i] = oldChild;
                         }
                     }
-                    //}
                     for (let i = 0; i < newChildrenLength; i++) {
                         oldChild = oldChildren[i];
-                        if (newChildren[i] == null && oldChild != null) {
-                            removeVNode(parentNode, oldChild);
-                            if (oldChild.removing === true) {
-                                oldChild.parent = parentNode;
-                                newChildren[i] = oldChild;
-                                newChildren[i] && reusedDoms.add(newChildren[i].dom);
+                        newChild = newChildren[i];
+                        if (newChild == null) {
+                            if (oldChild != null) {
+                                if (removeVNode(parentNode, oldChild) === false) {
+                                    //console.log('node is being removed, keep it in tree');
+                                    //console.log(oldChild.root);
+                                    oldChild.parent = parentNode;
+                                    oldChild.root = parentNode.root;
+                                    newChildren[i] = newChild = oldChild;
+                                    newChild && reusedDoms.add(newChildren[i].dom);
+                                }
                             }
                         }
-                        else if (oldChild == null || oldChild.dom == null || reusedDoms.has(oldChild.dom)) {
-                            createVNode(parentNode, newChildren[i], ns);
-                            newChildren[i] && reusedDoms.add(newChildren[i].dom);
-                        }
-                        else if (oldChild.removing == null) {
-                            updateChild(parentNode, newChildren[i], oldChild, i, ns);
-                            newChildren[i] && reusedDoms.add(newChildren[i].dom);
+                        else {
+                            if (oldChild == null || oldChild.dom == null || reusedDoms.has(oldChild.dom)) {
+                                //console.log('node is being created');
+                                createVNode(parentNode, parentDom, nextSibling, newChild, ns);
+                                newChild && reusedDoms.add(newChild.dom);
+                            }
+                            else if (oldChild.removed == null) {
+                                //console.log('node is being updated');
+                                updateChild(parentNode, parentDom, nextSibling, newChild, oldChild, i, ns);
+                                newChild && reusedDoms.add(newChild.dom);
+                            }
                         }
                     }
                 }
             }
             else {
-                createVNodes(parentNode, newChildren, 0, newChildrenLength, ns);
+                createVNodes(parentNode, parentDom, nextSibling, newChildren, 0, newChildrenLength, ns);
             }
         }
         else {
@@ -247,75 +296,51 @@ const z = (function () {
         }
         parentNode.children = newChildren;
     };
-    const createVNodes = (parentNode, children, start, end, ns) => {
+    const createVNodes = (parentNode, parentDom, nextSibling, children, start, end, ns) => {
         while (start < end) {
-            createVNode(parentNode, children[start++], ns);
+            createVNode(parentNode, parentDom, nextSibling, children[start++], ns);
         }
     };
-    const insertElements = (parentDom, elements) => {
-        for (const element of elements) {
-            if (element) {
-                parentDom.appendChild(element);
-            }
-        }
-    };
-    const createVNode = (parentNode, vNode, ns) => {
+    const createVNode = (parentNode, parentDom, nextSibling, vNode, ns) => {
         //if(typeof vNode === 'number') vNode = keepVNodes.get(vNode);
         if (vNode == null)
             return;
+        //console.log(parentNode.root)
         vNode.parent = parentNode;
+        vNode.root = parentNode.root;
         //let elements;
         switch (vNode.type) {
             case 2 /* elem */:
-                createElement(parentNode, vNode, ns);
+                createElement(parentNode, parentDom, nextSibling, vNode, ns);
                 break;
             case 3 /* text */:
                 vNode = vNode;
                 vNode.dom = document.createTextNode(vNode.tag);
-                insertElements(parentNode.dom, [vNode.dom]);
+                insertElement(parentDom, nextSibling, vNode.dom);
                 break;
             case 4 /* comp */:
-                createComponent(parentNode, vNode, ns);
+                createComponent(parentNode, parentDom, nextSibling, vNode, ns);
                 break;
-            case 5 /* html */:
-                createHTML(parentNode, vNode, ns);
+            case 6 /* html */:
+                createHTML(parentNode, parentDom, nextSibling, vNode, ns);
                 break;
+            case 5 /* node */:
+                insertElement(parentDom, nextSibling, vNode.dom);
         }
-    };
-    const createHTML = (parentNode, vNode, ns) => {
-        const tmpDom = getElement(parentNode.dom.nodeName, ns);
-        tmpDom.innerHTML = vNode.tag;
-        vNode.doms = [...tmpDom.childNodes];
-        vNode.dom = vNode.doms[0];
-        insertElements(parentNode.dom, vNode.doms);
     };
     const setDOMAttribute = (vNode, attr, value, oldValue, ns) => {
         if (value == null || attr === 'type' || attr === 'key' || attr === 'is' || attr === 'ns')
             return;
-        if (attr === 'class') {
-            vNode.dom.setAttribute(attr, Array.isArray(value) ? value.join(' ') : value);
+        if (attr === 'value') {
+            // do we need this type check?
+            //if (vNode.tag === 'input' || vNode.tag === 'option' || vNode.tag === 'textarea') (vNode.dom as HTMLInputElement).value = value + '';
+            vNode.dom.value = value + '';
         }
-        else if (attr === 'style') {
-            if (typeof value === 'string') {
-                vNode.dom.setAttribute(attr, value);
-            }
-            else {
-                for (const style in value) {
-                    vNode.dom.style[style] = value[style];
-                }
-            }
+        else if (value === true) {
+            vNode.dom.setAttribute(attr, attr);
         }
-        else if (attr === 'value') {
-            if (vNode.tag === 'input' || vNode.tag === 'option' || vNode.tag === 'textarea')
-                vNode.dom.value = value + '';
-        }
-        else if (typeof value === 'boolean') {
-            if (value === true) {
-                vNode.dom.setAttribute(attr, attr);
-            }
-            else {
-                vNode.dom.removeAttribute(attr);
-            }
+        else if (value === false) {
+            vNode.dom.removeAttribute(attr);
             // Setting "on*" handlers using setAttribute does not work,
             // so we need a conditional to detect those attrs
             // Benchmarking the following shows that array access is faster
@@ -329,10 +354,19 @@ const z = (function () {
             vNode.events[attr] = vNode.dom[attr] = value;
         }
         else {
-            vNode.dom.setAttribute(attr, value);
+            if (Array.isArray(value))
+                vNode.dom.setAttribute(attr, value.join(' '));
+            else if (typeof value === 'object') {
+                for (const style in value) {
+                    vNode.dom[attr][style] = value[style];
+                }
+            }
+            else {
+                vNode.dom.setAttribute(attr, value); // add ''?
+            }
         }
     };
-    const createElement = (parentNode, vNode, ns) => {
+    const createElement = (parentNode, parentDom, nextSibling, vNode, ns) => {
         vNode.events = {};
         vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, vNode.attrs.ns || ns), vNode.attrs.is);
         if (vNode.attrs.tick)
@@ -340,14 +374,15 @@ const z = (function () {
         // ensure <input> has a type before doing additional attribute manipulation
         if (vNode.tag === 'input' && vNode.attrs.type != null)
             vNode.dom.setAttribute('type', vNode.attrs.type);
-        // iterate attributes
+        //setDOMAttributes(vNode);
         for (const attr in vNode.attrs) {
             setDOMAttribute(vNode, attr, vNode.attrs[attr]);
         }
-        createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
-        insertElements(parentNode.dom, [vNode.dom]);
+        createVNodes(vNode, vNode.dom, nextSibling, vNode.children, 0, vNode.children.length, ns);
+        insertElement(parentDom, nextSibling, vNode.dom);
     };
-    const updateElement = (parentNode, newVNode, oldVNode, ns) => {
+    const updateElement = (parentNode, parentDom, nextSibling, newVNode, oldVNode, ns) => {
+        newVNode.dom = oldVNode.dom;
         newVNode.events = oldVNode.events;
         //if (newVNode.attrs === oldVNode.attrs && newVNode.attrs !== FROZEN_EMPTY_OBJECT) throw new Error('must not reuse attrs object across calls to z.elem()');
         // input type must be set before other attributes
@@ -362,88 +397,72 @@ const z = (function () {
                 newVNode.dom.removeAttribute(attr);
             }
         }
+        //setDOMAttributes(newVNode);
         // set new attributes
         for (const attr in newVNode.attrs) {
             setDOMAttribute(newVNode, attr, newVNode.attrs[attr], oldVNode.attrs[attr]);
         }
-        updateChildren(newVNode, newVNode.children, oldVNode.children, ns);
+        updateChildren(newVNode, newVNode.dom, nextSibling, newVNode.children, oldVNode.children, ns);
     };
-    const tempUpdateComponent = (parentNode, vNode) => {
-        vNode.children;
-        updateComponent(parentNode, vNode);
-        let reinsert = vNode.doms.length > 0;
-        for (const dom of vNode.doms) {
-            if (dom.parentNode) {
-                reinsert = false;
-                break;
-            }
-        }
-        if (reinsert) {
-            vNode.doms = [...vNode.dom.childNodes];
-            vNode.dom = vNode.doms[0];
-            insertElements(parentNode.dom, vNode.doms);
-        }
-    };
-    const redrawComponent = (vNode, immediate) => {
-        if (immediate)
-            tempUpdateComponent(vNode.parent, vNode);
-        else
-            deferUpdateRedrawable(vNode.parent, vNode);
-    };
-    //const redrawFunction = (vNode: VNodeFunc, immediate?: boolean): void => {
-    //  if (immediate) updateFunction(vNode.parent, vNode);
-    //  else deferUpdateRedrawable(vNode.parent, vNode);
-    //};
-    const createComponent = (parentNode, vNode, ns) => {
+    const createComponent = (parentNode, parentDom, nextSibling, vNode, ns) => {
         if (vNode.tag.init)
             vNode.tag.init(vNode);
-        vNode.dom = getElement(parentNode.dom.nodeName, ns);
-        vNode.children = drawDrawable(vNode, vNode.tag.draw);
-        createVNodes(vNode, vNode.children, 0, vNode.children.length, ns);
-        vNode.doms = [...vNode.dom.childNodes];
+        const children = vNode.children = drawDrawable(vNode, vNode.tag.draw);
+        createVNodes(vNode, parentDom, nextSibling, children, 0, children.length, ns);
+        vNode.doms = getChildrenDoms(vNode.children);
         vNode.dom = vNode.doms[0];
-        insertElements(parentNode.dom, vNode.doms);
+        insertElements(parentDom, nextSibling, vNode.doms);
+        if (vNode.tag.drawn)
+            vNode.tag.drawn(vNode);
         if (vNode.tag.tick)
             tickQueue.set(vNode, vNode.tag.tick);
+    };
+    // *** ensure namespace is correct when updating
+    const updateComponent = (parentNode, parentDom, nextSibling, vNode, ns) => {
+        //console.log('updateComponent()');
+        //if (vNode.tag.drawOnce != null) return;
+        updateChildren(vNode, parentDom, nextSibling, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
+        vNode.doms = getChildrenDoms(vNode.children);
+        vNode.dom = vNode.doms[0];
         if (vNode.tag.drawn)
             vNode.tag.drawn(vNode);
     };
-    const updateComponent = (parentNode, vNode, ns) => {
-        //if (vNode.tag.drawOnce != null) return;
-        vNode.dom = getElement(parentNode.dom.nodeName, ns);
-        updateChildren(vNode, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
-        //vNode.doms = [...vNode.dom.childNodes];
-        //vNode.dom = vNode.doms[0] as Element;
-        if (vNode.tag.drawn)
-            vNode.tag.drawn(vNode);
+    const createHTML = (parentNode, parentDom, nextSibling, vNode, ns) => {
+        const tmpDom = getElement(parentDom.nodeName, ns);
+        tmpDom.innerHTML = vNode.tag;
+        vNode.doms = [...tmpDom.childNodes];
+        vNode.dom = vNode.doms[0];
+        insertElements(parentDom, nextSibling, vNode.doms);
+    };
+    const destroyVNode = (vNode) => {
+        //console.log('destroyVNode()');
+        if (vNode.type === 4 /* comp */) {
+            if (vNode.tag.destroy)
+                vNode.tag.destroy(vNode);
+            //vNode.removed = null;
+        }
+        if (vNode.children) {
+            removeVNodes(vNode, vNode.children, 0, vNode.children.length, true);
+            vNode.children.length = 0;
+        }
+        else if (vNode.dom)
+            vNode.dom.remove();
+        if (vNode.doms) {
+            for (const childDom of vNode.doms)
+                childDom.remove();
+        }
+        else if (vNode.dom)
+            vNode.dom.remove();
+        delete vNode.dom;
+        vNode.root = vNode.parent = null;
     };
     const removeVNodes = (parentNode, children, start, end, noBeforeDestroy) => {
         while (start < end) {
             removeVNode(parentNode, children[start++], noBeforeDestroy);
         }
     };
-    const destroyVNode = (vNode) => {
-        if (vNode.type === 4 /* comp */) {
-            if (vNode.tag.destroy)
-                vNode.tag.destroy(vNode);
-            vNode.removing = null;
-        }
-        if (vNode.children) {
-            removeVNodes(vNode, vNode.children, 0, vNode.children.length, true);
-            vNode.children.length = 0;
-        }
-        else if (vNode.dom && vNode.dom.remove)
-            vNode.dom.remove();
-        if (vNode.doms) {
-            for (const childDom of vNode.doms)
-                childDom.remove();
-        }
-        else if (vNode.dom && vNode.dom.remove)
-            vNode.dom.remove();
-        delete vNode.dom;
-        vNode.parent = null;
-    };
     const removeVNode = (parentNode, vNode, immediate) => {
+        //console.log('removeVNode()');
         if (vNode == null)
             return;
         switch (vNode.type) {
@@ -454,49 +473,55 @@ const z = (function () {
             case 4 /* comp */:
                 if (vNode.tag.tick)
                     tickQueue.delete(vNode);
-                if (vNode.removing === true) {
-                    return;
+                if (vNode.removed === true) {
+                    return false;
                 }
                 else if (immediate !== true && typeof vNode.tag.remove === 'function') {
                     const delayed = vNode.tag.remove(vNode);
-                    if (delayed != null && typeof delayed.then === 'function') {
-                        vNode.removing = true;
-                        const destroy = () => {
-                            vNode.removing = false;
-                            vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
-                            destroyVNode(vNode);
-                        };
-                        delayed.then(destroy, destroy);
-                        return;
+                    vNode.removed = true;
+                    if (delayed) {
+                        if (delayed instanceof Promise) {
+                            //console.log(vNodeRef);
+                            const destroy = () => {
+                                //console.log('destroy callback');
+                                //console.log(vNodeRef);
+                                if (vNode) {
+                                    if (vNode.root)
+                                        vNode.root.redraw = true;
+                                    if (vNode.parent)
+                                        vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
+                                }
+                                destroyVNode(vNode);
+                            };
+                            delayed.then(destroy, destroy);
+                            return false;
+                        }
+                        else
+                            throw new Error('comp.destroy must return falsy or Promise');
                     }
                     //if(typeof deferred === 'number' && isFinite(deferred)) {
-                    //  vNode.removing = true;
+                    //  vNode.remove = true;
                     //  setTimeout(() => {
-                    //    vNode.removing = false;
+                    //    vNode.removed = null;
                     //    vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
                     //    destroyVNode(vNode as VNodeComp);
                     //  }, deferred);
-                    //  remove = false;
                     //}
                 }
                 break;
-            case 5 /* html */:
-                // *** fix this as TypeScript insists el can be a String
+            case 6 /* html */:
                 for (const index in vNode.doms) {
                     vNode.doms[index].remove();
                 }
                 break;
         }
         destroyVNode(vNode);
+        return true;
     };
     const drawDrawable = (vNode, drawFn, oldChildren) => {
         const children = drawFn(vNode, oldChildren);
         return normalizeChildren(Array.isArray(children) ? children : [children]);
     };
-    // *** unused
-    //const emptyDom = (dom: Element): void => {
-    //  while(dom.lastChild) dom.lastChild.remove();
-    //};
     // ----------------------------------------
     // VNODES
     // ----------------------------------------
@@ -535,12 +560,12 @@ const z = (function () {
             children: normalizeChildren(children),
         };
     };
-    const deferUpdateRedrawable = (parentNode, vNode) => redrawableUpdateQueue.set(vNode, [parentNode]);
+    //const deferUpdateRedrawable = (parentNode: VNodeAny, vNode: VNodeComp) => redrawableUpdateQueue.set(vNode, [parentNode]);
     //function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
     const compDef = (inputDef) => {
         if (typeof inputDef.draw !== 'function')
             throw new Error('compDef requires draw function');
-        return Object.assign({}, inputDef, { type: 1 /* compDef */ });
+        return Object.assign({}, inputDef, { type: 7 /* compDef */ });
     };
     // A component should include:
     // - optional state (ideally reactive)
@@ -552,16 +577,31 @@ const z = (function () {
         const vNode = {
             type: 4 /* comp */,
             tag: componentDefinition,
-            redraw: now => redrawComponent(vNode, now),
             attrs: attrs ? Object.freeze(attrs) : FROZEN_EMPTY_OBJECT
+        };
+        vNode.draw = immediate => {
+            if (immediate)
+                updateComponent(vNode.parent, vNode.parent.dom, getNextSibling(vNode.parent.children, vNode.parent.children.indexOf(vNode) + 1, vNode.parent.children.length), vNode);
+            else {
+                // *** add vNode.redraw = true to optimize redraws?
+                vNode.root.redraw = true;
+            }
         };
         return vNode;
     };
     const html = (value) => {
         const type = typeof value;
         return {
-            type: 5 /* html */,
+            type: 6 /* html */,
             tag: type === 'string' || type === 'number' || type === 'bigint' ? value + '' : '',
+        };
+    };
+    const node = (dom) => {
+        return {
+            type: 5 /* node */,
+            tag: dom.nodeName.toLowerCase(),
+            attrs: FROZEN_EMPTY_OBJECT,
+            dom: dom,
         };
     };
     const mount = (dom, vNodeAnyOrArray) => {
@@ -575,30 +615,37 @@ const z = (function () {
             ancestor = ancestor.parentNode;
         }
         // we wrap the node to be able to get its previous vNode children
-        const mountedNode = mountedNodes.get(dom) || mountedNodes.set(dom, Object.assign(elem(dom.nodeName.toLowerCase()), {
-            dom: dom
-        })).get(dom);
+        const mountedNode = mountedNodes.get(dom) || mountedNodes.set(dom, {
+            type: 1 /* root */,
+            tag: dom.nodeName.toLowerCase(),
+            attrs: FROZEN_EMPTY_OBJECT,
+            dom: dom,
+            children: [],
+        }).get(dom);
         if (vNodeAnyOrArray == null || vNodeAnyOrArray.length === 0) {
             removeVNodes(mountedNode, mountedNode.children, 0, mountedNode.children.length);
             mountedNode.children.length = 0;
+            mountedNodes.delete(dom);
         }
         else {
-            updateChildren(mountedNode, normalizeChildren(Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
+            mountedNode.root = mountedNode;
+            updateChildren(mountedNode, dom, null, normalizeChildren(Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, getClosestElementNamespace(dom));
         }
+        //console.log(mountedNode);
         return mountedNode;
     };
     const tick = () => {
         tickCount++;
-        for (const [vNode, value] of redrawableUpdateQueue) {
-            if (vNode.type === 4 /* comp */)
-                tempUpdateComponent(value[0], vNode);
-        }
-        redrawableUpdateQueue.clear();
         for (const [vNode, tick] of tickQueue) {
             tick(vNode, tickCount);
         }
-        // *** refactor if we end up caching other vNode types
-        //if (pools[VNodeTypes.elem].length > poolSizes[VNodeTypes.elem]) pools[VNodeTypes.elem].length = poolSizes[VNodeTypes.elem];
+        for (const [dom, vNode] of mountedNodes) {
+            if (vNode.redraw === true) {
+                // set this first in case a descendant node wants to force the tree to redraw on next tick
+                vNode.redraw = false;
+                updateChildren(vNode, dom, null, vNode.children, vNode.children, getClosestElementNamespace(dom));
+            }
+        }
         requestAnimationFrame(tick);
     };
     tick();
@@ -609,6 +656,7 @@ const z = (function () {
         elem,
         text,
         comp,
+        node,
         html,
         //func,
         compDef,
@@ -621,11 +669,12 @@ const z = (function () {
         //grow,
         type: Object.freeze({
             none: 0 /* none */,
-            compDef: 1 /* compDef */,
-            elem: 2 /* elem */,
-            text: 3 /* text */,
+            compDef: 7 /* compDef */,
             comp: 4 /* comp */,
-            html: 5 /* html */,
+            elem: 2 /* elem */,
+            html: 6 /* html */,
+            node: 5 /* node */,
+            text: 3 /* text */,
         }),
         ns: ELEMENT_NAMESPACES
     };
