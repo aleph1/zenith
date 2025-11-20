@@ -52,6 +52,10 @@ export interface VNodeCompDefinition {
   type?: VNodeTypes.compDef;
 }
 
+export interface VNodeNodeAttributes {
+  tick?: (vNode: VNodeNode, tickCount: number) => void;
+}
+
 interface VNodeAbstract {
   type: VNodeTypes.none;
   children?: VNodeFlatArray;
