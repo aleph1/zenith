@@ -1,6 +1,6 @@
 {
   "name": "zenith",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.7",
   "description": "Another front-end framework.",
   "main": "index.js",
   "scripts": {
@@ -20,6 +20,7 @@
   "homepage": "https://github.com/aleph1/Zenith#readme",
   "devDependencies": {
     "@rollup/plugin-replace": "^4.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^8.3.2",
     "@types/jest": "^29.0.0",
     "@typescript-eslint/eslint-plugin": "^5.59.2",
