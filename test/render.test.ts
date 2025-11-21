@@ -20,6 +20,7 @@ function generateDeferredPromise() {
 
 // TESTS TO ADD
 // - z.elem with children has children reapplied in different order
+// - z.comp where order of elems changes by mistake
 // - z.comp where draw returns elem that requires different parent (<tr>, <tbody>)
 
 describe('render', () => {
@@ -1112,10 +1113,10 @@ describe('render', () => {
       expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/1999/xhtml');
       elType = 'svg';
       node.draw(true);
-      //expect(node.children.length).toBe(1);
-      //expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
-      //expect(node.children[0].children[0].children.length).toBe(1);
-      //expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      expect(node.children.length).toBe(1);
+      expect((node.doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
+      expect(node.children[0].children[0].children.length).toBe(1);
+      expect(((node.children[0].children[0] as VNodeComp).doms[0] as Element).namespaceURI).toEqual('http://www.w3.org/2000/svg');
     });
 
     test('Nested z.comp() returning z.html updates as expected', () => {
@@ -1345,6 +1346,46 @@ describe('render', () => {
       //expect(node.children[0].children[0].dom).toEqual(elem1);
       //expect(node.children[0].children[2].dom).toEqual(elem3);
     });
+
+    // *** finish implementing
+    test('z.node is changed on redraw', async () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const app = document.querySelector('#app');
+      const dom1 = document.createElement('div');
+      const dom2 = document.createElement('div');
+      let currentDom = dom1;
+      const compDef = z.compDef({
+        draw: vNode => z.node(currentDom),
+      });
+      const comp = z.comp(compDef);
+      z.mount(app, comp);
+      expect(comp.dom).toBe(currentDom);
+      currentDom = dom2;
+      comp.draw(true);
+      expect(comp.dom).toBe(currentDom);
+    });
+
+    //// This test is not needed as getNextSibling has been removed
+    //test('getNextSibling works as expected', async () => {
+    //  document.body.innerHTML = '<div id="app"></div>';
+    //  const app = document.querySelector('#app');
+    //  const compDef = z.compDef({
+    //    draw: vNode => z.elem('div'),
+    //  });
+    //  const comp1 = z.comp(compDef);
+    //  const comp2 = z.comp(compDef);
+    //  const node = z.elem('div',
+    //    comp1,
+    //    null,
+    //    comp2,
+    //  );
+    //  z.mount(app, node);
+    //  expect(node.children.length).toEqual(3);
+    //  comp1.draw(true);
+    //  expect((node.children[0] as VNodeComp).doms.length).toEqual(1);
+    //  expect(node.children[1]).toEqual(null);
+    //  expect((node.children[2] as VNodeComp).doms.length).toEqual(1);
+    //});
     
   });
 

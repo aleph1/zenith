@@ -67,6 +67,23 @@ describe('Lifecycle', () => {
     expect(removeFn).toHaveBeenCalledTimes(1);
   });
 
+  test('z.comp() with remove throws when returns non-promise', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const removeFn = jest.fn(() => true);
+    const compDef = z.compDef({
+      draw: () => z.elem('div'),
+      // ignore remove type and ensure throws at runtime
+      // @ts-ignore
+      remove: removeFn,
+    });
+    const vNode = z.comp(compDef);
+    z.mount(app, vNode);
+    expect(() => {
+      z.mount(app, null);
+    }).toThrow(Error);
+  });
+
   test('z.comp() with destroy is called as expected', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');

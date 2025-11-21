@@ -59,4 +59,32 @@ describe('Tick', () => {
     expect(tick).not.toBeCalled();
   });
 
+  test('z.node() ticks as expected', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const tick = jest.fn();
+    const div = document.createElement('div');
+    const el1 = z.node(div, {
+      tick
+    });
+    z.mount(app, el1);
+    expect(tick).not.toBeCalled();
+    jest.advanceTimersByTime(global.FRAME_TIME);
+    expect(tick).toHaveBeenCalledTimes(1);
+  });
+
+  test('z.node() stops ticking when destroyed', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const tick = jest.fn();
+    const div = document.createElement('div');
+    const el1 = z.node(div, {
+      tick
+    });
+    z.mount(app, el1);
+    z.mount(app, null);
+    jest.advanceTimersByTime(global.FRAME_TIME);
+    expect(tick).not.toBeCalled();
+  });
+
 });
