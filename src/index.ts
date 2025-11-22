@@ -309,7 +309,7 @@ const updateChildren = (parentNode: VNodeContainer, parentDom: Element, newChild
           
           for(const dom of (newChild as VNodeComp | VNodeHTML).doms || [newChild.dom]) {
             // Skip if dom is not in this parent (e.g., manually moved z.node)
-            if(dom.parentElement !== parentDom) continue;
+            if(!dom || dom.parentElement !== parentDom) continue;
             
             // Only move if this dom is not already positioned correctly after expectedPrev
             const isInCorrectPosition = expectedPrev 

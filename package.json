@@ -1,6 +1,6 @@
 {
   "name": "zenith",
-  "version": "1.0.0-alpha.7",
+  "version": "1.0.0-alpha.8",
   "description": "Another front-end framework.",
   "main": "index.js",
   "scripts": {
