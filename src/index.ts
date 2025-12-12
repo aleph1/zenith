@@ -1,34 +1,53 @@
 // ----------------------------------------
-// WORKFLOW
+// Component lifecycle hooks
 // ----------------------------------------
-// Creating vnodes:
-// 
-// Component lifecycle:
-// - init (called once on vnode creation)
-// - draw
-// - drawn
-// - tick
-// - remove
-// - destroy
+// init(vNode): 
+//   Called once during component creation, before first draw
+//   Use for initialization, setting up state
+//
+// draw(vNode, oldChildren): 
+//   Called to render component content, must return vnodes
+//   Called on mount and every update
+//
+// drawn(vNode, isFirstDraw): 
+//   Called after component is rendered to DOM
+//   isFirstDraw is true only on initial mount
+//   Use for DOM manipulation, entry animations
+//
+// remove(vNode): 
+//   Called when component is being removeda
+//   Return Promise to defer destruction (for exit animations)
+//   Return nothing for immediate removal
+//
+// removed(vNode): 
+//   Called when component is fully removed from DOM
+//   Use for cleanup (timers, listeners, etc.)
 
 // ----------------------------------------
-// GLOBALS
+// Notes
+// ----------------------------------------
+// We use insertBefore(child, null)???
+
+// ----------------------------------------
+// Globals
 // ----------------------------------------
 
 declare global {
-  // used to specify debug or production build
-  // eslint-disable-next-line
-  var DEBUG: boolean;
+  interface Window {
+    DEBUG?: boolean;
+  }
 }
-const DEBUG = window.DEBUG;
 
 // ----------------------------------------
-// TYPE DEFINITIONS
+// Type definitions
 // ----------------------------------------
 
 import {
-  //DrawModes,
-  VNodeTypes,
+  VNODE_ROOT,
+  VNODE_ELEM,
+  VNODE_TEXT,
+  VNODE_COMP,
+  VNODE_NODE,
   VNodeElem,
   VNodeText,
   VNodeComp,
@@ -37,661 +56,650 @@ import {
   VNodeAny,
   VNodeAnyOrArray,
   VNodeArray,
-  VNodeDom,
-  VNodeDrawable,
   VNodeFlatArray,
   VNodeElemAttributes,
   VNodeCompAttributes,
   VNodeCompDefinition,
   VNodeNodeAttributes,
   VNodeContainer,
-  VNodeRoot,
 } from './vnode.defs';
 
-//import {
-//  grow,
-//  pools,
-//  poolSizes
-//} from './pool';
-
 // ----------------------------------------
-// CONSTANTS
+// For Queue
 // ----------------------------------------
 
-//let drawMode = DrawModes.raf;
-let tickCount = 0;
-//let keepCount = 0;
+let scheduled;
 
+// ----------------------------------------
+// Bitwise flags
+// ----------------------------------------
+
+const FLAG_STALE = 1; // component needs redraw
+const FLAG_REMOVED = 2; // component being removed
+const FLAG_REMOVE_CALLED = 4; // component.remove() called
+
+// ----------------------------------------
+// Internal state
+// ----------------------------------------
+
+const DEBUG = window.DEBUG ?? false;
 const mountedNodes = new Map();
-const tickQueue = new Map();
-//const propSetters = {};
+const redrawQueue = new Set();
 
-// for createElementNS calls
-const ELEMENT_NAMESPACES = Object.freeze({
+// ----------------------------------------
+// Namespaces
+// ----------------------------------------
+
+const ns = {
   math: 'http://www.w3.org/1998/Math/MathML',
   svg: 'http://www.w3.org/2000/svg'
-});
-
-const ELEMENT_CLONERS = {};
-
-// used on elements with no attrs to avoid creating new objects
-const FROZEN_EMPTY_OBJECT = Object.freeze({});
-
-// used to queue component updates when drawMode is DRAW_MODE_RAF
-//const redrawableUpdateQueue = new Map();
-
-//const keepVNodes: Map<number, VNodeAny> = new Map();
-
-const normalizeChildren = (children:VNodeArray): VNodeFlatArray => {
-  const normalizedChildren:VNodeFlatArray = children.flat(Infinity) as VNodeFlatArray;
-  const firstChild = normalizedChildren[0];
-  const isKeyed = firstChild != null && typeof firstChild !== 'boolean' && (firstChild.type === VNodeTypes.elem || firstChild.type === VNodeTypes.comp) && 'key' in firstChild.attrs;
-  for(const [index, child] of normalizedChildren.entries()) {
-    // convert all falsy children to null
-    // if (!child || child as unknown as boolean === true) {
-    if (child == null || typeof child === 'boolean') {
-      normalizedChildren[index] = null;
-    } else {
-      if((child.type === VNodeTypes.elem || child.type === VNodeTypes.comp) && isKeyed !== 'key' in child.attrs) throw new Error('children mixed keys');
-    }
-  }
-  return normalizedChildren;
 };
 
-//const getClosestElementNamespace = (dom:Element): string | undefined => {
-//  return dom.closest(ELEMENT_NAMESPACES[(dom.closest(ELEMENT_NAMESPACES_QUERY) || dom).nodeName.toLowerCase()]);
-//};
+// Used on nodes with no attrs to avoid
+// creating new objects, minizes memory use
+const EMPTY_OBJECT = DEBUG ? Object.freeze({}) : {};
+const slice = Array.prototype.slice;
 
-const getNamespace = (vNode:VNodeElem, ns:string | undefined): string | undefined => {
-  return vNode.attrs && vNode.attrs.xmlns || ELEMENT_NAMESPACES[vNode.tag] || ns;
-};
-
-const getChildrenDoms = (children: VNodeFlatArray): Array<ChildNode> => {
-  const doms = [];
-  for(const child of children) {
-    if(child == null) continue;
-    if(child.type === VNodeTypes.comp || child.type === VNodeTypes.html) {
-      for(const dom of child.doms) doms.push(dom)
-    } else doms.push(child.dom);
-  }
-  return doms;
-};
-
-// cloning elements is faster than creating them in most browsers:
-// https://www.measurethat.net/Benchmarks/Show/25003/0/create-versus-clone-element
-const getElement = (name:string, ns?:string, is?:string): Element => {
-  const fullName = name + ':' + (ns || '') + ':' + (is || '');
-  return (ELEMENT_CLONERS[fullName] || (ELEMENT_CLONERS[fullName] = ns ? document.createElementNS(ns, name, is ? {is} : null) : document.createElement(name, is ? {is} : null))).cloneNode();
-};
-
-//const getNextSibling = (vNodes: VNodeFlatArray, start: number, end: number): Element | null => {
-//  while(start < end) {
-//    if (vNodes[start] != null && vNodes[start].dom != null) return vNodes[start].dom as Element;
-//    start++;
-//  }
-//};
-
-const insertElements = (parentDom: Element, elements:Array<ChildNode | Element | Text>): void => {
-  for(const element of elements) {
-    if (element) parentDom.appendChild(element);
-  }
-};
-
-const insertElement = (parentDom: Element, element: ChildNode | Element | Text): void => {
-  parentDom.appendChild(element);
-};
-
-const updateChild = (parentNode: VNodeContainer, parentDom: Element, newVNode: VNodeAny, oldVNode: VNodeAny, ns: string): void => {
-  if (oldVNode != null && oldVNode.dom != null) {
-    newVNode.parent = oldVNode.parent;
-    newVNode.root = oldVNode.root;
-    const newVNodeType = newVNode.type;
-    const oldVNodeType = oldVNode.type;
-    if (newVNodeType === oldVNodeType) {
-      // *** should we reenable .diff check?
-      //if ((newVNode.attrs || FROZEN_EMPTY_OBJECT).diff !== false) {
-        switch(newVNodeType) {
-          case VNodeTypes.elem:
-            if(newVNode.tag !== oldVNode.tag) {
-              // we don't pass the namespace in case the node type
-              // node type has changed (xhtml, svg, math, etc.)
-              createVNode(parentNode, parentDom, newVNode);//, ns);
-              removeVNode(parentNode, oldVNode);
-            } else {
-              updateElement(parentNode, parentDom, newVNode, oldVNode as VNodeElem, ns);
-            }
-            break;
-          case VNodeTypes.text:
-            if (newVNode.tag !== oldVNode.tag) {
-              newVNode.dom = document.createTextNode(newVNode.tag);
-              insertElement(parentDom, newVNode.dom);
-              oldVNode.dom.remove();
-            } else {
-              newVNode.dom = (oldVNode as VNodeText).dom;
-            }
-            break;
-          case VNodeTypes.comp:
-            if (newVNode.tag !== oldVNode.tag) {
-              removeVNode(parentNode, oldVNode);
-              createVNode(parentNode, parentDom, newVNode, ns);
-            } else {
-              newVNode.dom = oldVNode.dom as Element;
-              //*** needed for memory leak?
-              //oldVNode.dom = undefined;
-              newVNode.doms = (oldVNode as VNodeComp).doms;
-              newVNode.children = (oldVNode as VNodeComp).children;
-              updateComponent(parentNode, parentDom, newVNode, ns);
-            }
-            break;
-          case VNodeTypes.html:
-            if (newVNode.tag !== oldVNode.tag) {
-              createVNode(parentNode, parentDom, newVNode, ns);
-              removeVNode(parentNode, oldVNode);
-            } else {
-              newVNode.dom = (oldVNode as VNodeHTML).dom;
-              newVNode.doms = (oldVNode as VNodeHTML).doms;
-            }
-            break;
-          case VNodeTypes.node:
-            if (newVNode.dom as Element !== oldVNode.dom as Element) {
-              insertElement(parentDom, newVNode.dom);
-              oldVNode.dom.remove();
-            }
-        }
-      //}
-    } else {
-      //getNextSibling(parentNode.children, index + 1, parentNode.children.length)
-      createVNode(parentNode, parentDom, newVNode, ns);
-      removeVNode(parentNode, oldVNode);
-    }
-  } else {
-    //getNextSibling(parentNode.children, index + 1, parentNode.children.length)
-    createVNode(parentNode, parentDom, newVNode, ns);
-  }
-};
-
-const updateChildren = (parentNode: VNodeContainer, parentDom: Element, newChildren:VNodeFlatArray, oldChildren:VNodeFlatArray, ns: string): void => {
-  const newChildrenLength = newChildren.length;
-  const oldChildrenLength = oldChildren.length;
-  if(newChildrenLength > 0) {
-    if(oldChildrenLength > 0) {
-      let oldChild;
-      let newChild;
-      const isNewKeyed = newChildren[0] && newChildren[0].attrs && newChildren[0].attrs.key != null;
-      const isOldKeyed = oldChildren[0] && oldChildren[0].attrs && oldChildren[0].attrs.key != null;
-      // keyed diff
-      // 1) get IDs for new children
-      // 2) get IDs for old children
-      // 3) get IDs for old children
-      // 4) iterate through new children IDs and ***
-      if(isNewKeyed === true && isOldKeyed === true) {
-        const oldChildrenByKey = {};
-        const doms = [];
-        
-        // Build map of old children by key
-        for(oldChild of oldChildren) {
-          oldChildrenByKey[oldChild.attrs.key] = oldChild;
-        }
-        
-        // Process new children
-        for(newChild of newChildren) {
-          if(newChild == null) continue;
-          
-          const key = newChild.attrs.key;
-          updateChild(parentNode, parentDom, newChild, oldChildrenByKey[key], ns);
-          delete oldChildrenByKey[key];
-          
-          // Collect doms for insertion
-          if(newChild.type === VNodeTypes.comp || newChild.type === VNodeTypes.html) {
-            for(const dom of newChild.doms) {
-              doms.push(dom);
-            }
-          } else {
-            doms.push(newChild.dom);
-          }
-        }
-        
-        // Remove any old children that weren't reused
-        for(const key in oldChildrenByKey) {
-          removeVNode(parentNode, oldChildrenByKey[key]);
-        }
-        
-        //insertElements(parentDom, doms);
-
-      // non-keyed diff
-      // 1) iterate through oldChildren starting at index newChildrenLength
-      //    - attempt to remove node
-      //    - keep nodes that are being removed in the tree
-      // 2) iterate through newChildren starting at 0 up to newChildrenLength
-      //    - 
-      } else {
-        let expectedPrev;
-        const reusedDoms = new Set();
-        // 1iterate through old nodes and keep any that have been destroyed, but deferred
-        for(let i = newChildrenLength; i < oldChildrenLength; i++) {
-          oldChild = oldChildren[i];
-          // if old node is in the process of being removed, keep it in the tree
-          if(removeVNode(parentNode, oldChild) === false) {
-            //console.log('node is being removed, keep it in tree');
-            //console.log(oldChild.root);
-            oldChild.parent = parentNode;
-            oldChild.root = parentNode.root;
-            newChildren[i] = oldChild;
-          }
-        }
-        // Update/create nodes for new children
-        for(let i = 0; i < newChildrenLength; i++) {
-          oldChild = oldChildren[i];
-          newChild = newChildren[i];
-          if(newChild == null) {
-            if(oldChild != null && removeVNode(parentNode, oldChild) === false) {
-              oldChild.parent = parentNode;
-              oldChild.root = parentNode.root;
-              newChildren[i] = newChild = oldChild;
-              reusedDoms.add(oldChild.dom);
-            }
-          } else {
-            if(oldChild == null || oldChild.dom == null || reusedDoms.has(oldChild.dom)) {
-              createVNode(parentNode, parentDom, newChild, ns);
-            } else if(oldChild.removed == null) {
-              updateChild(parentNode, parentDom, newChild, oldChild, ns);
-            }
-            reusedDoms.add(newChild.dom);
-          }
-        }
-
-        // Reorder DOM children to match newChildren order
-        for(const newChild of newChildren) {
-          if(newChild == null) continue;
-          //const childDoms = newChild.type === VNodeTypes.comp || newChild.type === VNodeTypes.html
-          //  ? (newChild as VNodeComp | VNodeHTML).doms
-          //  : [newChild.dom];
-          
-          for(const dom of (newChild as VNodeComp | VNodeHTML).doms || [newChild.dom]) {
-            // Skip if dom is not in this parent (e.g., manually moved z.node)
-            if(!dom || dom.parentElement !== parentDom) continue;
-            
-            // Only move if this dom is not already positioned correctly after expectedPrev
-            const isInCorrectPosition = expectedPrev 
-              ? dom.previousSibling === expectedPrev
-              : dom === parentDom.firstChild || (dom.parentElement === parentDom && !expectedPrev);
-            
-            if(!isInCorrectPosition) {
-              insertElement(parentDom, dom as Element);
-            }
-            expectedPrev = dom;
-          }
-        }
+// Microtask batching
+const scheduleRedraw = (vNode: VNodeComp) => {
+  let root;
+  for(root = vNode; root.up; root = root.up);
+  if (root) {
+    // Mark this component and all ancestors as stale
+    for (let current: VNodeAny = vNode; current; current = current.up) {
+      if (current.is === VNODE_COMP) {
+        // Already stale, ancestors must be too
+        if (current.f & FLAG_STALE) break;
+        current.f |= FLAG_STALE;
       }
-    } else {
-      createVNodes(parentNode, parentDom, newChildren, 0, newChildrenLength, ns);
     }
-  } else {
-    removeVNodes(parentNode, oldChildren, 0, oldChildrenLength);
-  }
-  parentNode.children = newChildren;
-};
-
-const createVNodes = (parentNode: VNodeContainer, parentDom: Element, children: VNodeFlatArray, start: number, end: number, ns: string): void => {
-  while(start < end) {
-    createVNode(parentNode, parentDom, children[start++], ns);
-  }
-};
-
-const createVNode = (parentNode: VNodeContainer, parentDom: Element, vNode: VNodeAny, ns?: string): void => {
-  //if(typeof vNode === 'number') vNode = keepVNodes.get(vNode);
-  if(vNode == null) return;
-  //console.log(parentNode.root)
-  vNode.parent = parentNode;
-  vNode.root = parentNode.root;
-  //let elements;
-  switch(vNode.type) {
-    case VNodeTypes.elem:
-      createElement(parentNode, parentDom, vNode as VNodeElem, ns);
-      break;
-    case VNodeTypes.text:
-      vNode = vNode as VNodeText;
-      vNode.dom = document.createTextNode(vNode.tag);
-      insertElement(parentDom, vNode.dom);
-      break;
-    case VNodeTypes.comp:
-      createComponent(parentNode, parentDom, vNode as VNodeComp, ns);
-      break;
-    case VNodeTypes.html:
-      createHTML(parentNode, parentDom, vNode as VNodeHTML, ns);
-      break;
-    case VNodeTypes.node:
-      insertElement(parentDom, vNode.dom);
-      if(vNode.attrs.tick) tickQueue.set(vNode, vNode.attrs.tick);
-  }
-};
-
-const setDOMAttribute = (vNode: VNodeElem, attr: string, value: boolean | number | string | object | ((event?: Event) => void)): void => {
-  if (attr === 'type' || attr === 'key' || attr === 'is' || attr === 'ns') return;
-  if (value == null || value === false) {
-    if (attr[0] === 'o' && attr[1] === 'n') {
-      vNode.events[attr] = vNode.dom[attr] = null;
-    } else {
-      vNode.dom.removeAttribute(attr);
-    }
-  } else if (attr === 'value') {
-    (vNode.dom as HTMLInputElement).value = value + '';
-  } else if (value === true) {
-    vNode.dom.setAttribute(attr, attr);
-  } else if (attr[0] === 'o' && attr[1] === 'n') {
-    vNode.events[attr] = vNode.dom[attr] = value;
-  } else if (Array.isArray(value)) {
-    vNode.dom.setAttribute(attr, value.join(' '));
-  } else if (typeof value === 'object') {
-    Object.assign((vNode.dom as HTMLElement)[attr], value);
-  } else {
-    vNode.dom.setAttribute(attr, value as string);
-  }
-};
-
-const createElement = (parentNode: VNodeAny, parentDom: Element, vNode: VNodeElem, ns: string): void => {
-  vNode.events = {};
-  vNode.dom = getElement(vNode.tag, ns = getNamespace(vNode, vNode.attrs.ns || ns), vNode.attrs.is as string);
-  if (vNode.attrs.tick) tickQueue.set(vNode, vNode.attrs.tick);
-  // ensure <input> has a type before doing additional attribute manipulation
-  if (vNode.tag === 'input' && vNode.attrs.type != null) vNode.dom.setAttribute('type', vNode.attrs.type);
-  //setDOMAttributes(vNode);
-  for(const attr in vNode.attrs) {
-    setDOMAttribute(vNode, attr, vNode.attrs[attr]);
-  }
-  createVNodes(vNode, vNode.dom, vNode.children, 0, vNode.children.length, ns);
-  insertElement(parentDom, vNode.dom);
-};
-
-const updateElement = (parentNode: VNodeContainer, parentDom: Element, newVNode: VNodeElem, oldVNode: VNodeElem, ns: string): void => {
-  newVNode.dom = oldVNode.dom;
-  newVNode.events = oldVNode.events;
-  // input type must be set before other attributes
-  if (newVNode.tag === 'input' && newVNode.attrs.type != null) newVNode.dom.setAttribute('type', newVNode.attrs.type);
-  // remove old attrs
-  for(const attr in oldVNode.attrs) {
-    if (attr[0] === 'o' && attr[1] === 'n') {
-      newVNode.events[attr] = newVNode.dom[attr] = null;
-    } else if(attr !== 'type') {
-      newVNode.dom.removeAttribute(attr);
-    }
-  }
-  //setDOMAttributes(newVNode);
-  // set new attributes
-  for(const attr in newVNode.attrs) {
-    setDOMAttribute(newVNode, attr, newVNode.attrs[attr]);
-  }
-  updateChildren(newVNode, newVNode.dom, newVNode.children, oldVNode.children, ns);
-};
-
-const createComponent = (parentNode: VNodeAny, parentDom: Element, vNode: VNodeComp, ns: string): void => {
-  if (vNode.tag.init) vNode.tag.init(vNode);
-  const children = vNode.children = drawDrawable(vNode, vNode.tag.draw);
-  createVNodes(vNode, parentDom, children, 0, children.length, ns);
-  vNode.doms = getChildrenDoms(vNode.children);
-  vNode.dom = vNode.doms[0] as Element;
-  //insertElements(parentDom, nextSibling, vNode.doms);
-  if (vNode.tag.drawn) vNode.tag.drawn(vNode);
-  if (vNode.tag.tick) tickQueue.set(vNode, vNode.tag.tick);
-};
-
-const updateComponent = (parentNode: VNodeContainer, parentDom: Element, vNode:VNodeComp, ns?: string): void => {
-  //if (vNode.tag.drawOnce != null) return;
-  updateChildren(vNode, parentDom, drawDrawable(vNode, vNode.tag.draw, vNode.children), vNode.children, ns || vNode.dom.namespaceURI);
-  vNode.doms = getChildrenDoms(vNode.children);
-  vNode.dom = vNode.doms[0] as Element;
-  if(vNode.tag.drawn) vNode.tag.drawn(vNode);
-};
-
-const createHTML = (parentNode: VNodeAny, parentDom: Element, vNode: VNodeHTML, ns: string): void => {
-  const tmpDom = getElement(parentDom.nodeName, ns);
-  tmpDom.innerHTML = vNode.tag;
-  vNode.doms = Array.from(tmpDom.childNodes)
-  vNode.dom = vNode.doms[0] as Element;
-  insertElements(parentDom, vNode.doms);
-};
-
-const destroyVNode = (vNode: VNodeAny): void => {
-  if(vNode.type === VNodeTypes.comp && vNode.tag.destroy) {
-    vNode.tag.destroy(vNode);
-  }
-  if((vNode as VNodeContainer).children) {
-    removeVNodes(vNode, vNode.children, 0, vNode.children.length, true);
-    vNode.children.length = 0;
-  }
-  if((vNode as VNodeComp).doms) {
-    for(const childDom of (vNode as VNodeComp).doms) childDom.remove();
-  } else if(vNode.dom) {
-    vNode.dom.remove();
-  }
-  delete vNode.dom;
-  vNode.root = vNode.parent = null;
-};
-
-const removeVNodes = (parentNode: VNodeAny, children:VNodeFlatArray, start: number, end: number, noBeforeDestroy?: boolean): void => {
-  while(start < end) {
-    removeVNode(parentNode, children[start++], noBeforeDestroy);
-  }
-};
-
-const removeVNode = (parentNode: VNodeAny, vNode: VNodeAny, immediate?: boolean): boolean => {
-  //console.log('removeVNode()');
-  if(vNode == null) return;
-  switch(vNode.type) {
-    case VNodeTypes.elem:
-      if(vNode.attrs.tick) tickQueue.delete(vNode);
-      break;
-    case VNodeTypes.comp:
-      if(vNode.tag.tick) tickQueue.delete(vNode);
-      if(vNode.removed === true) {
-        return false;
-      } else if(immediate !== true && typeof vNode.tag.remove === 'function') {
-        const delayed = vNode.tag.remove(vNode);
-        vNode.removed = true;
-        if(delayed != null) {
-          if(delayed instanceof Promise) {
-            //console.log(vNodeRef);
-            const destroy = () => {
-              //console.log('destroy callback');
-              //console.log(vNodeRef);
-              if(vNode) {
-                if(vNode.root) vNode.root.redraw = true;
-                if(vNode.parent) vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
-              }
-              destroyVNode(vNode as VNodeComp);
-            };
-            delayed.then(destroy, destroy);
-            return false;
-          } else throw new Error('comp.remove: invalid return');
+    redrawQueue.add(root);
+    if (!scheduled) {
+      scheduled = true;
+      Promise.resolve().then(() => {
+        scheduled = false;
+        const active = document.activeElement;
+        for (const rootNode of redrawQueue) {
+          if (mountedNodes.has(rootNode.el)) {
+            updateNodes(rootNode, rootNode.el, rootNode.nodes, rootNode.nodes);
+          }
         }
-        //if(typeof deferred === 'number' && isFinite(deferred)) {
-        //  vNode.remove = true;
-        //  setTimeout(() => {
-        //    vNode.removed = null;
-        //    vNode.parent.children.splice(vNode.parent.children.indexOf(vNode), 1);
-        //    destroyVNode(vNode as VNodeComp);
-        //  }, deferred);
-        //}
-      }
-      break;
-    case VNodeTypes.html:
-      for(const dom of vNode.doms) {
-        dom.remove();
-      }
-      break;
-    case VNodeTypes.node:
-      if(vNode.attrs.tick) tickQueue.delete(vNode);
-      break;
+        redrawQueue.clear();
+        if (active) (active as HTMLElement).focus();
+      });
+    }
   }
-  destroyVNode(vNode);
+};
+
+const shallowEqual = (a, b) => {
+  if (a !== b) {
+    for (const k in a) if (a[k] !== b[k]) return false;
+    for (const k in b) if (!(k in a)) return false;  
+  }
   return true;
 };
 
-const drawDrawable = (vNode: VNodeDrawable, drawFn: (vNode: VNodeDrawable, oldChildren: VNodeFlatArray) => VNodeAnyOrArray, oldChildren?:VNodeFlatArray) => {
-  const children = drawFn(vNode, oldChildren);
-  return normalizeChildren(Array.isArray(children) ? children : [children]);
-};
+//const oneNodeArr = [];
 
-// ----------------------------------------
-// VNODES
-// ----------------------------------------
-// All of the following functions are
-// designed to create one or more vnodes.
-// ----------------------------------------
+// Faster?
+//const flatten = (nodes: VNodeAnyOrArray, arr: VNodeFlatArray = []): VNodeFlatArray => {
+//  if(!Array.isArray(nodes)) {
+//    oneChildArr[0] = nodes;
+//    nodes = oneChildArr;
+//  }
+//  for (const child of nodes) {
+//    if (Array.isArray(child)) {
+//      flatten(child, arr);
+//    } else if (child != null && child !== false && child !== true) {
+//      if (child.is) {
+//        if (arr.$keys === undefined) {
+//          arr.$keys = (child.is === VNODE_ELEM || child.is === VNODE_COMP) && child.attrs && 'key' in child.attrs;
+//        } else if (child.attrs && arr.$keys !== ('key' in child.attrs)) {
+//          throw new Error('keys');
+//        }
+//        arr.push(child);
+//      //} else if (nodeType === 'string' || nodeType === 'number' || nodeType === 'bigint') {
+//      } else {
+//        arr.push({ is: VNODE_TEXT, tag: typeof child === 'string' ? child : child + '' });
+//      }
+//    }
+//  }
+//  return arr;
+//};
 
-const text = (value: string | number | bigint): VNodeText => {
-  const type = typeof value;
-  return {
-    type: VNodeTypes.text,
-    tag: type === 'string' || type === 'number' || type === 'bigint' ? value + '' : ''
-  };
-};
-
-const elem: {
-    (selector: string): VNodeElem
-    (selector: string, attrs:VNodeElemAttributes, ...args:VNodeArray): VNodeElem
-    (selector: string, ...args:VNodeArray): VNodeElem;
-} = (selector: string, ...args): VNodeElem => {
-  let index = 0;
-  let attrs = args[0];
-  // if no passed attributes
-  if (!attrs || typeof attrs !== 'object' || attrs.tag != null || Array.isArray(attrs)) {
-    attrs = FROZEN_EMPTY_OBJECT;
-  // otherwise, copy attributes
-  } else {
-    //attrs = Object.freeze(Object.assign({}, attrs));
-    attrs = Object.freeze(attrs);
-    index++;
+const flatten = (nodes: VNodeAnyOrArray, arr: VNodeFlatArray = []): VNodeFlatArray => {
+  for (const node of Array.isArray(nodes) ? nodes : [nodes]) {
+    if (Array.isArray(node)) {
+      flatten(node, arr);
+    } else if (node != null && node !== false && node !== true) {
+      const hasKey = (node.is === VNODE_ELEM || node.is === VNODE_COMP) && node.attrs && 'key' in node.attrs;
+      if (arr.$keys === undefined) arr.$keys = hasKey;
+      else if(hasKey !== arr.$keys) {
+        throw new Error(DEBUG ? 'Children have mixed keys. Wrap text in elem(\'span\', {key}, "My keyed string.")' : 'keys');
+      }
+      arr.push(node.is ? node : { is: VNODE_TEXT, tag: typeof node === 'string' ? node : node + '' });
+    }
   }
-  // *** consider implementing object pooling
+  return arr;
+};
+
+const wrapHandler = (vNode, handler) => e => {
+  if (handler.call(e.currentTarget, e) === false) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  if (e.redraw !== false) {
+    scheduleRedraw(vNode);
+  }
+};
+
+const updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns: string, skipMemo?: boolean): void => {
+  if (oldNode.el) {
+    const newNodeType = newNode.is;
+    newNode.up = oldNode.up;
+
+    // Clear removal flag if updating a vnode that was being removed
+    if(oldNode.is === VNODE_COMP && (oldNode as VNodeComp).f & FLAG_REMOVED) {
+      (oldNode as VNodeComp).f &= ~FLAG_REMOVED;
+    }
+
+    if (newNodeType === oldNode.is) {
+      if(newNodeType === VNODE_ELEM) {
+        if(newNode.tag !== oldNode.tag) {
+          createNode(parentNode, parentEl, newNode);
+          removeNode(oldNode);
+        } else {
+          newNode.el = oldNode.el as Element;
+          newNode.events = oldNode.events;
+          setElAttributes(newNode, oldNode);
+          updateNodes(newNode, newNode.el, newNode.nodes, oldNode.nodes, xmlns);
+        }
+      } else if(newNodeType === VNODE_TEXT) {
+        newNode.el = oldNode.el;
+        newNode.el.textContent = newNode.tag;
+      } else if(newNodeType === VNODE_COMP) {
+        if (newNode.tag !== oldNode.tag) {
+          createNode(parentNode, parentEl, newNode, xmlns);
+          removeNode(oldNode);
+        } else {
+          newNode.el = oldNode.el as Element;
+          newNode.nodes = (oldNode as VNodeComp).nodes;
+          if(
+            !skipMemo
+            // AND not marked stale
+            && !((oldNode as VNodeComp).f & FLAG_STALE)
+            // AND has memo function
+            && newNode.tag.memo
+            // AND props unchanged
+            && (newNode.tag.memo === true ? shallowEqual : newNode.tag.memo)(newNode.attrs, oldNode.attrs)
+          ) {
+            // Skip redraw - component unchanged
+            newNode.f = (oldNode as VNodeComp).f;
+          } else {
+            // Props changed or stale - redraw component
+            newNode.f = (oldNode as VNodeComp).f & ~FLAG_STALE;
+            redrawComponent(newNode, parentEl, xmlns);
+          }
+        }
+      } else if(newNodeType === VNODE_NODE) {
+        if (newNode.el !== oldNode.el) {
+          parentEl.insertBefore(newNode.el, null);
+          oldNode.el.remove();
+        }
+      }
+    } else {
+      createNode(parentNode, parentEl, newNode, xmlns);
+      removeNode(oldNode);
+    }
+  } else {
+    createNode(parentNode, parentEl, newNode, xmlns);
+  }
+};
+
+const updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VNodeFlatArray, oldNodes:VNodeFlatArray, xmlns?: string): void => {
+  const newNodesLength = newNodes.length;
+  const oldNodesLength = oldNodes.length;
+  
+  if(newNodesLength > 0) {
+    let oldNode;
+    let newNode;
+    let needsReconcile;
+    let mergedIndex = 0;
+    let expectedNext = null;
+    if(oldNodesLength > 0) {
+
+      // Determine if nodes require reconciling
+      if(newNodes.$keys && oldNodes.$keys) {
+
+        needsReconcile = newNodesLength !== oldNodesLength;
+        for (let i = 0; !needsReconcile && i < newNodesLength; i++) {
+          needsReconcile = newNodes[i].attrs.key !== oldNodes[i].attrs.key;
+        }
+
+        if (needsReconcile) {
+          const oldPositions = new Map();
+          const mergedNodes: VNodeFlatArray = [];
+          const movedKeys = new Set();
+          
+          for(let i = 0; i < oldNodesLength; i++) {
+            oldPositions.set(oldNodes[i].attrs.key, i);
+          }
+          
+          for(newNode of newNodes) {
+            const key = newNode.attrs.key;
+            const oldPos = oldPositions.get(key);
+            
+            if(oldPos !== undefined) {
+              oldNode = oldNodes[oldPos];
+              oldPositions.delete(key);
+              
+              if(oldPos !== mergedIndex) {
+                movedKeys.add(key);
+              }
+              
+              if(newNode.is === VNODE_COMP) {
+                if(newNode.attrs.$remove) {
+                  // Deferred removal case
+                  if((oldNode as VNodeComp).f & FLAG_REMOVED || removeNode(oldNode) === false) {
+                    oldNode.up = parentNode;
+                    mergedNodes.push(oldNode);
+                    mergedIndex++;
+                  }
+                } else {
+                  // Normal component update
+                  if((oldNode as VNodeComp).f & FLAG_REMOVED) {
+                    (oldNode as VNodeComp).f &= ~FLAG_REMOVED;
+                  }
+                  
+                  // Early memo check avoids a potential call
+                  // to updateNode, improving speef
+                  if(newNode.tag === oldNode.tag 
+                    && !((oldNode as VNodeComp).f & FLAG_STALE)
+                    && newNode.tag.memo
+                    && (newNode.tag.memo === true ? shallowEqual : newNode.tag.memo)(newNode.attrs, oldNode.attrs)
+                  ) {
+                    oldNode.attrs = newNode.attrs;
+                    mergedNodes.push(oldNode);
+                    mergedIndex++;
+                  } else {
+                    updateNode(parentNode, parentEl, newNode, oldNode, xmlns, true);
+                    mergedNodes.push(newNode);
+                    mergedIndex++;
+                  }
+                }
+              } else {
+                updateNode(parentNode, parentEl, newNode, oldNode, xmlns, true);
+                mergedNodes.push(newNode);
+                mergedIndex++;
+              }
+            } else if(!newNode.attrs.$remove) {
+              movedKeys.add(key);
+              createNode(parentNode, parentEl, newNode, xmlns);
+              mergedNodes.push(newNode);
+              mergedIndex++;
+            }
+          }
+
+          for(const pos of oldPositions.values()) {
+            removeNode(oldNodes[pos]);
+          }
+          
+          newNodes = mergedNodes;
+          newNodes.$keys = true;
+          
+          // Only reorder if something actually moved
+          if (movedKeys.size > 0) {
+            let expectedNext = null;
+            for (let i = newNodes.length - 1; i >= 0; i--) {
+              newNode = newNodes[i];
+              if (newNode.el) {
+                if (movedKeys.has(newNode.attrs.key) && newNode.el.nextSibling !== expectedNext) {
+                  parentEl.insertBefore(newNode.el, expectedNext);
+                }
+                expectedNext = newNode.el;
+              }
+            }
+          }
+        } else {
+          // Fast path: same order, just update in place
+          for (let i = 0; i < newNodesLength; i++) {
+            updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
+          }
+          
+          // Remove any extra old nodes
+          for (let i = newNodesLength; i < oldNodesLength; i++) {
+            removeNode(oldNodes[i]);
+          }
+        }
+      } else {
+        // Non-keyed path
+        //const reusedEls = new Set();
+        //
+        //for(let i = newNodesLength; i < oldNodesLength; i++) {
+        //  oldNode = oldNodes[i];
+        //  if(removeVNode(oldNode) === false) {
+        //    oldNode.up = parentNode;
+        //    //oldNode.root = parentNode.root;
+        //    newNodes[i] = oldNode;
+        //  }
+        //}
+        //
+        //for(let i = 0; i < newNodesLength; i++) {
+        //  oldNode = oldNodes[i];
+        //  newNode = newNodes[i];
+        //  if(oldNode && oldNode.el && !reusedEls.has(oldNode.el) && (oldNode.is !== VNODE_COMP || ((oldNode as VNodeComp).f & FLAG_REMOVED) === 0)) {
+        //    updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
+        //  } else {
+        //    createVNode(parentNode, parentEl, newNode, xmlns);
+        //  }
+        //  reusedEls.add(newNode.el);
+        //}
+        
+        for(let i = newNodesLength; i < oldNodesLength; i++) {
+          oldNode = oldNodes[i];
+          if(removeNode(oldNode) === false) {
+            oldNode.up = parentNode;
+            newNodes[i] = oldNode;
+          }
+        }
+        
+        for(let i = 0; i < newNodesLength; i++) {
+          oldNode = oldNodes[i];
+          newNode = newNodes[i];
+          if(oldNode && oldNode.el && (oldNode.is !== VNODE_COMP || !((oldNode as VNodeComp).f & FLAG_REMOVED))) {
+            updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
+          } else {
+            createNode(parentNode, parentEl, newNode, xmlns);
+          }
+        }
+      }
+    } else {
+      for(newNode of newNodes) {
+        createNode(parentNode, parentEl, newNode, xmlns);
+      }
+    }
+  } else {
+    parentEl.textContent = '';
+    for(const oldNode of oldNodes) {
+      unmountNode(oldNode, true);
+    }
+  }
+  parentNode.nodes = newNodes;
+};
+
+const setElAttributes = (newNode: VNodeElem, oldNode?: VNodeElem): void => {
+  const el = newNode.el;
+  const newAttrs = newNode.attrs;
+  const oldAttrs = oldNode ? oldNode.attrs : EMPTY_OBJECT;
+  // ensure <input> has a type before additional attribute manipulation
+  if (newNode.tag === 'input' && typeof newAttrs.type === 'string') {
+    el.setAttribute('type', newAttrs.type);
+  }
+  for (const attr in newAttrs) {
+    if (attr[0] === 'o' && attr[1] === 'n') {
+      if(typeof newAttrs[attr] === 'function') {
+        newNode.events = true;
+        el[attr] = wrapHandler(newNode, newAttrs[attr]);
+      } else {
+        el[attr] = null;
+      }
+    } else if (attr === 'type' || attr === 'key' || attr === 'is' || attr === 'xmlns') {
+
+    } else if (!(attr in oldAttrs) || newAttrs[attr] !== oldAttrs[attr]) {
+      const value = newAttrs[attr] === true ? attr : newAttrs[attr];
+      const valueType = typeof value;
+      
+      if (valueType === 'string' || valueType === 'number') {
+        if (attr === 'value') {
+          const valueStr = value + '';
+          if (el.value !== valueStr) el.value = valueStr;
+        } else {
+          el.setAttribute(attr, value + '');
+        }
+      } else if (!value) {
+        el.removeAttribute(attr);
+      } else if (valueType === 'object') {
+        Object.assign(el[attr], value);
+      }
+    }
+  }
+  for (const attr in oldAttrs) {
+    if (!(attr in newAttrs)) {
+      if (attr[0] === 'o' && attr[1] === 'n') {
+        el[attr] = null;
+      } else {
+        el.removeAttribute(attr);
+      }
+    }
+  }
+};
+
+const createNode = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny, xmlns?: string): void => {
+  if(vNode.is === VNODE_ELEM) {
+    vNode.up = parentNode;
+    xmlns = vNode.attrs && vNode.attrs.xmlns || ns[vNode.tag] || xmlns;
+    vNode.el = xmlns 
+      ? document.createElementNS(xmlns, vNode.tag, vNode.attrs.is ? {is: vNode.attrs.is} : null)
+      : document.createElement(vNode.tag, vNode.attrs.is ? {is: vNode.attrs.is} : null);
+    setElAttributes(vNode);
+    for(const child of vNode.nodes) {
+      createNode(vNode, vNode.el, child, xmlns);
+    }
+    parentEl.insertBefore(vNode.el, null);
+  } else if(vNode.is === VNODE_TEXT) {
+    vNode = vNode as VNodeText;
+    vNode.el = document.createTextNode(vNode.tag);
+    parentEl.insertBefore(vNode.el, null);
+  } else if(vNode.is === VNODE_COMP) {
+    vNode.up = parentNode;
+    if (vNode.tag.init) vNode.tag.init(vNode);
+    vNode.nodes = flatten(vNode.tag.draw(vNode));
+    const drawToEl = typeof vNode.tag.drawTo === 'function' ? vNode.tag.drawTo(vNode) : parentEl;
+    if (drawToEl !== parentEl) {
+      vNode.el = document.createComment();
+      parentEl.insertBefore(vNode.el, null);
+    }
+    for(const child of vNode.nodes) {
+      createNode(vNode, drawToEl, child, xmlns);
+    }
+    if(!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
+    if(vNode.tag.drawn) vNode.tag.drawn(vNode, true);
+  } else if(vNode.is === VNODE_NODE) {
+    parentEl.insertBefore(vNode.el, null);
+  }
+};
+
+const redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns: string): void => {
+  const oldChildren = vNode.nodes;
+  const newChildren = vNode.tag.draw(vNode, vNode.nodes);
+  if (newChildren !== oldChildren) {
+    updateNodes(vNode, parentEl, flatten(newChildren), oldChildren, xmlns);
+    if(!vNode.el || vNode.el.nodeType !== 8) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
+    oldChildren.length = 0;
+  }
+  if(vNode.tag.drawn) vNode.tag.drawn(vNode);
+};
+
+const unmountNode = (vNode: VNodeAny, detached?: boolean): void => {
+  if(vNode.is === VNODE_ELEM) {
+    if(!detached && vNode.events) {
+      for(const attr in vNode.attrs) {
+        if (attr[0] === 'o' && attr[1] === 'n') vNode.el[attr] = null;
+      }
+    }
+    vNode.attrs = null;
+  } else if(vNode.is === VNODE_COMP) {
+    // Only call remove() if not already called
+    if(vNode.tag.remove && !(vNode.f & FLAG_REMOVE_CALLED)) {
+      vNode.f |= FLAG_REMOVE_CALLED;
+      vNode.tag.remove(vNode);
+    }
+    // Always call removed()
+    if(vNode.tag.removed) vNode.tag.removed(vNode);
+    vNode.attrs = null;
+  }
+  // Common child iteration (works for types elem, comp, and root)
+  if(vNode.nodes) {
+    for(const child of vNode.nodes) {
+      unmountNode(child, true);
+    }
+    vNode.nodes = null;
+  }
+  
+  vNode.tag = vNode.el = vNode.up = null;
+};
+
+const destroyNode = (vNode: VNodeAny): void => {
+  if(vNode.el) vNode.el.remove();
+  unmountNode(vNode, true);
+};
+
+const removeNode = (vNode: VNodeAny): boolean => {
+  if(vNode.is === VNODE_COMP) {
+    if(typeof vNode.tag.remove === 'function') {
+      if((vNode as VNodeComp).f & FLAG_REMOVED) {
+        return false;
+      }
+      // Mark remove() as called before calling it
+      (vNode as VNodeComp).f |= FLAG_REMOVE_CALLED | FLAG_REMOVED;
+      const deferred = vNode.tag.remove(vNode);
+      if(deferred && deferred.then) {
+        if(DEBUG && !('key' in vNode.attrs)) {
+          throw new Error(
+            'Component remove() returned a Promise but component has no key attribute.\n' +
+            'Deferred removal requires a key to track the component during exit.\n' +
+            'Add a key and use $remove flag. Example:\n' +
+            'comp(MyComponent, { key: item.id, $remove: item.deleted })'
+          );
+        }
+        const destroy = () => {
+          if((vNode as VNodeComp).f & FLAG_REMOVED) {
+            const parent = vNode.up;
+            if(DEBUG && !parent) {
+              console.warn(
+                'Promise resolved but component was already removed.',
+                'This usually means the component was removed without using $remove attribute.'
+              );
+              return;
+            }
+            if(parent) parent.nodes.splice(parent.nodes.indexOf(vNode), 1);
+            destroyNode(vNode);
+            scheduleRedraw(parent);
+          }
+        };
+        deferred.then(destroy, destroy);
+        return false;
+      }
+    }
+  }
+  destroyNode(vNode);
+  return true;
+};
+
+// ----------------------------------------
+// VNode creation
+// ----------------------------------------
+
+export const draw = scheduleRedraw;
+
+export const elem: {
+    (tag: string): VNodeElem
+    (tag: string, attrs:VNodeElemAttributes, ...args:VNodeArray): VNodeElem
+    (tag: string, ...args:VNodeArray): VNodeElem;
+} = function(tag: string): VNodeElem {
+  const first = arguments[1];
+  const hasAttrs = first && typeof first === 'object' && !first.tag && !Array.isArray(first);
   return {
-    type: VNodeTypes.elem,
-    tag: selector,
-    attrs,
-    children: normalizeChildren(args.slice(index)),
+    is: VNODE_ELEM,
+    tag,
+    attrs: hasAttrs ? DEBUG ? Object.freeze(first) : first : EMPTY_OBJECT,
+    nodes: flatten(slice.call(arguments, hasAttrs ? 2 : 1)),
+    //el: null,
+    //parent: null,
+    //events: null,
   } as VNodeElem;
 };
 
-//const deferUpdateRedrawable = (parentNode: VNodeAny, vNode: VNodeComp) => redrawableUpdateQueue.set(vNode, [parentNode]);
-
-//function compDef(inputDef: VNodeCompDefinition, extendDef?: VNodeCompDefinition): VNodeCompDefinition {
-const compDef = (inputDef: VNodeCompDefinition): VNodeCompDefinition => {
-  if (typeof inputDef.draw !== 'function') throw new Error('compDef: no draw');
-  return Object.assign({}, inputDef, {type: VNodeTypes.compDef});
-};
-
-// A component should include:
-// - optional state (ideally reactive)
-// - lifecycle hooks
-//   - create: called once upon creation
-//   - draw: called whenever state is changed or component is redrawn due to parent vnodes being redrawn
-//   - destroy: called once upon destruction
-const comp = (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes): VNodeComp => {
-  const vNode:VNodeComp = {
-    type: VNodeTypes.comp,
+export const comp = (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes): VNodeComp => {
+  return {
+    is: VNODE_COMP,
     tag: componentDefinition,
-    attrs: attrs ? Object.freeze(attrs) : FROZEN_EMPTY_OBJECT
+    attrs: attrs ? DEBUG ? Object.freeze(attrs) : attrs : EMPTY_OBJECT,
+    nodes: null,
+    //el: null,
+    //parent: null,
+    f: 0, // flags
   };
-  vNode.draw = immediate => {
-    //if (immediate) updateComponent(vNode.parent, vNode.parent.dom, vNode.dom.getNextSibling(vNode.parent.children, vNode.parent.children.indexOf(vNode) + 1, vNode.parent.children.length), vNode);
-    if (immediate) updateComponent(vNode.parent, vNode.parent.dom, vNode);
-    else if(vNode.root) {
-      // *** add vNode.redraw = true to optimize redraws?
-      vNode.root.redraw = true;
-    }
-  }
-  return vNode;
 };
 
-const html = (value: string): VNodeHTML => {
-  const type = typeof value;
+export const node = (el: Element): VNodeNode => {
   return {
-    type: VNodeTypes.html,
-    tag: type === 'string' || type === 'number' || type === 'bigint' ? value + '' : '',
+    is: VNODE_NODE,
+    tag: el.nodeName.toLowerCase(),
+    attrs: EMPTY_OBJECT,
+    el,
   };
 };
 
-const node = (dom: Element, attrs?: VNodeNodeAttributes): VNodeNode => {
-  return {
-    type: VNodeTypes.node,
-    tag: dom.nodeName.toLowerCase(),
-    attrs: attrs || FROZEN_EMPTY_OBJECT,
-    dom: dom,
-  };
-};
-
-const mount = (dom: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem => {
-  if(dom == null) throw new Error('mount: invalid dom');
-  // first check to see if DOM is a child node of a mounted node
-  let ancestor = dom.parentNode;
-  while(ancestor) {
-    if(mountedNodes.get(ancestor)) throw new Error('mount: nested');
-    ancestor = ancestor.parentNode;
+export const mount = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeElem => {
+  if(DEBUG && el == null) throw new Error('mount');
+  // nesting would all a lot of complexity to zenith
+  for(let ancestor = el.parentNode; ancestor; ancestor = ancestor.parentNode) {
+    if(mountedNodes.get(ancestor)) throw new Error('nested');
   }
-  // we wrap the node to be able to get its previous vNode children
-  const mountedNode = mountedNodes.get(dom) || mountedNodes.set(dom, {
-    type: VNodeTypes.root,
-    tag: dom.nodeName.toLowerCase(),
-    attrs: FROZEN_EMPTY_OBJECT,
-    dom: dom,
-    children: [],
-  }).get(dom);
+
+  // wrapping the node allows access to its previous nodes
+  const mountedNode = mountedNodes.get(el) || mountedNodes.set(el, {
+    is: VNODE_ROOT,
+    tag: el.nodeName.toLowerCase(),
+    attrs: EMPTY_OBJECT,
+    el,
+    nodes: [],
+  }).get(el);
+
+  const active = document.activeElement;
+
+  sync();
 
   if(vNodeAnyOrArray == null || (vNodeAnyOrArray as VNodeArray).length === 0) {
-    removeVNodes(mountedNode, mountedNode.children, 0, mountedNode.children.length);
-    mountedNode.children.length = 0;
-    mountedNodes.delete(dom);
+    el.textContent = '';
+    unmountNode(mountedNode, true);
+    mountedNodes.delete(el);
   } else {
-    mountedNode.root = mountedNode;
-    updateChildren(mountedNode, dom, normalizeChildren(Array.isArray(vNodeAnyOrArray) ? vNodeAnyOrArray : [vNodeAnyOrArray]), mountedNode.children, undefined); // Changed here
+    updateNodes(mountedNode, el, flatten(vNodeAnyOrArray), mountedNode.nodes);
   }
+  if (active) (active as HTMLElement).focus();
   return mountedNode;
 };
 
-const tick = (): void => {
-  tickCount++;
-  for(const [vNode, tick] of tickQueue) {
-    tick(vNode, tickCount);
-  }
-  for(const [dom, vNode] of mountedNodes) {
-    if(vNode.redraw === true) {
-      // set this first in case a descendant node wants to force the tree to redraw on next tick
-      vNode.redraw = false;
-      updateChildren(vNode, dom, vNode.children, vNode.children, undefined); // Changed here
+// ----------------------------------------
+// Flush pending updates
+// ----------------------------------------
+// Flushes the microtask queue to apply
+// pending updates immediately.
+// ----------------------------------------
+
+export const sync = (): void => {
+  if (scheduled) {
+    scheduled = false;
+    const active = document.activeElement;
+    for (const rootNode of redrawQueue) {
+      if (mountedNodes.has(rootNode.el)) {
+        updateNodes(rootNode, rootNode.el, rootNode.nodes, rootNode.nodes);
+      }
     }
+    redrawQueue.clear();
+    if (active) (active as HTMLElement).focus();
   }
-  requestAnimationFrame(tick);
 };
 
-tick();
-
 // ----------------------------------------
-// EXPORT
+// Exported constants
 // ----------------------------------------
 
-export default {
-  elem,
-  text,
-  comp,
-  node,
-  html,
-  //func,
-  compDef,
-  mount,
-  //diff: {
-  //  none: 0,
-  //  self: 1,
-  //  children: 2,
-  //},
-  //grow,
-  type: Object.freeze({
-    none: VNodeTypes.none,
-    compDef: VNodeTypes.compDef,
-    comp: VNodeTypes.comp,
-    elem: VNodeTypes.elem,
-    html: VNodeTypes.html,
-    node: VNodeTypes.node,
-    text: VNodeTypes.text,
-  }),
-  ns: ELEMENT_NAMESPACES
-};
+export const elemType = VNODE_ELEM;
+export const textType = VNODE_TEXT;
+export const compType = VNODE_COMP;
+export const nodeType = VNODE_NODE;
+
+export { ns };

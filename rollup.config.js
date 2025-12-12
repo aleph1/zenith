@@ -1,18 +1,17 @@
 import replace from '@rollup/plugin-replace';
-import typescript from '@rollup/plugin-typescript';
+import esbuild from 'rollup-plugin-esbuild';
 import terser from '@rollup/plugin-terser';
 
-const banner = '/*! Zenith v' + process.env.npm_package_version + ' | MIT License | © 2022 Aleph1 Technologies Inc */';
+const banner = '/*! Zenith v' + process.env.npm_package_version + ' | MIT License | © 2022-2025 Daniel Barber */';
+const reservedExports = ['elem', 'node', 'comp', 'mount', 'draw', 'sync', 'ns', 'elemType', 'nodeType', 'compType', 'textType'];
 
 export default [
-  // debug build
+  // ESM debug build
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/zenith.debug.js',
-      format: 'iife',
-      name: 'z',
-      extend: true,
+      file: 'dist/zenith.development.js',
+      format: 'esm',
       banner
     },
     plugins: [
@@ -20,22 +19,19 @@ export default [
         preventAssignment: true,
         DEBUG: true
       }),
-      typescript({
-        compilerOptions: {
-          target: 'es6'
-        }
+      esbuild({
+        target: 'es6'
       })
     ]
   },
-  // production build
+  
+  // ESM production build
   {
     input: 'src/index.ts',
     output: {
       file: 'dist/zenith.js',
-      format: 'iife',
-      name: 'z',
+      format: 'esm',
       compact: true,
-      extend: true,
       banner
     },
     plugins: [
@@ -43,40 +39,95 @@ export default [
         preventAssignment: true,
         DEBUG: false
       }),
-      typescript({
-        compilerOptions: {
-          target: 'es6'
-        }
+      esbuild({
+        target: 'es6'
       }),
       terser({
         compress: {
           inline: 3,
-          passes: 10,  // More passes for better optimization
+          passes: 10,
           pure_getters: true,
           unsafe: true,
           unsafe_comps: true,
           unsafe_math: true,
-          unsafe_proto: true,  // Add this
-          unsafe_methods: true,  // Add this
-          unsafe_arrows: true,  // Add this
+          unsafe_proto: true,
+          unsafe_methods: true,
+          unsafe_arrows: true,
           drop_debugger: true,
           drop_console: false,
-          collapse_vars: true,  // Add this
-          reduce_vars: true,  // Add this
-          reduce_funcs: true,  // Add this
-          loops: true,  // Add this
-          dead_code: true,  // Add this
-          conditionals: true,  // Add this
-          evaluate: true,  // Add this
-          booleans: true,  // Add this
-          typeofs: true,  // Add this
-          sequences: true,  // Add this
-          side_effects: true,  // Add this
-          join_vars: true,  // Add this
+          collapse_vars: true,
+          reduce_vars: true,
+          reduce_funcs: true,
+          loops: true,
+          dead_code: true,
+          conditionals: true,
+          evaluate: true,
+          booleans: true,
+          typeofs: true,
+          sequences: true,
+          side_effects: true,
+          join_vars: true,
         },
         mangle: {
           properties: false,
-          toplevel: true,  // Add this - mangle top-level variable names
+          toplevel: true,
+          reserved: reservedExports,
+        },
+        format: {
+          comments: /^!/,
+        },
+      })
+    ]
+  },
+  
+  // IIFE build for direct browser usage
+  {
+    input: 'src/index.iife.ts',  // Different entry point
+    output: {
+      file: 'dist/zenith.global.js',
+      format: 'es',
+      extend: true,
+      exports: 'none',
+      banner
+    },
+    plugins: [
+      replace({
+        preventAssignment: true,
+        DEBUG: false
+      }),
+      esbuild({
+        target: 'es6'
+      }),
+      terser({
+        compress: {
+          inline: 3,
+          passes: 10,
+          pure_getters: true,
+          unsafe: true,
+          unsafe_comps: true,
+          unsafe_math: true,
+          unsafe_proto: true,
+          unsafe_methods: true,
+          unsafe_arrows: true,
+          drop_debugger: true,
+          drop_console: false,
+          collapse_vars: true,
+          reduce_vars: true,
+          reduce_funcs: true,
+          loops: true,
+          dead_code: true,
+          conditionals: true,
+          evaluate: true,
+          booleans: true,
+          typeofs: true,
+          sequences: true,
+          side_effects: true,
+          join_vars: true,
+        },
+        mangle: {
+          properties: false,
+          toplevel: false,
+          reserved: reservedExports,
         },
         format: {
           comments: /^!/,
@@ -85,7 +136,7 @@ export default [
       replace({
         preventAssignment: false,
         delimiters: ['', ''],
-        'this.z=': 'window.z=',
+        'var z=': 'window.z=',
       })
     ]
   }

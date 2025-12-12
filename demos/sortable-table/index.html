@@ -7,6 +7,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../css/demos.css">
 	<style>
+		:root {
+			--fade-duration: 1s;
+		}
 		@keyframes fade-in {
 		    from {opacity:0;}
 		    to {opacity:1;}
@@ -15,103 +18,117 @@
 		    from {opacity:1;}
 		    to {opacity:0;}
 		}
-		tr {
-			animation: fade-in 1s forwards;
+		tr.fade-in {
+			animation: fade-in var(--fade-duration) forwards;
 		}
-		tr.removed {
-			animation: fade-out 2s forwards;
+		tr.fade-out {
+			animation: fade-out var(--fade-duration) forwards;
 			pointer-events: none;
 		}
 	</style>
 </head>
 <body>
 	<div id="app"></div>
-	<script src="../../dist/zenith.min.js"></script>
-	<script>
+	<script type="module">
+		import { elem, comp, mount, draw } from '../../dist/zenith.development.js';
+		
+		let peopleCount = 0;
+		let personId = 0;
+		const setCSSVariable = (name, value) => document.documentElement.style.setProperty(name, value);
 		const appEl = document.querySelector('#app');
+		const fadeDuration = 1000;
+		setCSSVariable('--fade-duration', fadeDuration + 'ms');
+		
 		const firstNames = ['Aki', 'Adam', 'Amy', 'Ang', 'Brianna', 'Bruce', 'Cassandra', 'Charles', 'Colette', 'Dae', 'Deion', 'Elijah', 'Emma', 'Han', 'Hiromi', 'Jackie', 'Jamal', 'Jin', 'Kalisha', 'Keysha', 'Lamonte', 'Liang', 'Naoki', 'Osamu'];
 		const lastNames = ['Anderson', 'Barnes', 'Chan', 'Diaz', 'Ferguson', 'Hunt', 'James', 'Lee', 'McDonald', 'Olson', 'Ramirez', 'Singh', 'Smith', 'Wood'];
 		const people = [];
-		// we track this separately as when people are removed
-		// we want the counter to update immediately
-		let peopleLength = 0;
-		let personId = 0;
+		
+		const animate = (dom, className, duration) => {
+  		dom.classList.add(className);
+  		setTimeout(() => dom.classList.remove(className), duration);
+		};
+		
 		const addPerson = () => {
 			const person = {
 				id: ++personId,
 				firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
 				lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
-				age: Math.floor(Math.random() * 60 + 18)
+				age: Math.floor(Math.random() * 60 + 18),
+				deleted: false
 			};
 			people.push(person);
-			peopleLength++;
+			peopleCount++;
 		};
+		
 		const removePerson = id => {
-			for(let i = people.length - 1; i >= 0; i--) {
-				if(people[i] && people[i].id === id) {
-					people[i] = null;
-					peopleLength--;
-					break;
-				}
-			}
+			console.log('removePerson()');
+			console.log('id: ' + id);
+		  for(const person of people) {
+		  	if(person.id === id) {
+		  		person.deleted = true; // ← Mark as deleted, don't remove
+		    	peopleCount--;
+		    	return;
+		    }
+		 	}
 		};
-		const deletePerson = id => {
-			for(let i = people.length - 1; i >= 0; i--) {
-				if(!people[i]) {
-					people.splice(i, 1);
-				}
-			}
-		};
+		
 		const sortPeople = sortFn => {
 			people.sort(sortFn);
-			remount();
 		};
-		for(let i = 0; i < 5; i++) {
+		
+		for(let i = 0; i < 2; i++) {
 			addPerson();
-		};
+		}
+		
 		const shuffle = arr => {
 			let currentIndex = arr.length, randomIndex;
 			while (currentIndex !== 0) {
-				// Pick a remaining element.
 				randomIndex = Math.floor(Math.random() * currentIndex);
 				currentIndex--;
-				// And swap it with the current element.
 				[arr[currentIndex], arr[randomIndex]] = [arr[randomIndex], arr[currentIndex]];
 			}
 		};
 
-		const SortableTableRow = z.compDef({
-			draw: vNode => z.elem('tr',
-				vNode.attrs.data.map(datum => z.elem('td', {
+		const SortableTableRow = {
+			draw: vNode => elem('tr',
+				vNode.attrs.data.map(datum => elem('td', {
 					class: datum.class,
-				}, typeof datum.value === 'function' ? datum.value() : z.text(datum.value)))
+				}, typeof datum.value === 'function' ? datum.value() : datum.value))
 			),
+			drawn: (vNode, isFirstDraw) => {
+				if(isFirstDraw && vNode.dom) animate(vNode.dom, 'fade-in', fadeDuration);
+			},
 			remove: vNode => {
-				if(vNode.children) vNode.children[0].dom.classList.add('removed');
-				return new Promise(resolve => setTimeout(() => {
-					deletePerson(vNode.attrs.id);
-					resolve();
-					remount();
-				}, 2000));
+				console.log('SortableTableRow.remove()');
+				console.log('key: ' + vNode.attrs.key);
+			  vNode.dom.classList.add('fade-out');
+			  return new Promise(resolve => setTimeout(resolve, fadeDuration));
 			},
 			destroy: vNode => {
+				// Actually remove from array after fade completes
+				for(let i = people.length - 1; i >= 0; i--) {
+					if(people[i] && people[i].id === vNode.attrs.id) {
+						people.splice(i, 1);
+						return;
+					}
+				}
 			}
-		});
+		};
 
-		const SortableTable = z.compDef({
+		const SortableTable = {
 			draw: vNode => {
-				console.log('KeyedList redraw');
 				return [
-					z.elem('table',
-						z.elem('thead',
-							z.elem('tr',
-								z.elem('th', {
+					elem('table',
+						elem('thead',
+							elem('tr',
+								elem('th', {
 									class: 'sort',
 									onclick(e) {
-										sortPeople((a,b) => a.id-b.id);
+										sortPeople((a,b) => a.id - b.id);
+										draw(vNode);
 									}
-								}, z.text('ID')),
-								z.elem('th', {
+								}, 'ID'),
+								elem('th', {
 									class: 'sort',
 									onclick(e) {
 										sortPeople((a,b) => {
@@ -121,9 +138,10 @@
 											if (nameA > nameB) return 1;
 											return 0;
 										});
+										draw(vNode);
 									}
-								}, z.text('First Name')),
-								z.elem('th', {
+								}, 'First Name'),
+								elem('th', {
 									class: 'sort',
 									onclick(e) {
 										sortPeople((a,b) => {
@@ -133,87 +151,87 @@
 											if (nameA > nameB) return 1;
 											return 0;
 										});
+										draw(vNode);
 									}
-								}, z.text('Last Name')),
-								z.elem('th', {
+								}, 'Last Name'),
+								elem('th', {
 									class: 'sort',
 									onclick(e) {
 										sortPeople((a,b) => a.age-b.age);
+										draw(vNode);
 									}
-								}, z.text('Age')),
-								z.elem('th'),
+								}, 'Age'),
+								elem('th'),
 							)
 						),
-						z.elem('tbody',
-							people.map((person, index) => person ? z.comp(SortableTableRow, {
-								data: [
-									{
-										value: person.id,
-										class: 'r',
-									},
-									{
-										value: person.firstName,
-									},
-									{
-										value: person.lastName,
-									},
-									{
-										value: person.age,
-										class: 'r',
-									},
-									{
-										value: () => z.elem('button', {
-											onclick: e => {
-												removePerson(person.id);
-												remount();
-											}
-										}, z.text('x')),
-										class: 'c',
-									},
-								],
-								id: person.id,
-							}) : null)
+						elem('tbody',
+						  people.map(person => comp(SortableTableRow, {
+						    key: person.id,
+						    $remove: person.deleted,  // ← Use $remove attribute
+						    data: [
+						      {
+						        value: person.id,
+						        class: 'r',
+						      },
+						      {
+						        value: person.firstName,
+						      },
+						      {
+						        value: person.lastName,
+						      },
+						      {
+						        value: person.age,
+						        class: 'r',
+						      },
+						      {
+						        value: () => elem('button', {
+						          onclick: e => {
+						            removePerson(person.id);
+						            draw(vNode);
+						          }
+						        }, 'x'),
+						        class: 'c',
+						      },
+						    ],
+						    id: person.id,
+						  }))
 						)
 					)
 				];
 			},
-		});
+		};
 
-		const DemoControls = z.CompDef = {
-			draw: vNode => z.elem('div',
-				z.elem('button', {
+		const DemoControls = {
+			draw: vNode => elem('div',
+				elem('button', {
 					onclick(e) {
 						addPerson();
-						remount();
+						draw(vNode);
 					}
-				}, z.text('add')),
-				z.elem('button', {
+				}, 'add'),
+				elem('button', {
 					onclick(e) {
 						shuffle(people);
-						remount();
+						draw(vNode);
 					}
-				}, z.text('shuffe')),
-				z.elem('button', {
+				}, 'shuffle'),
+				elem('button', {
 					onclick(e) {
 						people.push(people.shift());
-						remount();
+						draw(vNode);
 					}
-				}, z.text('move first to last')),
-				z.elem('button', {
+				}, 'move first to last'),
+				elem('button', {
 					onclick(e) {
 						people.unshift(people.pop());
-						remount();
+						draw(vNode);
 					}
-				}, z.text('move last to first')),
-				z.text('Length: ' + peopleLength)
+				}, 'move last to first'),
+				'Length: ' + peopleCount
 			),
 		};
 
-		const remount = () => {
-			z.mount(appEl, [z.comp(DemoControls), z.comp(SortableTable)]);
-		};
-
-		remount();
+		mount(appEl, [comp(DemoControls), comp(SortableTable)]);
 	</script>
 </body>
 </html>

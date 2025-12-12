@@ -19,8 +19,8 @@
 <body>
 	<p>Creates a list where one item is added per animation frame, and animation plays when items are reshuffled or added</p>
 	<div id="app"></div>
-	<script src="../../dist/zenith.min.js"></script>
-	<script>
+	<script type="module">
+		import { elem, comp, mount } from '../../dist/zenith.js';
 		let id = 1;
 		const items = [];
 		const shuffle = arr => {
@@ -37,23 +37,22 @@
 			}
 			return arr;
 		}
-		const ListDef = z.compDef({
-			draw: vNode => z.elem('ul', vNode.attrs.items.map(item => z.elem('li', z.text('Item ' + item))))
-		});
-		const list = z.comp(ListDef, {
+		const ListDef = {
+			draw: vNode => elem('ul', vNode.attrs.items.map(item => elem('li', 'Item ' + item)))
+		};
+		const list = comp(ListDef, {
 			items
 		});
 		const tick = () => {
 			shuffle(items);
-			items.splice(Math.floor(Math.random() * items.length), 1);
-			items.push(id++, id++);
-			list.redraw();
+			items.push(id++);
+			list.draw();
 			window.requestAnimationFrame(tick);
 		};
-		while(id <= 20) {
+		while(id <= 1) {
 			items.push(id++);
 		}
-		z.mount(document.querySelector('#app'), list);
+		mount(document.querySelector('#app'), list);
 		tick();
 	</script>
 </body>
