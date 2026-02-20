@@ -1,14 +1,13 @@
-import { elem, node, comp, mount, draw, ns, elemType, textType, compType, nodeType } from './index';
+import { elem, comp, node, defc, bind, draw, ns, keep, DIFF } from './index';
 
 window.z = {
   elem,
-  node,
   comp,
-  mount,
-  elemType,
-  textType,
-  compType,
-  nodeType,
+  node,
+  defc,
+  bind,
   draw,
-  ns
+  ns,
+  keep,
+  DIFF
 };

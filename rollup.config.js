@@ -3,7 +3,7 @@ import esbuild from 'rollup-plugin-esbuild';
 import terser from '@rollup/plugin-terser';
 
 const banner = '/*! Zenith v' + process.env.npm_package_version + ' | MIT License | © 2022-2025 Daniel Barber */';
-const reservedExports = ['elem', 'node', 'comp', 'mount', 'draw', 'sync', 'ns', 'elemType', 'nodeType', 'compType', 'textType'];
+const reservedExports = ['elem', 'comp', 'node', 'defc', 'bind', 'draw', 'sync', 'ns', 'keep', 'diff_none', 'diff_self', 'diff_nodes', 'diff_all'];
 
 export default [
   // ESM debug build
@@ -20,7 +20,7 @@ export default [
         DEBUG: true
       }),
       esbuild({
-        target: 'es6'
+        target: 'es2018'
       })
     ]
   },
@@ -40,7 +40,7 @@ export default [
         DEBUG: false
       }),
       esbuild({
-        target: 'es6'
+        target: 'es2018'
       }),
       terser({
         compress: {
@@ -96,7 +96,7 @@ export default [
         DEBUG: false
       }),
       esbuild({
-        target: 'es6'
+        target: 'es2018'
       }),
       terser({
         compress: {

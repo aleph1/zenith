@@ -1,24 +1,20 @@
-export const VNODE_ROOT = 1;
-export const VNODE_ELEM = 2;
-export const VNODE_TEXT = 3;
-export const VNODE_COMP = 4;
-export const VNODE_NODE = 5;
-export const VNODE_HTML = 6;
+export const VNODE_ELEM = 1;
+export const VNODE_TEXT = 2;
+export const VNODE_COMP = 3;
+export const VNODE_NODE = 4;
 
 const enum VNODE_TYPE {
-  ROOT = 1,
-  ELEM = 2,
-  TEXT = 3,
-  COMP = 4,
-  NODE = 5,
-  HTML = 6
+  ELEM = 1,
+  TEXT = 2,
+  COMP = 3,
+  NODE = 4,
 }
 
 export interface VNodeElemAttributes {
   // The class name(s) for this virtual element, as a space-separated list.
   class?: string | Array<string>;
   // A key to optionally associate with this element.
-  key?: string | number;
+  $key?: string | number;
   is?: string;
   style?: string | Record<string, string | number>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +22,6 @@ export interface VNodeElemAttributes {
 }
 
 export interface VNodeCompAttributes {
-  key?: string | number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [property: string]: any;
 }
@@ -36,8 +31,9 @@ export interface VNodeCompDefinition {
   draw: (vNode: VNodeComp, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
   drawn?: (vNode: VNodeComp, isFirstDraw?: boolean) => void;
   remove?: (vNode: VNodeComp) => Promise<void> | void;
+  $remove?: boolean;
   removed?: (vNode: VNodeComp) => void;
-  memo?: boolean | ((newAttrs: VNodeCompAttributes, oldAttrs: VNodeCompAttributes) => boolean);
+  $memo?: boolean | ((newAttrs: VNodeCompAttributes, oldAttrs: VNodeCompAttributes) => boolean);
 }
 
 export interface VNodeNodeAttributes {
@@ -69,6 +65,7 @@ export type VNodeElem = VNodeAbstract & {
   attrs: VNodeElemAttributes;
   events?: Record<string, Function>;
   dom?: Element;
+  $memo?: boolean | ((newAttrs: VNodeElemAttributes, oldAttrs: VNodeElemAttributes) => boolean);
 };
 
 export type VNodeText = VNodeAbstract & {
@@ -82,7 +79,7 @@ export type VNodeComp = VNodeAbstract & {
   tag: VNodeCompDefinition;
   attrs?: VNodeCompAttributes;
   dom?: Element;
-  f: number; // flags: FLAG_REMOVED | FLAG_STALE
+  f: number; // Flags: FLAG_REMOVED (1) | FLAG_STALE (2) | FLAG_REMOVE_CALLED (4)
 };
 
 export type VNodeNode = VNodeAbstract & {
@@ -92,10 +89,10 @@ export type VNodeNode = VNodeAbstract & {
 };
 
 export type VNodeDom = Element | Text | Array<ChildNode>;
-export type VNodeDrawable = VNodeComp; // in case we add additional drawable types
+export type VNodeDrawable = VNodeComp; // In case we add additional drawable types
 export type VNodeContainer = VNodeComp | VNodeElem;
 export type VNodeAny = VNodeElem | VNodeText | VNodeComp | VNodeNode;
-export type VNodeArray = Array<VNodeElem | VNodeText | VNodeComp | VNodeNode | VNodeArray | boolean | undefined | string | number>;
+export type VNodeArray = Array<VNodeAny | VNodeArray | boolean | undefined | string | number>;
 export type VNodeAnyOrArray = VNodeAny | VNodeArray;
 
 export interface VNodeFlatArray extends Array<VNodeAny> {
