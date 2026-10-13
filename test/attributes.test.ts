@@ -48,6 +48,117 @@ describe('DOM Attributes with elem()', () => {
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
   });
 
+  test('Style property is updated', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const el1 = elem('div', {
+      style: {
+        backgroundColor: 'red',
+      }
+    });
+    const el2 = elem('div', {
+      style: {
+        backgroundColor: 'blue',
+      }
+    });
+    bind(app, el1);
+    flushMicrotasks();
+    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
+    bind(app, el2);
+    flushMicrotasks();
+    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('blue');
+  });
+
+  test('Style property is cleared when set to null', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+
+    const el1 = elem('div', {
+      style: { backgroundColor: 'red' },
+    });
+
+    const el2 = elem('div', {
+      style: { backgroundColor: null },
+    });
+
+    bind(app, el1);
+    flushMicrotasks();
+
+    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
+
+    bind(app, el2);
+    flushMicrotasks();
+
+    expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
+  });
+
+  test('Style property is removed when omitted', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+
+    const el1 = elem('div', {
+      style: { backgroundColor: 'red' },
+    });
+
+    const el2 = elem('div', {
+      style: {},
+    });
+
+    bind(app, el1);
+    flushMicrotasks();
+
+    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
+
+    bind(app, el2);
+    flushMicrotasks();
+
+    expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
+  });
+
+  test('Style attribute is removed when omitted', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+
+    const el1 = elem('div', {
+      style: { backgroundColor: 'red' },
+    });
+
+    const el2 = elem('div', {});
+
+    bind(app, el1);
+    flushMicrotasks();
+
+    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
+
+    bind(app, el2);
+    flushMicrotasks();
+
+    expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
+  });
+
+  test('Nested Attribute in style removed as expected', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+
+    const el1 = elem('div', {
+      style: { backgroundColor: 'red' },
+    });
+
+    const el2 = elem('div', {
+      style: {},
+    });
+
+    bind(app, el1);
+    flushMicrotasks();
+
+    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
+
+    bind(app, el2);
+    flushMicrotasks();
+
+    expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
+  });
+
   test('Attribute of null is equivalent to no attribute', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');
