@@ -1,4 +1,4 @@
-/*! Zenith Helpers v1.0.0-beta.10 | MIT License | © 2022-2025 Daniel Barber */
+/*! Zenith Helpers v1.0.0-beta.12 | MIT License | © 2022-2025 Daniel Barber */
 import { node, draw } from './zenith.js';
 
 const keep = () => true;

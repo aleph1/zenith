@@ -1,4 +1,4 @@
-/*! Zenith v1.0.0-beta.10 | MIT License | © 2022-2025 Daniel Barber */
+/*! Zenith v1.0.0-beta.12 | MIT License | © 2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 3;
@@ -297,8 +297,13 @@ const _setElAttributes = (newNode, oldAttrs = ALWAYS_EMPTY_OBJECT) => {
         if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
       } else if (!value) {
         if (oldAttrs[attr]) el.removeAttribute(attr);
-      } else {
-        Object.assign(el[attr], value);
+      } else if (attr === "style") {
+        for (const oldAttr in oldAttrs.style || ALWAYS_EMPTY_OBJECT) {
+          if (!(oldAttr in value)) {
+            el.style[oldAttr] = "";
+          }
+        }
+        Object.assign(el.style, value);
       }
     }
   }
