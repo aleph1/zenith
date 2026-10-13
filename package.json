@@ -1,6 +1,6 @@
 {
   "name": "zenith",
-  "version": "1.0.0-beta.13",
+  "version": "1.0.0-beta.14",
   "description": "Another front-end framework.",
   "type": "module",
   "main": "./dist/zenith.js",
