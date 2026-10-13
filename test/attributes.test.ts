@@ -1,5 +1,4 @@
 import { describe, test, expect, vi } from 'vitest';
-import { flushMicrotasks } from './helpers';
 import { elem, comp, bind } from '../src/index';
 
 describe('DOM Attributes with elem()', () => {
@@ -9,7 +8,6 @@ describe('DOM Attributes with elem()', () => {
     const app = document.querySelector('#app');
     const el1 = elem('div', {id: 'test'});
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el.getAttribute('id')).toBe('test');
   });
 
@@ -20,7 +18,6 @@ describe('DOM Attributes with elem()', () => {
       class: 'test',
     });
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el.className).toEqual('test');
   });
 
@@ -31,7 +28,6 @@ describe('DOM Attributes with elem()', () => {
       style: 'background-color: red'
     });
     bind(app, el1);
-    flushMicrotasks();
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
   });
 
@@ -44,7 +40,6 @@ describe('DOM Attributes with elem()', () => {
       }
     });
     bind(app, el1);
-    flushMicrotasks();
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
   });
 
@@ -62,106 +57,73 @@ describe('DOM Attributes with elem()', () => {
       }
     });
     bind(app, el1);
-    flushMicrotasks();
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
     bind(app, el2);
-    flushMicrotasks();
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('blue');
   });
 
   test('Style property is cleared when set to null', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');
-
     const el1 = elem('div', {
       style: { backgroundColor: 'red' },
     });
-
     const el2 = elem('div', {
       style: { backgroundColor: null },
     });
-
     bind(app, el1);
-    flushMicrotasks();
-
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
-
     bind(app, el2);
-    flushMicrotasks();
-
     expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
   });
 
   test('Style property is removed when omitted', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');
-
     const el1 = elem('div', {
       style: { backgroundColor: 'red' },
     });
-
     const el2 = elem('div', {
       style: {},
     });
-
     bind(app, el1);
-    flushMicrotasks();
-
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
-
     bind(app, el2);
-    flushMicrotasks();
-
     expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
   });
 
   test('Style attribute is removed when omitted', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');
-
     const el1 = elem('div', {
       style: { backgroundColor: 'red' },
     });
-
     const el2 = elem('div', {});
-
     bind(app, el1);
-    flushMicrotasks();
-
     expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
-
     bind(app, el2);
-    flushMicrotasks();
-
     expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
   });
 
   test('Style property removal preserves other properties', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');
-
     const el1 = elem('div', {
       style: {
         backgroundColor: 'red',
         color: 'white',
       },
     });
-
     const el2 = elem('div', {
       style: {
         color: 'blue',
       },
     });
-
     bind(app, el1);
-
     const el = el1.el as HTMLElement;
-
     expect(el.style.backgroundColor).toBe('red');
     expect(el.style.color).toBe('white');
-
     bind(app, el2);
-
     expect(el2.el).toBe(el);
     expect(el.style.backgroundColor).toBe('');
     expect(el.style.color).toBe('blue');
@@ -172,7 +134,6 @@ describe('DOM Attributes with elem()', () => {
     const app = document.querySelector('#app');
     const el1 = elem('div', {id: null});
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el.getAttribute('id')).toBeNull();
   });
 
@@ -181,7 +142,6 @@ describe('DOM Attributes with elem()', () => {
     const app = document.querySelector('#app');
     const el1 = elem('div', {id: undefined});
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el.getAttribute('id')).toBeNull();
   });
 
@@ -190,7 +150,6 @@ describe('DOM Attributes with elem()', () => {
     const app = document.querySelector('#app');
     const el1 = elem('div', {id: false});
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el.getAttribute('id')).toBeNull();
   });
 
@@ -199,7 +158,6 @@ describe('DOM Attributes with elem()', () => {
     const app = document.querySelector('#app');
     const el1 = elem('div', {disabled: true});
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el.getAttribute('disabled')).toBe('disabled');
   });
 
@@ -210,7 +168,6 @@ describe('DOM Attributes with elem()', () => {
       onclick: e => e.stopImmediatePropagation()
     });
     bind(app, el1);
-    flushMicrotasks();
     expect(el1.el instanceof HTMLElement).toBe(true);
     expect(typeof (el1.el as HTMLElement).onclick).toBe('function');
   });
@@ -261,11 +218,9 @@ describe('DOM Attributes with elem()', () => {
     const node2 = elem('div', {
     });
     bind(app, node1);
-    flushMicrotasks();
     expect(node1.el instanceof HTMLElement).toEqual(true);
     expect(typeof (node1.el as HTMLElement).onclick).toEqual('function');
     bind(app, node2);
-    flushMicrotasks();
     expect(node2.el instanceof HTMLElement).toEqual(true);
     expect((node2.el as HTMLElement).onclick).toEqual(null);
   });
