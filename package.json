@@ -9,6 +9,9 @@
     ".": "./dist/zenith.js",
     "./helpers": "./dist/zenith-helpers.js"
   },
+  "files": [
+    "dist/"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "rollup --config && node scripts/after-build.mjs",
