@@ -2,12 +2,14 @@ export const VNODE_ELEM = 1;
 export const VNODE_TEXT = 2;
 export const VNODE_COMP = 3;
 export const VNODE_NODE = 4;
+export const VNODE_COMPDEF = 5;
 
 const enum VNODE_TYPE {
   ELEM = 1,
   TEXT = 2,
   COMP = 3,
   NODE = 4,
+  COMPDEF = 5,
 }
 
 export interface VNodeElemAttributes {
@@ -27,6 +29,7 @@ export interface VNodeCompAttributes {
 }
 
 export interface VNodeCompDefinition {
+  is?: VNODE_TYPE.DEFC;
   init?: (vNode: VNodeComp) => void;
   draw: (vNode: VNodeComp, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
   drawn?: (vNode: VNodeComp, isFirstDraw?: boolean) => void;

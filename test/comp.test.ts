@@ -1,7 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import {
-  comp
-} from '../src/index';
+import { comp } from '../src/index';
 import {
   VNODE_COMP
 } from '../src/vNode.defs';
@@ -12,7 +10,7 @@ describe('comp()', () => {
       draw: () => null
     };
     const comp1 = comp(compDef);
-    expect(comp1.type).toBe(VNODE_COMP);
+    expect(comp1.is).toBe(VNODE_COMP);
   });
   test('Returns a vNode with the correct type when an incorrect type is passed', () => {
     const compDef = {
@@ -20,7 +18,7 @@ describe('comp()', () => {
       type: 0
     };
     const comp1 = comp(compDef);
-    expect(comp1.type).toBe(VNODE_COMP);
+    expect(comp1.is).toBe(VNODE_COMP);
   });
   test('Returns a vNode with a frozen empty attrs object', () => {
     const compDef = {
@@ -45,6 +43,6 @@ describe('comp()', () => {
       draw: () => null
     };
     const comp1 = comp(compDef);
-    expect(comp1.tag).toBe(compDef);
+    expect(comp1.$def).toBe(compDef);
   });
 });

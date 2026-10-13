@@ -30,7 +30,7 @@
 <body>
 	<div id="app"></div>
 	<script type="module">
-		import { elem, comp, mount, draw } from '../../dist/zenith.development.js';
+		import { elem, comp, bind, draw } from '../../dist/zenith.development.js';
 		
 		let peopleCount = 0;
 		let personId = 0;
@@ -231,7 +231,7 @@
 			),
 		};
 
-		mount(appEl, [comp(DemoControls), comp(SortableTable)]);
+		bind(appEl, [comp(DemoControls), comp(SortableTable)]);
 	</script>
 </body>
 </html>

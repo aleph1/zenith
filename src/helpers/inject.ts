@@ -1,0 +1,27 @@
+import { is } from './is';
+import type { VNode } from '../vnode.defs';
+
+/**
+ * Retrieves values provided by ancestor components.
+ * Walks up the tree collecting requested keys, with closer
+ * ancestors taking priority (shadowing).
+ * Returns an object with only the keys that were found.
+ *
+ * @example
+ * const { theme, locale } = inject(vNode, 'theme', 'locale');
+ */
+export const inject = (vNode: VNode, ...keys: string[]): Record<string, any> => {
+  const result: Record<string, any> = {};
+  const needed = new Set(keys);
+  for (let current = vNode.up; current && needed.size > 0; current = current.up) {
+    if (current.is === is.comp && current.provide) {
+      for (const key of needed) {
+        if (current.provide[key] !== undefined) {
+          result[key] = current.provide[key];
+          needed.delete(key);
+        }
+      }
+    }
+  }
+  return result;
+};

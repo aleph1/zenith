@@ -1,8 +1,15 @@
 {
   "name": "zenith",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.9",
   "description": "Another front-end framework.",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/zenith.global.js",
+  "module": "dist/zenith.js",
+  "exports": {
+    ".": "./dist/zenith.js",
+    "./helpers": "./dist/zenith-helpers.js"
+  },
+  "sideEffects": false,
   "scripts": {
     "build": "rollup --config && node scripts/after-build.mjs",
     "lint": "eslint . --ext .ts",

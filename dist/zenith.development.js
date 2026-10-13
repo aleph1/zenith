@@ -1,9 +1,16 @@
-/*! Zenith v1.0.0-beta.1 | MIT License | © 2022-2025 Daniel Barber */
+/*! Zenith v1.0.0-beta.9 | MIT License | © 2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 3;
 const VNODE_NODE = 4;
+const VNODE_COMPDEF = 5;
 
+const boundNodes = /* @__PURE__ */ new Map();
+const redrawQueue = /* @__PURE__ */ new Set();
+const ns = {
+  math: "http://www.w3.org/1998/Math/MathML",
+  svg: "http://www.w3.org/2000/svg"
+};
 const FLAG_IS_DEFINED = 1;
 const FLAG_IS_STALE = 2;
 const FLAG_IS_REMOVING = 4;
@@ -11,42 +18,47 @@ const FLAG_HAS_LIFECYCLE = 8;
 const FLAG_HAS_REMOVE = 16;
 const FLAG_HAS_REMOVED = 32;
 const FLAG_REMOVE_CALLED = 64;
-const boundNodes = /* @__PURE__ */ new Map();
-const redrawQueue = /* @__PURE__ */ new Set();
-const ns = {
-  math: "http://www.w3.org/1998/Math/MathML",
-  svg: "http://www.w3.org/2000/svg"
-};
-const EMPTY_ARRAY = Object.freeze([]) ;
-const EMPTY_OBJECT = Object.freeze({}) ;
-const EMPTY_MAP = /* @__PURE__ */ new Map();
 const DIFF_NONE = 1;
 const DIFF_SELF = 2;
 const DIFF_NODES = 4;
 const DIFF_ALL = DIFF_SELF | DIFF_NODES;
-const DIFF = {
-  NONE: DIFF_NONE,
-  SELF: DIFF_SELF,
-  NODES: DIFF_NODES,
-  ALL: DIFF_ALL
+const diff = {
+  none: DIFF_NONE,
+  self: DIFF_SELF,
+  nodes: DIFF_NODES,
+  all: DIFF_ALL
 };
+const ALWAYS_EMPTY_ARRAY = Object.freeze([]) ;
+const ALWAYS_EMPTY_OBJECT = Object.freeze({}) ;
+const ALWAYS_EMPTY_MAP = /* @__PURE__ */ new Map();
 const sync = () => {
-  if (redrawQueue.size) {
+  let remaining = redrawQueue.size;
+  let targetEl;
+  if (remaining) {
     const active = document.activeElement;
     for (const redrawNode of redrawQueue) {
-      const targetEl = boundNodes.has(redrawNode.el) ? redrawNode.el : redrawNode.attrs && redrawNode.attrs.to || redrawNode.up && redrawNode.up.el;
+      targetEl = boundNodes.has(redrawNode.el) ? redrawNode.el : redrawNode.attrs && redrawNode.attrs.to || redrawNode.el && redrawNode.el.parentNode || redrawNode.up && redrawNode.up.el;
+      redrawQueue.delete(redrawNode);
       if (targetEl) {
         _redrawComponent(redrawNode, targetEl);
       }
+      if (!--remaining) break;
     }
-    redrawQueue.clear();
-    if (active) active.focus();
+    if (redrawQueue.size) Promise.resolve().then(sync);
+    if (active && active !== document.activeElement && typeof active.focus === "function") {
+      active.focus();
+    }
   }
 };
-const draw = (vNode, doSync = false) => {
-  let current;
-  for (current = vNode; current.up; current = current.up) ;
-  if (current) {
+const draw = (vNode, surgical) => {
+  if (surgical) {
+    if (vNode.is === VNODE_COMP) {
+      vNode.$tag |= FLAG_IS_STALE;
+    }
+    redrawQueue.add(vNode);
+  } else {
+    let current;
+    for (current = vNode; current.up; current = current.up) ;
     redrawQueue.add(current);
     for (current = vNode; current.up; current = current.up) {
       if (current.is === VNODE_COMP) {
@@ -54,23 +66,15 @@ const draw = (vNode, doSync = false) => {
         current.$tag |= FLAG_IS_STALE;
       }
     }
-    if (doSync) {
-      sync();
-    } else if (redrawQueue.size === 1) {
-      Promise.resolve().then(sync);
-    }
   }
-};
-const edit = (vNode) => {
-  if (vNode.is !== VNODE_COMP) throw new Error("vNode must be comp() instance");
-  vNode.$tag |= FLAG_IS_STALE;
-  redrawQueue.add(vNode);
-  sync();
+  if (redrawQueue.size === 1) {
+    Promise.resolve().then(sync);
+  }
 };
 const _flattenReusableArray = [];
 const _flatten = (nodes, offset = 0, arr = []) => {
   let node2;
-  if (!(nodes && typeof nodes === "object" && nodes.length !== void 0)) {
+  if (!(nodes && typeof nodes === "object" && nodes.length != null)) {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
@@ -81,7 +85,7 @@ const _flatten = (nodes, offset = 0, arr = []) => {
     } else if (node2 != null) {
       if (node2.is) {
         if (arr.$keys === void 0) {
-          arr.$keys = node2.attrs && "$key" in node2.attrs ? EMPTY_MAP : null;
+          arr.$keys = node2.attrs && "$key" in node2.attrs ? ALWAYS_EMPTY_MAP : null;
         } else if (!arr.$keys !== !(node2.attrs && "$key" in node2.attrs)) {
           throw new Error("Children have mixed keys..." );
         }
@@ -106,6 +110,27 @@ const _flatten = (nodes, offset = 0, arr = []) => {
   }
   return arr;
 };
+const _lastRoot = (vNode) => {
+  if (vNode.is === VNODE_COMP && !vNode.attrs.to) {
+    for (let i = vNode.nodes.length - 1; i >= 0; i--) {
+      const root = _lastRoot(vNode.nodes[i]);
+      if (root) return root;
+    }
+    return null;
+  }
+  return vNode.el;
+};
+const _place = (vNode, parentEl, next) => {
+  if (vNode.is === VNODE_COMP && !vNode.attrs.to) {
+    for (let i = vNode.nodes.length - 1; i >= 0; i--) {
+      next = _place(vNode.nodes[i], parentEl, next);
+    }
+  } else if (vNode.el) {
+    if (vNode.el.nextSibling !== next) parentEl.insertBefore(vNode.el, next);
+    next = vNode.el;
+  }
+  return next;
+};
 const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, skipMemo) => {
   if (oldNode.el) {
     const newNodeType = newNode.is;
@@ -114,15 +139,19 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, skipMemo) =>
         newNode.up = parentNode;
         if (newNode.$tag === oldNode.$tag) {
           newNode.el = oldNode.el;
-          const diff = newNode.attrs.$diff || DIFF.ALL;
-          if (diff & DIFF.SELF) {
+          newNode.$h = oldNode.$h;
+          const diff2 = newNode.attrs.$diff || DIFF_ALL;
+          if (diff2 & DIFF_SELF) {
             _setElAttributes(newNode, oldNode.attrs);
           }
-          if (diff & DIFF.NODES) {
-            _updateNodes(newNode, newNode.el, newNode.nodes, oldNode.nodes, xmlns);
+          if (diff2 & DIFF_NODES) {
+            _updateNodes(newNode, newNode.el, newNode.nodes, oldNode.nodes, newNode.attrs.xmlns || ns[newNode.$tag] || xmlns);
+          } else {
+            newNode.nodes = oldNode.nodes;
           }
         } else {
-          _create(parentNode, parentEl, newNode);
+          _create(parentNode, parentEl, newNode, xmlns);
+          parentEl.insertBefore(newNode.el, oldNode.el);
           _remove(oldNode);
         }
       } else if (newNodeType === VNODE_TEXT) {
@@ -135,8 +164,9 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, skipMemo) =>
         newNode.up = parentNode;
         if (newNode.$def === oldNode.$def) {
           newNode.el = oldNode.el;
+          newNode.$h = oldNode.$h;
           newNode.nodes = oldNode.nodes;
-          if (!skipMemo && !(oldNode.$tag & FLAG_IS_STALE) && newNode.$def.$memo && (newNode.$def.$memo === true ? newNode.attrs === oldNode.attrs : newNode.$def.$memo(newNode.attrs, oldNode.attrs))) ; else {
+          if (skipMemo || oldNode.$tag & FLAG_IS_STALE || !newNode.$def.$memo || (newNode.$def.$memo === true ? newNode.attrs !== oldNode.attrs : !newNode.$def.$memo(newNode.attrs, oldNode.attrs))) {
             newNode.$tag &= ~FLAG_IS_STALE;
             _redrawComponent(newNode, parentEl, xmlns);
           }
@@ -164,112 +194,53 @@ const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns, depth = 0
   if (newNodesLength) {
     let oldNode;
     let newNode;
-    let needsReconcile;
-    let key;
-    let oldPos;
+    let i = 0;
     if (oldNodesLength) {
       if (newNodes.$keys && oldNodes.$keys) {
-        needsReconcile = newNodesLength !== oldNodesLength;
-        for (let i = 0; !needsReconcile && i < newNodesLength; i++) {
-          needsReconcile = newNodes[i].attrs.$key !== oldNodes[i].attrs.$key;
+        while (i < newNodesLength && i < oldNodesLength && newNodes[i].attrs.$key === oldNodes[i].attrs.$key) {
+          _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
+          i++;
         }
-        if (needsReconcile) {
-          const mergedNodes = [];
-          const movedNodes = [];
-          const newNodesKeys = /* @__PURE__ */ new Map();
-          let oldNodesKeys;
-          if (oldNodes.$keys === EMPTY_MAP) {
-            oldNodesKeys = /* @__PURE__ */ new Map();
-            for (let i = 0; i < oldNodesLength; i++) {
-              oldNodesKeys.set(oldNodes[i].attrs.$key, i);
-            }
-          } else {
-            oldNodesKeys = oldNodes.$keys;
+        if (i < newNodesLength || i < oldNodesLength) {
+          const oldByKey = /* @__PURE__ */ new Map();
+          for (let k = i; k < oldNodesLength; k++) {
+            oldByKey.set(oldNodes[k].attrs.$key, oldNodes[k]);
           }
-          for (let i = 0; i < newNodesLength; i++) {
-            newNode = newNodes[i];
-            key = newNode.attrs.$key;
-            oldPos = oldNodesKeys.get(key);
-            if (oldPos !== void 0) {
-              oldNode = oldNodes[oldPos];
-              oldNodesKeys.delete(key);
-              let nodeToAdd;
-              if (newNode.is === VNODE_COMP) {
-                if (newNode.attrs.$remove) {
-                  if (oldNode.$tag & FLAG_IS_REMOVING || _remove(oldNode) === false) {
-                    oldNode.up = parentNode;
-                    nodeToAdd = oldNode;
-                  }
+          const last = _lastRoot(oldNodes[oldNodesLength - 1]);
+          let next = last ? last.nextSibling : null;
+          for (let k = newNodesLength - 1; k >= i; k--) {
+            newNode = newNodes[k];
+            oldNode = oldByKey.get(newNode.attrs.$key);
+            if (oldNode) {
+              oldByKey.delete(newNode.attrs.$key);
+              if (newNode.is === VNODE_COMP && newNode.attrs.$remove) {
+                if (oldNode.$tag & FLAG_IS_REMOVING || !_remove(oldNode)) {
+                  oldNode.up = parentNode;
+                  newNodes[k] = oldNode;
                 } else {
-                  if (oldNode.$tag & FLAG_IS_REMOVING) {
-                    oldNode.$tag &= ~FLAG_IS_REMOVING;
-                  }
-                  if (newNode.$def === oldNode.$def && !(oldNode.$tag & FLAG_IS_STALE) && newNode.$def.$memo && (newNode.$def.$memo === true ? newNode.attrs === oldNode.attrs : newNode.$def.$memo(newNode.attrs, oldNode.attrs))) {
-                    oldNode.attrs = newNode.attrs;
-                    nodeToAdd = oldNode;
-                  } else {
-                    _updateNode(parentNode, parentEl, newNode, oldNode, xmlns, true);
-                    nodeToAdd = newNode;
-                  }
+                  newNodes.splice(k, 1);
+                  continue;
                 }
               } else {
-                _updateNode(parentNode, parentEl, newNode, oldNode, xmlns, true);
-                nodeToAdd = newNode;
-              }
-              if (nodeToAdd) {
-                mergedNodes.push(nodeToAdd);
-                newNodesKeys.set(key, mergedNodes.length - 1);
-                if (oldPos !== i) {
-                  movedNodes.push(nodeToAdd);
-                }
+                _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
               }
             } else if (!newNode.attrs.$remove) {
               _create(parentNode, parentEl, newNode, xmlns);
-              newNodesKeys.set(key, mergedNodes.length);
-              mergedNodes.push(newNode);
-            }
-          }
-          for (const pos of oldNodesKeys.values()) {
-            oldNode = oldNodes[pos];
-            if (oldNode.is === VNODE_COMP && oldNode.$tag & FLAG_HAS_LIFECYCLE) {
-              _remove(oldNode);
             } else {
-              if (oldNode.is === VNODE_COMP && oldNode.attrs.to) {
-                oldNode.attrs.to.textContent = "";
-              }
-              if (oldNode.el) oldNode.el.remove();
-              _unmount(oldNode);
+              newNodes.splice(k, 1);
+              continue;
             }
+            next = _place(newNodes[k], parentEl, next);
           }
-          newNodes = mergedNodes;
-          newNodes.$keys = newNodesKeys;
-          for (let i = movedNodes.length - 1; i >= 0; i--) {
-            oldNode = movedNodes[i];
-            newNode = newNodes[newNodesKeys.get(oldNode.attrs.$key) + 1];
-            const expectedNext = newNode ? newNode.el : null;
-            if (oldNode.el.nextSibling !== expectedNext) {
-              parentEl.insertBefore(oldNode.el, expectedNext);
-            }
-          }
-        } else {
-          const keysMap = oldNodes.$keys === EMPTY_MAP ? /* @__PURE__ */ new Map() : oldNodes.$keys;
-          for (let i = 0; i < newNodesLength; i++) {
-            _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
-            keysMap.set(newNodes[i].attrs.$key, i);
-          }
-          for (let i = newNodesLength; i < oldNodesLength; i++) {
-            keysMap.delete(oldNodes[i].attrs.$key);
-            _remove(oldNodes[i]);
-          }
-          newNodes.$keys = keysMap;
+          for (const oldNode2 of oldByKey.values()) _remove(oldNode2);
         }
       } else {
-        for (let i = newNodesLength; i < oldNodesLength; i++) {
-          _remove(oldNodes[i]);
+        for (let i2 = newNodesLength; i2 < oldNodesLength; i2++) {
+          _remove(oldNodes[i2]);
         }
-        for (let i = 0; i < newNodesLength; i++) {
-          oldNode = oldNodes[i];
-          newNode = newNodes[i];
+        for (let i2 = 0; i2 < newNodesLength; i2++) {
+          oldNode = oldNodes[i2];
+          newNode = newNodes[i2];
           if (oldNode && oldNode.el) {
             _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
           } else {
@@ -278,65 +249,65 @@ const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns, depth = 0
         }
       }
     } else {
-      for (let i = 0; i < newNodes.length; i++) {
+      for (; i < newNodesLength; i++) {
         _create(parentNode, parentEl, newNodes[i], xmlns);
       }
     }
-    parentNode.nodes = newNodes;
   } else {
-    parentEl.textContent = "";
-    _unmount(oldNodes);
-    parentNode.nodes = newNodes;
+    if (parentNode.is === VNODE_ELEM) {
+      parentEl.textContent = "";
+      _unmount(oldNodes);
+    } else {
+      for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
+    }
   }
+  parentNode.nodes = newNodes;
 };
-const _setElAttributes = (newNode, oldAttrs = EMPTY_OBJECT) => {
+const _setElAttributes = (newNode, oldAttrs = ALWAYS_EMPTY_OBJECT) => {
+  let attr;
+  let valueType;
   const el = newNode.el;
   const newAttrs = newNode.attrs;
-  let attr;
-  if (newAttrs !== EMPTY_OBJECT) {
-    if (newNode.$tag === "input" && typeof newAttrs.type === "string") {
-      el.setAttribute("type", newAttrs.type);
-    }
-    for (attr in newAttrs) {
-      const value = newAttrs[attr];
-      if (attr[0] === "o" && attr[1] === "n") {
-        if (value !== oldAttrs[attr]) {
-          el[attr] = typeof value === "function" ? (e) => {
-            if (value.call(e.currentTarget, e) === false) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-            if (e.draw !== false) {
-              draw(newNode);
-            }
-          } : null;
-        }
-      } else if (attr[0] !== "$" && attr !== "type" && attr !== "is" && attr !== "xmlns") {
-        const valueType = typeof value;
-        if (valueType === "string" || valueType === "number") {
-          if (attr === "value") {
-            if (value !== oldAttrs[attr]) el.value = value;
-          } else if (value !== oldAttrs[attr]) {
-            el.setAttribute(attr, value + "");
+  if (newNode.$tag === "input" && newAttrs.type) {
+    el.setAttribute("type", newAttrs.type);
+  }
+  for (attr in newAttrs) {
+    const value = newAttrs[attr];
+    if (attr[0] === "o" && attr[1] === "n") {
+      if (value !== oldAttrs[attr]) {
+        el[attr] = typeof value === "function" ? (e) => {
+          if (value.call(e.currentTarget, e) === false) {
+            e.preventDefault();
+            e.stopPropagation();
           }
-        } else if (value === true) {
-          if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
-        } else if (!value) {
-          if (oldAttrs[attr]) el.removeAttribute(attr);
-        } else {
-          Object.assign(el[attr], value);
+          if (e.draw !== false) {
+            draw(newNode);
+          }
+        } : null;
+      }
+    } else if (attr[0] !== "$" && (attr !== "type" || newNode.$tag !== "input") && attr !== "is" && attr !== "xmlns") {
+      valueType = typeof value;
+      if (valueType === "string" || valueType === "number") {
+        if (attr === "value") {
+          if (value !== oldAttrs[attr]) el.value = value;
+        } else if (value !== oldAttrs[attr]) {
+          el.setAttribute(attr, value + "");
         }
+      } else if (value === true) {
+        if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
+      } else if (!value) {
+        if (oldAttrs[attr]) el.removeAttribute(attr);
+      } else {
+        Object.assign(el[attr], value);
       }
     }
   }
-  if (oldAttrs !== EMPTY_OBJECT) {
-    for (attr in oldAttrs) {
-      if (!(attr in newAttrs)) {
-        if (attr[0] === "o" && attr[1] === "n") {
-          el[attr] = null;
-        } else {
-          el.removeAttribute(attr);
-        }
+  for (attr in oldAttrs) {
+    if (!(attr in newAttrs)) {
+      if (attr[0] === "o" && attr[1] === "n") {
+        el[attr] = null;
+      } else {
+        el.removeAttribute(attr);
       }
     }
   }
@@ -370,15 +341,11 @@ const _create = (parentNode, parentEl, vNode, xmlns) => {
       }
       vNode.el = document.createComment("");
       parentEl.insertBefore(vNode.el, null);
-      for (let i = 0; i < vNode.nodes.length; i++) {
-        _create(vNode, vNode.attrs.to, vNode.nodes[i], xmlns);
-      }
-    } else {
-      for (let i = 0; i < vNode.nodes.length; i++) {
-        _create(vNode, parentEl, vNode.nodes[i], xmlns);
-      }
-      vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
     }
+    for (let i = 0; i < vNode.nodes.length; i++) {
+      _create(vNode, vNode.attrs.to || parentEl, vNode.nodes[i], xmlns);
+    }
+    if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
     if (vNode.$def.drawn) vNode.$def.drawn(vNode, true);
   } else if (vNode.is === VNODE_NODE) {
     parentEl.insertBefore(vNode.el, null);
@@ -387,6 +354,7 @@ const _create = (parentNode, parentEl, vNode, xmlns) => {
 const _redrawComponent = (vNode, parentEl, xmlns) => {
   const oldChildren = vNode.nodes;
   const newChildren = vNode.$def.draw(vNode, oldChildren);
+  vNode.$tag &= ~FLAG_IS_STALE;
   if (newChildren !== oldChildren) {
     _updateNodes(vNode, vNode.attrs.to || parentEl, _flatten(newChildren), oldChildren, xmlns);
     if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
@@ -418,11 +386,18 @@ const _unmount = (nodes) => {
     node2.attrs = node2.nodes = node2.$tag = node2.$def = node2.el = node2.up = null;
   }
 };
-const _destroy = (vNode) => {
-  if (vNode.is === VNODE_COMP && vNode.attrs.to) {
-    vNode.attrs.to.textContent = "";
+const _detach = (vNode) => {
+  if (vNode.is === VNODE_COMP) {
+    for (let i = 0; i < vNode.nodes.length; i++) {
+      _detach(vNode.nodes[i]);
+    }
+    if (vNode.attrs.to && vNode.el) vNode.el.remove();
+  } else if (vNode.el) {
+    vNode.el.remove();
   }
-  if (vNode.el) vNode.el.remove();
+};
+const _destroy = (vNode) => {
+  _detach(vNode);
   _unmount(vNode);
 };
 const _remove = (vNode) => {
@@ -449,7 +424,10 @@ const _remove = (vNode) => {
               );
               return;
             }
-            if (parent) parent.nodes.splice(parent.nodes.indexOf(vNode), 1);
+            if (parent) {
+              const i = parent.nodes.indexOf(vNode);
+              if (i !== -1) parent.nodes.splice(i, 1);
+            }
             _destroy(vNode);
             draw(parent);
           }
@@ -464,20 +442,20 @@ const _remove = (vNode) => {
 };
 const elem = function(tag) {
   const first = arguments[1];
-  const hasAttrs = first && typeof first === "object" && !first.is && !Array.isArray(first);
+  const hasAttrs = first && typeof first === "object" && !Array.isArray(first) && !("$tag" in first);
   return {
     is: VNODE_ELEM,
     $tag: tag,
     // string: element name
     $def: null,
     // always null for elem
-    attrs: hasAttrs ? Object.freeze(first)  : EMPTY_OBJECT,
-    nodes: arguments.length > (hasAttrs ? 2 : 1) ? _flatten(arguments, hasAttrs ? 2 : 1) : EMPTY_ARRAY,
+    attrs: hasAttrs ? Object.freeze(first)  : ALWAYS_EMPTY_OBJECT,
+    nodes: arguments.length > (hasAttrs ? 2 : 1) ? _flatten(arguments, hasAttrs ? 2 : 1) : ALWAYS_EMPTY_ARRAY,
     up: null,
     el: null
   };
 };
-const defc = (componentDefinition) => {
+const compDef = (componentDefinition) => {
   {
     if (!componentDefinition.draw) {
       throw new Error("Component definition must have a draw function");
@@ -502,19 +480,20 @@ const defc = (componentDefinition) => {
     }
   }
   return Object.freeze({
-    ...componentDefinition,
-    $tag: FLAG_IS_DEFINED | (componentDefinition.remove ? FLAG_HAS_REMOVE : 0) | (componentDefinition.removed ? FLAG_HAS_REMOVED : 0) | (componentDefinition.remove || componentDefinition.removed ? FLAG_HAS_LIFECYCLE : 0)
+    is: VNODE_COMPDEF,
+    $tag: FLAG_IS_DEFINED | (componentDefinition.remove ? FLAG_HAS_REMOVE : 0) | (componentDefinition.removed ? FLAG_HAS_REMOVED : 0) | (componentDefinition.remove || componentDefinition.removed ? FLAG_HAS_LIFECYCLE : 0),
+    ...componentDefinition
   });
 };
-const comp = (componentDefinition, attrs = EMPTY_OBJECT) => {
+const comp = (componentDefinition, attrs = ALWAYS_EMPTY_OBJECT) => {
   return {
     is: VNODE_COMP,
     $tag: componentDefinition.$tag || 0,
     // number: flags
     $def: componentDefinition,
     // object: component definition
-    attrs: attrs === EMPTY_OBJECT ? attrs : Object.freeze(attrs) ,
-    nodes: EMPTY_ARRAY,
+    attrs: attrs === ALWAYS_EMPTY_OBJECT ? attrs : Object.freeze(attrs) ,
+    nodes: ALWAYS_EMPTY_ARRAY,
     up: null,
     el: null
   };
@@ -532,18 +511,17 @@ const node = (el) => {
     el
   };
 };
-const RootWrapper = {
-  draw: (vNode) => vNode.nodes.slice()
-};
+const RootWrapper = compDef({
+  draw: (vNode) => vNode.attrs.$nodes
+});
 const bind = (el, vNodeAnyOrArray) => {
   if (el == null) throw new Error("mount");
   const rootComp = boundNodes.get(el) || comp(RootWrapper);
-  rootComp.nodes = _flatten(vNodeAnyOrArray);
+  rootComp.attrs = { $nodes: vNodeAnyOrArray };
   boundNodes.set(rootComp.el = el, rootComp);
   draw(rootComp);
   sync();
   return rootComp;
 };
-const keep = () => true;
 
-export { DIFF, bind, comp, defc, draw, edit, elem, keep, node, ns, sync };
+export { bind, comp, compDef, diff, draw, elem, node, ns, sync };
