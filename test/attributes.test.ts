@@ -136,27 +136,35 @@ describe('DOM Attributes with elem()', () => {
     expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
   });
 
-  test('Nested Attribute in style removed as expected', () => {
+  test('Style property removal preserves other properties', () => {
     document.body.innerHTML = '<div id="app"></div>';
     const app = document.querySelector('#app');
 
     const el1 = elem('div', {
-      style: { backgroundColor: 'red' },
+      style: {
+        backgroundColor: 'red',
+        color: 'white',
+      },
     });
 
     const el2 = elem('div', {
-      style: {},
+      style: {
+        color: 'blue',
+      },
     });
 
     bind(app, el1);
-    flushMicrotasks();
 
-    expect((el1.el as HTMLElement).style.backgroundColor).toEqual('red');
+    const el = el1.el as HTMLElement;
+
+    expect(el.style.backgroundColor).toBe('red');
+    expect(el.style.color).toBe('white');
 
     bind(app, el2);
-    flushMicrotasks();
 
-    expect((el2.el as HTMLElement).style.backgroundColor).toEqual('');
+    expect(el2.el).toBe(el);
+    expect(el.style.backgroundColor).toBe('');
+    expect(el.style.color).toBe('blue');
   });
 
   test('Attribute of null is equivalent to no attribute', () => {
