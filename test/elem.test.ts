@@ -137,150 +137,38 @@ describe('elem()', () => {
     });
   });
 
-  /*
   test('Handles array with multiple elem() children', () => {
     const node = elem('div', [elem('div'), elem('p')]);
-    expect(node.children).toHaveLength(2);
-    expect(node.children[0]).toMatchObject({
-      type: VNODE_ELEM,
-      $tag: 'div',
-      attrs: {},
-      children: [],
-    });
-    expect(node.children[1]).toMatchObject({
-      type: VNODE_ELEM,
-      $tag: 'p',
-      attrs: {},
-      children: [],
-    });
+    expect(node.nodes).toHaveLength(2);
+    expect(node.nodes.map(child => child.$tag)).toEqual(['div', 'p']);
   });
 
-  test('Filters nulls mixed with elements', () => {
-    const node = elem('div', null, elem('span'), null);
-    expect(node.children.length).toBe(1);
-    expect(node.children[0].tag).toBe('span');
+  test('Filters null and undefined children', () => {
+    const node = elem('div', null, elem('span'), undefined, elem('p'));
+    expect(node.nodes).toHaveLength(2);
+    expect(node.nodes.map(child => child.$tag)).toEqual(['span', 'p']);
   });
 
-  test('Filters nulls mixed with elements in array', () => {
-    const node = elem('div', [null, elem('span'), null, elem('p'), undefined]);
-    expect(node.children.length).toBe(2);
-    expect(node.children[0].tag).toBe('span');
-    expect(node.children[1].tag).toBe('p');
-  });
-
-  test('Filters booleans mixed with elements', () => {
+  test('Filters boolean children', () => {
     const node = elem('div', false, elem('span'), true, elem('p'));
-    expect(node.children.length).toBe(2);
-    expect(node.children[0].tag).toBe('span');
-    expect(node.children[1].tag).toBe('p');
+    expect(node.nodes).toHaveLength(2);
+    expect(node.nodes.map(child => child.$tag)).toEqual(['span', 'p']);
   });
 
-  test('Filters mixed nullish values with elements', () => {
-    const node = elem('div', [null, elem('span'), undefined, false, elem('p'), true]);
-    expect(node.children.length).toBe(2);
-    expect(node.children[0].tag).toBe('span');
-    expect(node.children[1].tag).toBe('p');
+  test('Filters nullish and boolean values from nested arrays', () => {
+    const node = elem('div', [
+      null,
+      [elem('span'), undefined, false],
+      true,
+      [elem('p'), null],
+    ]);
+    expect(node.nodes).toHaveLength(2);
+    expect(node.nodes.map(child => child.$tag)).toEqual(['span', 'p']);
   });
 
-  test('Filters single null child', () => {
-    const node = elem('div', null);
-    expect(node.children.length).toBe(0);
+  test('Handles only filtered children', () => {
+    const node = elem('div', null, [undefined, false], true, [null]);
+    expect(node.nodes).toHaveLength(0);
   });
-
-  test('Filters single null child array', () => {
-    const node = elem('div', [null]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters single undefined child', () => {
-    const node = elem('div', undefined);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters single undefined child array', () => {
-    const node = elem('div', [undefined]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters single false child', () => {
-    const node = elem('div', false);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters single false child array', () => {
-    const node = elem('div', [false]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters single true child', () => {
-    const node = elem('div', true);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters single true child array', () => {
-    const node = elem('div', [true]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple null children', () => {
-    const node = elem('div', null, null);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters mixed null children', () => {
-    const node = elem('div', null, [null]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple null children array', () => {
-    const node = elem('div', [null, null]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple undefined children', () => {
-    const node = elem('div', undefined, undefined);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple undefined children array', () => {
-    const node = elem('div', [undefined, undefined]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters mixed undefined children', () => {
-    const node = elem('div', undefined, [undefined]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple false children', () => {
-    const node = elem('div', false, false);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple false children array', () => {
-    const node = elem('div', [false, false]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters mixed false children', () => {
-    const node = elem('div', false, [false]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple true children', () => {
-    const node = elem('div', true, true);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters multiple true children array', () => {
-    const node = elem('div', [true, true]);
-    expect(node.children.length).toBe(0);
-  });
-
-  test('Filters mixed true children', () => {
-    const node = elem('div', true, [true]);
-    expect(node.children.length).toBe(0);
-  });
-  */
 
 });
