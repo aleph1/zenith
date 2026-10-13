@@ -1,4 +1,3 @@
-// *** fix toHaveOnlyProperties
 import { describe, test, expect } from 'vitest';
 import { elem } from '../src/index';
 import { VNODE_ELEM } from '../src/vNode.defs';
@@ -62,16 +61,6 @@ describe('elem()', () => {
     expect(node.attrs).toEqual({});
     expect(node.nodes).toEqual([]);
   });
-
-  // *** Objects are no longer frozen to improve performance.
-  // Errors are thrown in development mode, and also noted
-  // in documentation.
-  // test('Attempting to modify attrs throws an error', () => {
-  //   const node = elem('div');
-  //   expect(() => {
-  //     node.attrs.id = 'test';
-  //   }).toThrow(Error);
-  // });
 
   test('Handles children with keys', () => {
     const node1 = elem('div', {$key:1});

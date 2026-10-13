@@ -6,6 +6,7 @@
  * These tests must run in Vitest's DOM environment (jsdom or happy-dom).
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { elem} from '../src/index';
 
 type Framework = typeof import('../src/index');
 let lib: Framework;
@@ -25,8 +26,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+test('Element attributes are frozen in DEBUG mode', () => {
+  const node = elem('div', { id: 'test' });
+  expect(Object.isFrozen(node.attrs)).toBe(true);
+});
+
 describe('Development-only validation', () => {
-  // 622, 625, 628, 631, 634, 637, 642
   test.each([
     ['missing draw', {}, /draw function/],
     ['invalid draw', { draw: 1 }, /draw must be a function/],
@@ -39,13 +44,11 @@ describe('Development-only validation', () => {
     expect(() => lib.compDef(definition as any)).toThrow(message as RegExp);
   });
 
-  // 481: invalid portal target.
   test('rejects a portal target that is not an Element', () => {
     const Child = lib.compDef({ draw: () => lib.elem('span', 'portal') });
     expect(() => lib.bind(app, lib.comp(Child, { to: {} as Element }))).toThrow(/portal/i);
   });
 
-  // 563: an asynchronous remove() must have a key in DEBUG builds.
   test('rejects an unkeyed component returning a removal Promise', () => {
     let show = true;
     const Leaving = lib.compDef({
@@ -59,7 +62,6 @@ describe('Development-only validation', () => {
     expect(() => { lib.draw(view); lib.sync(); }).toThrow(/requires a key/i);
   });
 
-  // 574-578: defensive diagnostic for an orphaned pending removal.
   // This deliberately simulates a broken parent link. It is an internal guard,
   // rather than a normal supported state transition.
   test('warns when deferred removal resolves with no parent link', async () => {

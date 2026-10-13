@@ -1,10 +1,3 @@
-/**
- * Additional branch/edge-case coverage for src/index.ts.
- * Uses the same DOM environment as the existing Vitest tests.
- *
- * These are behavioural assertions, not implementation-detail coverage hacks.
- * See coverage.debug.test.ts for development-only validation branches.
- */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { bind, comp, compDef, draw, elem, node, sync } from '../src/index';
 
@@ -21,7 +14,6 @@ const update = (view: ReturnType<typeof comp>) => {
 };
 const texts = (parent: Element) => Array.from(parent.children, el => el.textContent);
 
-// 145: focus restoration after the DOM operation changes document.activeElement.
 describe('Focus and input events', () => {
   test('restores focus after a redraw steals it', () => {
     const original = document.createElement('input');
@@ -42,7 +34,6 @@ describe('Focus and input events', () => {
     expect(document.activeElement).toBe(original);
   });
 
-  // 403, 428, 446: input type ordering, value assignment and removed attrs.
   test('updates input type/value and removes an omitted attribute', () => {
     let value = 'first';
     let kind = 'text';
@@ -71,7 +62,6 @@ describe('Focus and input events', () => {
     expect(input.hasAttribute('title')).toBe(false);
   });
 
-  // 414-419: callback returning false prevents default/propagation and redraws.
   test('an event handler returning false cancels the event and redraws', () => {
     let count = 0;
     const ancestor = vi.fn();
@@ -111,13 +101,11 @@ describe('Focus and input events', () => {
 });
 
 describe('Flattening and raw DOM nodes', () => {
-  // 197-198: mixed primitive and keyed children are invalid.
   test('rejects a string among keyed element children', () => {
     expect(() => elem('div', elem('span', { $key: 'a' }, 'a'), 'unkeyed text'))
       .toThrow(/keys/i);
   });
 
-  // 492-493, 669: native node wrapping. 293-296: identity-preserving replacement.
   test('mounts a supplied DOM element without recreating it', () => {
     const native = document.createElement('strong');
     native.textContent = 'external';
@@ -155,7 +143,6 @@ describe('Flattening and raw DOM nodes', () => {
 });
 
 describe('Additional keyed reconciliation branches', () => {
-  // 221, 304: the old last keyed component has no DOM root; match is updated.
   test('inserts next to an initially empty keyed component', () => {
     const Empty = compDef({ draw: () => [] });
     let add = false;
@@ -173,7 +160,6 @@ describe('Additional keyed reconciliation branches', () => {
     expect(texts(app.querySelector('section')!)).toEqual(['new']);
   });
 
-  // 290-291: same key, different component definition.
   test('replaces a keyed component when its definition changes', () => {
     const A = compDef({ draw: () => elem('i', 'A') });
     const B = compDef({ draw: () => elem('b', 'B') });
@@ -188,7 +174,6 @@ describe('Additional keyed reconciliation branches', () => {
     expect(app.querySelector('section b')).not.toBeNull();
   });
 
-  // 357-358: do not create an already-$remove-marked key with no old match.
   test('does not mount a newly introduced keyed item marked $remove', () => {
     let includeRemoval = false;
     const View = compDef({
@@ -204,7 +189,6 @@ describe('Additional keyed reconciliation branches', () => {
     expect(texts(app.querySelector('section')!)).toEqual(['keep']);
   });
 
-  // 343-348: a component with a synchronous remove() is discarded on $remove.
   test('completes a keyed $remove when remove() is synchronous', () => {
     const removed = vi.fn();
     let reverseAndRemove = false;
@@ -224,7 +208,6 @@ describe('Additional keyed reconciliation branches', () => {
     expect(texts(app.querySelector('section')!)).toEqual(['keep']);
   });
 
-  // 556: the reconciler must not run remove() a second time while pending.
   test('dropping an already-removing keyed component does not call remove twice', async () => {
     let finish!: () => void;
     const removed = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
@@ -255,7 +238,6 @@ describe('Additional keyed reconciliation branches', () => {
     expect(texts(app.querySelector('section')!)).toEqual(['keep']);
   });
 
-  // 270, 343-345, 556: a pending removal can be revisited then cancelled.
   test('retains a pending keyed removal, and reuses it if reintroduced', async () => {
     let finish!: () => void;
     const removed = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
@@ -299,7 +281,6 @@ describe('Additional keyed reconciliation branches', () => {
 });
 
 describe('Unmount lifecycle cleanup', () => {
-  // 521: when an enclosing element is destroyed, descendants receive remove().
   test('calls nested component remove and removed hooks on ancestor replacement', () => {
     const remove = vi.fn();
     const removed = vi.fn();

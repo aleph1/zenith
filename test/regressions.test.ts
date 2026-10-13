@@ -1,21 +1,12 @@
-/**
- * Regression tests for DOM ordering, component ownership, redraws and attributes.
- *
- * These intentionally assert the desired behavior. Several are expected to FAIL
- * against the current renderer; they should pass once the corresponding bugs
- * have been fixed. Keep them separate from the existing tests.
- *
- * Uses the project's existing Vitest DOM environment (jsdom or happy-dom).
- */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { bind, comp, compDef, diff, draw, elem, sync } from '../src/index';
+import { redraw } from './utils'
 
 const SVG = 'http://www.w3.org/2000/svg';
 const MATH = 'http://www.w3.org/1998/Math/MathML';
 const HTML = 'http://www.w3.org/1999/xhtml';
 
 let app: HTMLElement;
-
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
   app = document.querySelector('#app')!;
@@ -29,12 +20,6 @@ const elementTags = (parent: Element) =>
 
 const keyedItems = (keys: string[]) =>
   keys.map(key => elem('li', { $key: key, 'data-key': key }, key));
-
-/** Render from the component currently bound by the test. */
-const redraw = (vNode: ReturnType<typeof comp>, surgical = false) => {
-  draw(vNode, surgical);
-  sync();
-};
 
 describe('Regression: keyed reconciliation and DOM order', () => {
   test('prepending a keyed item inserts it before the existing first child', () => {
@@ -463,5 +448,217 @@ describe('Namespace propagation', () => {
     const inner = app.querySelector('foreignObject svg')!;
     expect(inner.namespaceURI).toBe(SVG);
     expect(inner.querySelector('circle')!.namespaceURI).toBe(SVG);
+  });
+});
+
+describe('Reconciliation and diff flags', () => {
+  test('keyed insert, remove and reorder in one update preserves surviving DOM nodes', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let keys = ['a', 'b', 'c', 'd'];
+    const View = compDef({ draw: () => elem('ul', keys.map(k => elem('li', { $key: k }, k))) });
+    const view = comp(View);
+    bind(app, view);
+    const ul = app.querySelector('ul')!;
+    const original = new Map(Array.from(ul.children, el => [el.textContent!, el]));
+    keys = ['d', 'x', 'b', 'a'];
+    redraw(view);
+    expect(elementText(ul)).toEqual(keys);
+    for (const key of ['a', 'b', 'd']) {
+      expect(Array.from(ul.children).find(el => el.textContent === key)).toBe(original.get(key));
+    }
+    expect(original.get('c')?.isConnected).toBe(false);
+  });
+
+  test('repeated keyed transitions preserve order and surviving identity', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let keys = ['a', 'b'];
+    const View = compDef({ draw: () => elem('ul', keys.map(k => elem('li', { $key: k }, k))) });
+    const view = comp(View);
+    bind(app, view);
+    const ul = app.querySelector('ul')!;
+    const a = ul.children[0];
+    const transitions = [['b', 'a'], ['a', 'c', 'b'], ['c', 'a'], [], ['a', 'z']];
+    transitions.forEach((next, index) => {
+      keys = next;
+      redraw(view);
+      expect(elementText(ul)).toEqual(next);
+      if (index < 3) {
+        expect(Array.from(ul.children).find(el => el.textContent === 'a')).toBe(a);
+      }
+      if (index === 3) expect(a.isConnected).toBe(false);
+    });
+    // Identity is only guaranteed while a key survives, not across removal.
+    expect(a.isConnected).toBe(false);
+  });
+
+  test('$diff: self updates attrs but preserves existing children', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let mode = diff.all;
+    let title = 'a';
+    let content = 'old';
+    const View = compDef({ draw: () => elem('div', { $diff: mode, title }, elem('b', content)) });
+    const view = comp(View);
+    bind(app, view);
+    const child = app.querySelector('b')!;
+    mode = diff.self; title = 'b'; content = 'new';
+    redraw(view);
+    expect(app.querySelector('div')!.title).toBe('b');
+    expect(app.querySelector('b')).toBe(child);
+    expect(child.textContent).toBe('old');
+  });
+
+  test('$diff: nodes updates children but preserves attributes', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let mode = diff.all;
+    let title = 'a';
+    let content = 'old';
+    const View = compDef({ draw: () => elem('div', { $diff: mode, title }, elem('b', content)) });
+    const view = comp(View);
+    bind(app, view);
+    mode = diff.nodes; title = 'b'; content = 'new';
+    redraw(view);
+    expect(app.querySelector('div')!.title).toBe('a');
+    expect(app.querySelector('b')!.textContent).toBe('new');
+  });
+
+  test('$diff: none preserves attrs and children, then all resumes updates', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let mode = diff.all;
+    let title = 'a';
+    let content = 'old';
+    const View = compDef({ draw: () => elem('div', { $diff: mode, title }, elem('b', content)) });
+    const view = comp(View);
+    bind(app, view);
+    mode = diff.none; title = 'b'; content = 'new';
+    redraw(view);
+    expect(app.querySelector('div')!.title).toBe('a');
+    expect(app.querySelector('b')!.textContent).toBe('old');
+    mode = diff.all; title = 'c'; content = 'latest';
+    redraw(view);
+    expect(app.querySelector('div')!.title).toBe('c');
+    expect(app.querySelector('b')!.textContent).toBe('latest');
+  });
+});
+
+describe('Scheduling and lifecycle', () => {
+  test('multiple queued draw calls coalesce into a single render', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let count = 0;
+    const render = vi.fn(() => elem('span', String(count)));
+    const View = compDef({ draw: render });
+    const view = comp(View);
+    bind(app, view);
+    count = 1;
+    draw(view);
+    draw(view);
+    draw(view);
+    sync();
+    expect(render).toHaveBeenCalledTimes(2); // initial + one update
+    expect(app.textContent).toBe('1');
+  });
+
+  test('mount and synchronous removal invoke lifecycle hooks in order', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const calls: string[] = [];
+    const Child = compDef({
+      init: () => { calls.push('init'); },
+      draw: () => { calls.push('draw'); return elem('span', 'child'); },
+      drawn: (_node: any, first: boolean) => { calls.push(first ? 'drawn:first' : 'drawn:update'); },
+      remove: () => { calls.push('remove'); },
+      removed: () => { calls.push('removed'); },
+    });
+    let show = true;
+    const View = compDef({ draw: () => elem('div', show ? comp(Child) : elem('i', 'gone')) });
+    const view = comp(View);
+    bind(app, view);
+    expect(calls).toEqual(['init', 'draw', 'drawn:first']);
+    show = false;
+    redraw(view);
+    expect(calls).toEqual(['init', 'draw', 'drawn:first', 'remove', 'removed']);
+  });
+
+  test('redrawing an existing component invokes draw before drawn(false)', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const calls: string[] = [];
+    const View = compDef({
+      draw: () => { calls.push('draw'); return elem('span', 'value'); },
+      drawn: (_node: any, first: boolean) => { calls.push(first ? 'first' : 'updated'); },
+    });
+    const view = comp(View);
+    bind(app, view);
+    redraw(view);
+    expect(calls).toEqual(['draw', 'first', 'draw', 'updated']);
+  });
+
+  test('Deferred removal resolves after parent is removed', async () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+
+    let resolveRemoval!: () => void;
+    let showChild = true;
+    let showParent = true;
+
+    const remove = vi.fn(() => new Promise<void>(resolve => {
+      resolveRemoval = resolve;
+    }));
+    const removed = vi.fn();
+
+    const Child = compDef({
+      draw: () => elem('span', 'child'),
+      remove,
+      removed,
+    });
+
+    const Parent = compDef({
+      draw: () => elem('div',
+        ...(showChild
+          ? [comp(Child, { $key: 'child' }), elem('b', { $key: 'keep' }, 'keep')]
+          : [elem('b', { $key: 'keep' }, 'keep')])
+      ),
+    });
+
+    const Root = compDef({
+      draw: () => showParent
+        ? comp(Parent)
+        : elem('p', 'replacement'),
+    });
+
+    const root = comp(Root);
+    bind(app, root);
+
+    const parent = root.nodes[0] as ReturnType<typeof comp>;
+
+    // Begin deferred removal.
+    showChild = false;
+    redraw(parent, true);
+
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(app.querySelector('span')).not.toBeNull();
+
+    // Remove the parent before the Promise resolves.
+    showParent = false;
+    redraw(root);
+
+    expect(app.querySelector('div')).toBeNull();
+    expect(app.querySelector('p')?.textContent).toBe('replacement');
+
+    // Complete the deferred removal.
+    resolveRemoval();
+    await Promise.resolve();
+    sync();
+
+    // The replacement must remain unaffected.
+    expect(app.querySelector('p')?.textContent).toBe('replacement');
+    expect(app.querySelector('span')).toBeNull();
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(removed).toHaveBeenCalledTimes(1);
   });
 });

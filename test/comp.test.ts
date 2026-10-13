@@ -1,8 +1,7 @@
-import { describe, test, expect } from 'vitest';
-import { comp } from '../src/index';
-import {
-  VNODE_COMP
-} from '../src/vNode.defs';
+import { describe, test, expect, vi } from 'vitest';
+import { bind, comp, compDef, draw, elem, sync } from '../src/index';
+import { VNODE_COMP } from '../src/vNode.defs';
+import { redraw } from './utils';
 
 describe('comp()', () => {
   test('Returns a vNode with the correct type', () => {
@@ -44,5 +43,55 @@ describe('comp()', () => {
     };
     const comp1 = comp(compDef);
     expect(comp1.$def).toBe(compDef);
+  });
+});
+
+describe('Component memoization', () => {
+  test('$memo: true skips redraw when attributes are the same object', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    const attrs = { label: 'same' };
+    const render = vi.fn(() => elem('span', 'same'));
+    const Child = compDef({ $memo: true, draw: render });
+    const Parent = compDef({ draw: () => comp(Child, attrs) });
+    const parent = comp(Parent);
+    bind(app, parent);
+    redraw(parent);
+    expect(render).toHaveBeenCalledTimes(1);
+  });
+
+  test('$memo: true redraws when the attributes object changes', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let attrs = { label: 'a' };
+    const render = vi.fn((vNode: any) => elem('span', vNode.attrs.label));
+    const Child = compDef({ $memo: true, draw: render });
+    const Parent = compDef({ draw: () => comp(Child, attrs) });
+    const parent = comp(Parent);
+    bind(app, parent);
+    attrs = { label: 'b' };
+    redraw(parent);
+    expect(render).toHaveBeenCalledTimes(2);
+    expect(app.textContent).toBe('b');
+  });
+
+  test('a custom $memo predicate controls whether an update is skipped', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const app = document.querySelector('#app');
+    let attrs = { label: 'a' };
+    const memo = vi.fn((next: any, prev: any) => next.label === prev.label);
+    const render = vi.fn((vNode: any) => elem('span', vNode.attrs.label));
+    const Child = compDef({ $memo: memo, draw: render });
+    const Parent = compDef({ draw: () => comp(Child, attrs) });
+    const parent = comp(Parent);
+    bind(app, parent);
+    attrs = { label: 'a' };
+    redraw(parent);
+    expect(render).toHaveBeenCalledTimes(1);
+    attrs = { label: 'b' };
+    redraw(parent);
+    expect(render).toHaveBeenCalledTimes(2);
+    expect(memo).toHaveBeenCalled();
+    expect(app.textContent).toBe('b');
   });
 });
