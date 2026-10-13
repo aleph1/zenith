@@ -308,11 +308,8 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
   if(newNodesLength) {
     let oldNode;
     let newNode;
-    let oldKey;
-    let newKey;
     let oldPos;
     let i = 0;
-    let j = 0;
     if(oldNodesLength) {
 
       // Determine if nodes require reconciling
