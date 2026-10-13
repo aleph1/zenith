@@ -17,9 +17,11 @@ interface PortalAttrs {
  *   children: comp(Modal)
  * })
  */
-export const Portal: VNodeCompDefinition = {
-  to: (vNode: VNodeComp<PortalAttrs>) => typeof vNode.attrs.to === 'string'
+export const Portal: VNodeCompDefinition<PortalAttrs> & {
+  to: (vNode: VNodeComp<PortalAttrs>) => Element | null;
+} = {
+  to: (vNode) => typeof vNode.attrs.to === 'string'
     ? document.querySelector(vNode.attrs.to)
     : vNode.attrs.to,
-  draw: (vNode: VNodeComp<PortalAttrs>): VNodeAnyOrArray => vNode.attrs.children
+  draw: (vNode) => vNode.attrs.children
 };

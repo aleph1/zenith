@@ -9,5 +9,5 @@ import { signal } from './signal';
 import { derived } from './derived';
 import { router } from './router';
 import { Portal } from './portal';
-
-window.zh = { keep, is, cls, slot, html, closest, inject, signal, derived, router, Portal };
+const zh = { keep, is, cls, slot, html, closest, inject, signal, derived, router, Portal };
+(window as Window & { zh?: typeof zh }).zh = zh;

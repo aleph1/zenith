@@ -3,18 +3,25 @@
   "version": "1.0.0-beta.13",
   "description": "Another front-end framework.",
   "type": "module",
-  "main": "dist/zenith.global.js",
-  "module": "dist/zenith.js",
+  "main": "./dist/zenith.js",
+  "module": "./dist/zenith.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
-    ".": "./dist/zenith.js",
-    "./helpers": "./dist/zenith-helpers.js"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/zenith.js"
+    },
+    "./helpers": {
+      "types": "./dist/types/helpers/index.d.ts",
+      "default": "./dist/zenith-helpers.js"
+    }
   },
   "files": [
     "dist/"
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "rollup --config && node scripts/after-build.mjs",
+    "build": "rollup --config && tsc && node scripts/after-build.mjs",
     "lint": "eslint . --ext .ts",
     "test": "vitest --run --coverage --reporter verbose",
     "test:ui": "vitest --ui",

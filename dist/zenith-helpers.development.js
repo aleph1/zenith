@@ -1,4 +1,4 @@
-/*! Zenith Helpers v1.0.0-beta.12 | MIT License | © 2022-2025 Daniel Barber */
+/*! Zenith Helpers v1.0.0-beta.14 | MIT License | © 2022-2025 Daniel Barber */
 import { node, draw } from './zenith.js';
 
 const keep = () => true;
@@ -43,7 +43,7 @@ const inject = (vNode, ...keys) => {
   const result = {};
   const needed = new Set(keys);
   for (let current = vNode.up; current && needed.size > 0; current = current.up) {
-    if (current.is === is.comp && current.provide) {
+    if (current.is === VNODE_COMP && current.provide) {
       for (const key of needed) {
         if (current.provide[key] !== void 0) {
           result[key] = current.provide[key];
@@ -122,24 +122,29 @@ const router = (routes, options = {}) => {
     });
   }
   return {
-    init(vNode) {
+    init: (vNode) => {
+      const node = vNode;
       const matched = matchRoute(getPath());
-      vNode.route = matched.component;
-      vNode.params = matched.params;
-      vNode.onroute = () => {
+      node.route = matched.component;
+      node.params = matched.params;
+      node.onroute = () => {
         const matched2 = matchRoute(getPath());
-        vNode.route = matched2.component;
-        vNode.params = matched2.params;
-        draw(vNode, true);
+        node.route = matched2.component;
+        node.params = matched2.params;
+        draw(node, true);
       };
-      window.addEventListener(eventType, vNode.onroute);
+      window.addEventListener(eventType, node.onroute);
     },
     draw: (vNode) => {
       var _a;
-      return (_a = vNode.route) == null ? void 0 : _a.call(vNode, vNode.params);
+      const node = vNode;
+      return (_a = node.route) == null ? void 0 : _a.call(node, node.params);
     },
-    removed(vNode) {
-      window.removeEventListener(eventType, vNode.onroute);
+    removed: (vNode) => {
+      const node = vNode;
+      if (node.onroute) {
+        window.removeEventListener(eventType, node.onroute);
+      }
     }
   };
 };

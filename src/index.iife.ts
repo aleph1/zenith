@@ -1,6 +1,6 @@
 import { elem, comp, node, compDef, bind, draw, ns, diff } from './index';
 
-window.z = {
+(window as any).z = {
   elem,
   comp,
   node,

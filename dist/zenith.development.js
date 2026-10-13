@@ -1,4 +1,4 @@
-/*! Zenith v1.0.0-beta.12 | MIT License | © 2022-2025 Daniel Barber */
+/*! Zenith v1.0.0-beta.14 | MIT License | © 2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 3;
@@ -376,6 +376,7 @@ const _unmount = (nodes) => {
     _unmountReusableArray[0] = nodes;
     nodes = _unmountReusableArray;
   }
+  nodes = nodes;
   for (let i = 0; i < nodes.length; i++) {
     const node2 = nodes[i];
     if (node2.is === VNODE_COMP) {

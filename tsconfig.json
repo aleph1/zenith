@@ -1,5 +1,15 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable"]
-  }
+    "lib": ["dom", "dom.iterable", "es2020"],
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist/types",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test"]
 }

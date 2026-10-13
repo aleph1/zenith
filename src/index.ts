@@ -72,7 +72,7 @@ const DEBUG = window.DEBUG ?? false;
 // ----------------------------------------
 
 const boundNodes = new Map();
-const redrawQueue = new Set();
+const redrawQueue = new Set<VNodeAny>();
 
 // ----------------------------------------
 // Namespaces
@@ -130,20 +130,20 @@ export const sync = (): void => {
   let remaining = redrawQueue.size;
   let targetEl;
   if (remaining) {
-    const active = document.activeElement;
+    const active = document.activeElement as HTMLElement;
     for (const redrawNode of redrawQueue) {
       targetEl = boundNodes.has(redrawNode.el) 
         ? redrawNode.el 
         : (redrawNode.attrs && redrawNode.attrs.to) || (redrawNode.el && redrawNode.el.parentNode) || (redrawNode.up && redrawNode.up.el);
       redrawQueue.delete(redrawNode);
       if (targetEl) {
-        _redrawComponent(redrawNode, targetEl);
+        _redrawComponent(redrawNode as VNodeComp, targetEl);
       }
       if (!--remaining) break;
     }
     if (redrawQueue.size) Promise.resolve().then(sync);
     if (active && active !== document.activeElement && typeof active.focus === 'function') {
-      (active as HTMLElement).focus();
+      active.focus();
     }
   }
 };
@@ -151,7 +151,7 @@ export const sync = (): void => {
 // Redraw a node
 // - Reuse current to avoid an additional variable declaration
 // - Optimized for performance and minification
-export const draw = (vNode: VNodeComp, surgical?: boolean) => {
+export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
   if (surgical) {
     if (vNode.is === VNODE_COMP) {
       vNode.$tag |= FLAG_IS_STALE;
@@ -174,13 +174,18 @@ export const draw = (vNode: VNodeComp, surgical?: boolean) => {
 };
 
 const _flattenReusableArray = [];
-const _flatten = (nodes: VNodeAnyOrArray, offset: number = 0, arr: VNodeFlatArray = []): VNodeFlatArray => {
+const _flatten = (
+  nodes: VNodeAnyOrArray | IArguments,
+  offset: number = 0,
+  arr: VNodeFlatArray =
+  []
+): VNodeFlatArray => {
   let node;
-  if (!(nodes && typeof nodes === 'object' && nodes.length != null)) {
+  if (!(nodes && typeof nodes === 'object' && (nodes as ArrayLike<unknown>).length != null)) {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
-  for (offset; offset < nodes.length; offset++) {
+  for (offset; offset < (nodes as ArrayLike<unknown>).length; offset++) {
     node = nodes[offset];
     if (Array.isArray(node)) {
       _flatten(node, 0, arr);
@@ -281,7 +286,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
               : !newNode.$def.$memo(newNode.attrs, oldNode.attrs))
           ) {
             newNode.$tag &= ~FLAG_IS_STALE;
-            _redrawComponent(newNode, parentEl, xmlns);
+            _redrawComponent(newNode as VNodeComp, parentEl, xmlns);
           }
         } else {
           _create(parentNode, parentEl, newNode, xmlns);
@@ -326,7 +331,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
              oldByKey.set(oldNodes[k].attrs.$key, oldNodes[k]);
            }
            const last = _lastRoot(oldNodes[oldNodesLength - 1]);
-           let next = last ? last.nextSibling : null;
+           let next: Node | null = last ? last.nextSibling : null;
   
            for (let k = newNodesLength - 1; k >= i; k--) {
              newNode = newNodes[k];
@@ -473,7 +478,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     if (vNode.$def.init) vNode.$def.init(vNode);
     vNode.nodes = _flatten(vNode.$def.draw(vNode));
     if (vNode.$tag & FLAG_HAS_LIFECYCLE) {
-      for (let current = vNode; current && !current.$h; current = current.up) {
+      for (let current: VNodeContainer | null = vNode; current && !current.$h; current = current.up) {
         current.$h = true;
       }
     }
@@ -486,7 +491,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
       //for(const child of vNode.nodes) {
     }
     for(let i = 0; i < vNode.nodes.length; i++) {
-      _create(vNode, vNode.attrs.to || parentEl, vNode.nodes[i], xmlns);
+      _create(vNode, (vNode.attrs.to || parentEl) as Element, vNode.nodes[i], xmlns);
     }
     if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
     if (vNode.$def.drawn) vNode.$def.drawn(vNode, true);
@@ -500,7 +505,7 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string): 
   const newChildren = vNode.$def.draw(vNode, oldChildren);
   vNode.$tag &= ~FLAG_IS_STALE;
   if (newChildren !== oldChildren) {
-    _updateNodes(vNode, vNode.attrs.to || parentEl, _flatten(newChildren), oldChildren, xmlns);
+    _updateNodes(vNode, (vNode.attrs.to || parentEl) as Element, _flatten(newChildren), oldChildren, xmlns);
     if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
   }
   if (vNode.$def.drawn) vNode.$def.drawn(vNode);
@@ -508,11 +513,12 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string): 
 
 const _unmountReusableArray = [];
 
-const _unmount = (nodes: VNodeAnyOrArray): void => {
+const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
   if (!Array.isArray(nodes)) {
-    _unmountReusableArray[0] = nodes;
+    _unmountReusableArray[0] = nodes as VNodeAny;
     nodes = _unmountReusableArray;
   }
+  nodes = nodes as VNodeFlatArray;
   //let node;
   for(let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -660,7 +666,7 @@ export const comp = (componentDefinition: VNodeCompDefinition, attrs: VNodeCompA
     $tag: componentDefinition.$tag || 0,  // number: flags
     $def: componentDefinition,           // object: component definition
     attrs: DEBUG ? attrs === ALWAYS_EMPTY_OBJECT ? attrs : Object.freeze(attrs) : attrs,
-    nodes: ALWAYS_EMPTY_ARRAY,
+    nodes: ALWAYS_EMPTY_ARRAY as unknown as VNodeFlatArray,
     up: null,
     el: null,
   };

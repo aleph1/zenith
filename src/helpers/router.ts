@@ -12,6 +12,12 @@ interface RouterRoutes {
   '*'?: RouteComponent;
 }
 
+interface RouterVNode extends VNodeComp {
+  route?: RouteComponent;
+  params?: Record<string, string>;
+  onroute?: () => void;
+}
+
 /**
  * Creates a hash or history-based router as a component definition.
  * Supports dynamic params (:id) and wildcard routes (*).
@@ -65,21 +71,32 @@ export const router = (routes: RouterRoutes, options: RouterOptions = {}): VNode
   }
 
   return {
-    init(vNode: VNodeComp) {
+    init: (vNode: VNodeComp) => {
+      const node = vNode as RouterVNode;
       const matched = matchRoute(getPath());
-      vNode.route = matched.component;
-      vNode.params = matched.params;
-      vNode.onroute = () => {
+
+      node.route = matched.component;
+      node.params = matched.params;
+      node.onroute = () => {
         const matched = matchRoute(getPath());
-        vNode.route = matched.component;
-        vNode.params = matched.params;
-        draw(vNode, true);
+        node.route = matched.component;
+        node.params = matched.params;
+        draw(node, true);
       };
-      window.addEventListener(eventType, vNode.onroute);
+
+      window.addEventListener(eventType, node.onroute);
     },
-    draw: (vNode: VNodeComp) => vNode.route?.(vNode.params),
-    removed(vNode: VNodeComp) {
-      window.removeEventListener(eventType, vNode.onroute);
+
+    draw: (vNode: VNodeComp) => {
+      const node = vNode as RouterVNode;
+      return node.route?.(node.params);
+    },
+
+    removed: (vNode: VNodeComp) => {
+      const node = vNode as RouterVNode;
+      if (node.onroute) {
+        window.removeEventListener(eventType, node.onroute);
+      }
     }
   };
 };
