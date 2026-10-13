@@ -427,9 +427,13 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
       } else if (!value) {
         if (oldAttrs[attr]) el.removeAttribute(attr);
       } else if (attr === 'style') {
-        for (const oldAttr in (oldAttrs.style || ALWAYS_EMPTY_OBJECT)) {
-          if (!(oldAttr in value)) {
-            el.style[oldAttr] = '';
+        if (typeof oldAttrs.style === 'string') {
+          el.removeAttribute('style');
+        } else {
+          for (const oldAttr in (oldAttrs.style || ALWAYS_EMPTY_OBJECT)) {
+            if (!(oldAttr in value)) {
+              el.style[oldAttr] = '';
+            }
           }
         }
         Object.assign(el.style, value);
