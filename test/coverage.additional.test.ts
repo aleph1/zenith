@@ -15,24 +15,6 @@ const update = (view: ReturnType<typeof comp>) => {
 const texts = (parent: Element) => Array.from(parent.children, el => el.textContent);
 
 describe('Focus and input events', () => {
-  test('restores focus after a redraw steals it', () => {
-    const original = document.createElement('input');
-    const other = document.createElement('button');
-    document.body.append(original, other);
-    let stealFocus = false;
-    const View = compDef({
-      draw: () => elem('span', 'content'),
-      drawn: () => { if (stealFocus) other.focus(); },
-    });
-    const view = comp(View);
-    bind(app, view);
-    original.focus();
-    expect(document.activeElement).toBe(original);
-
-    stealFocus = true;
-    update(view);
-    expect(document.activeElement).toBe(original);
-  });
 
   test('updates input type/value and removes an omitted attribute', () => {
     let value = 'first';

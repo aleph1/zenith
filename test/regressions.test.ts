@@ -662,3 +662,210 @@ describe('Scheduling and lifecycle', () => {
     expect(removed).toHaveBeenCalledTimes(1);
   });
 });
+
+
+describe('Focus preservation', () => {
+  test('redrawing an input preserves focus and selection', () => {
+    let label = 'Before';
+
+    const View = compDef({
+      draw: () => elem('div',
+        elem('input', { value: 'Hello world' }),
+        elem('span', label)
+      )
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    const input = app.querySelector('input')!;
+    input.focus();
+    input.setSelectionRange(3, 7);
+
+    label = 'After';
+    redraw(view);
+
+    expect(app.querySelector('input')).toBe(input);
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(3);
+    expect(input.selectionEnd).toBe(7);
+  });
+
+  test('reordering keyed siblings preserves input focus', () => {
+    let reversed = false;
+
+    const View = compDef({
+      draw: () => elem('div',
+        (reversed ? ['b', 'a'] : ['a', 'b']).map(key =>
+          elem('input', { $key: key, value: key })
+        )
+      )
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    const input = app.querySelectorAll('input')[0];
+    input.focus();
+
+    reversed = true;
+    redraw(view);
+
+    expect(app.querySelectorAll('input')[1]).toBe(input);
+    expect(document.activeElement).toBe(input);
+  });
+
+  test('parent redraw preserves focus inside nested component', () => {
+    const Child = compDef({
+      draw: () => elem('input', { value: 'Hello world' })
+    });
+
+    const Parent = compDef({
+      draw: () => elem('section', comp(Child))
+    });
+
+    const parent = comp(Parent);
+    bind(app, parent);
+
+    const input = app.querySelector('input')!;
+    input.focus();
+    input.setSelectionRange(2, 5);
+
+    redraw(parent);
+
+    expect(app.querySelector('input')).toBe(input);
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(2);
+    expect(input.selectionEnd).toBe(5);
+  });
+
+  test('drawn hook can intentionally move focus', () => {
+    let moveFocus = false;
+
+    const View = compDef({
+      draw: () => elem('div',
+        elem('input', { id: 'first' }),
+        elem('input', { id: 'second' })
+      ),
+      drawn: () => {
+        if (moveFocus) {
+          app.querySelector<HTMLInputElement>('#second')!.focus();
+        }
+      }
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    const first = app.querySelector<HTMLInputElement>('#first')!;
+    const second = app.querySelector<HTMLInputElement>('#second')!;
+
+    first.focus();
+    expect(document.activeElement).toBe(first);
+
+    moveFocus = true;
+    redraw(view);
+
+    expect(document.activeElement).toBe(second);
+  });
+
+  test('drawn hook can focus an external element', () => {
+    const original = document.createElement('input');
+    const other = document.createElement('button');
+    document.body.append(original, other);
+
+    let moveFocus = false;
+
+    const View = compDef({
+      draw: () => elem('span', 'content'),
+      drawn: () => {
+        if (moveFocus) other.focus();
+      }
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    original.focus();
+    expect(document.activeElement).toBe(original);
+
+    moveFocus = true;
+    redraw(view);
+
+    expect(document.activeElement).toBe(other);
+  });
+
+  test('replacing a focused input does not restore focus to the removed element', () => {
+    let replace = false;
+
+    const View = compDef({
+      draw: () => elem('div',
+        replace
+          ? elem('textarea')
+          : elem('input')
+      )
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    const input = app.querySelector('input')!;
+    input.focus();
+
+    replace = true;
+    redraw(view);
+
+    expect(input.isConnected).toBe(false);
+    expect(document.activeElement).not.toBe(input);
+  });
+
+  test('changing input value does not affect focus', () => {
+    let value = 'Hello world';
+
+    const View = compDef({
+      draw: () => elem('input', { value })
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    const input = app.querySelector('input')!;
+    input.focus();
+
+    value = 'Hello world!';
+    redraw(view);
+
+    expect(app.querySelector('input')).toBe(input);
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe('Hello world!');
+  });
+
+  test('reordering a focused input preserves selection', () => {
+    let reversed = false;
+
+    const View = compDef({
+      draw: () => elem('div',
+        (reversed ? ['b', 'a'] : ['a', 'b']).map(key =>
+          elem('input', {
+            $key: key,
+            value: 'Hello world'
+          })
+        )
+      )
+    });
+
+    const view = comp(View);
+    bind(app, view);
+
+    const input = app.querySelectorAll('input')[0];
+    input.focus();
+    input.setSelectionRange(3, 7);
+
+    reversed = true;
+    redraw(view);
+
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(3);
+    expect(input.selectionEnd).toBe(7);
+  });
+});
