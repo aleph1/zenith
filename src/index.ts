@@ -241,7 +241,7 @@ const _place = (vNode: VNodeAny, parentEl: Element, next: Node | null): Node | n
   return next;
 };
 
-const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns: string, skipMemo?: boolean): void => {
+const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns: string): void => {
   if (oldNode.el) {
     const newNodeType = newNode.is;
     if (newNodeType === oldNode.is) {
@@ -278,12 +278,11 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
           newNode.$h = oldNode.$h;
           newNode.nodes = (oldNode as VNodeComp).nodes;
           if(
-            skipMemo
-            || ((oldNode as VNodeComp).$tag & FLAG_IS_STALE)
-            || !newNode.$def.$memo
-            || (newNode.$def.$memo === true 
-              ? newNode.attrs !== oldNode.attrs 
-              : !newNode.$def.$memo(newNode.attrs, oldNode.attrs))
+            ((oldNode as VNodeComp).$tag & FLAG_IS_STALE)
+            || !(newNode.$def.$memo &&
+              (newNode.$def.$memo === true
+                ? newNode.attrs === oldNode.attrs
+                : newNode.$def.$memo(newNode.attrs, oldNode.attrs)))
           ) {
             newNode.$tag &= ~FLAG_IS_STALE;
             _redrawComponent(newNode as VNodeComp, parentEl, xmlns);
