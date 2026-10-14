@@ -181,7 +181,7 @@ const _flatten = (
   []
 ): VNodeFlatArray => {
   let node;
-  if (!(nodes && typeof nodes === 'object' && (nodes as ArrayLike<unknown>).length != null)) {
+  if (!nodes || (nodes as ArrayLike<unknown>).length == null) {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
