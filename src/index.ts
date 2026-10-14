@@ -519,6 +519,7 @@ const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
   nodes = nodes as VNodeFlatArray;
   for(let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
+    redrawQueue.delete(node);
     if (node.is === VNODE_COMP) {
       if (node.$tag & FLAG_HAS_REMOVE) {
         if (!(node.$tag & FLAG_REMOVE_CALLED)) {
