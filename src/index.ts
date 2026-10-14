@@ -306,7 +306,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
   }
 };
 
-const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VNodeFlatArray, oldNodes:VNodeFlatArray, xmlns?: string, depth = 0): void => {
+const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VNodeFlatArray, oldNodes:VNodeFlatArray, xmlns?: string): void => {
   const newNodesLength = newNodes.length;
   const oldNodesLength = oldNodes.length;
   if(newNodesLength) {
