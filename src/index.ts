@@ -530,7 +530,7 @@ const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
         node.$def.removed(node);
       }
     }
-    if (node.$h && node.nodes.length) {
+    if ((node.$h || redrawQueue.size) && node.nodes && node.nodes.length) {
       _unmount(node.nodes);
     }
     // invalidate pending asynchronous removals
