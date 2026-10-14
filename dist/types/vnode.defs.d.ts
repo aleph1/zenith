@@ -62,7 +62,7 @@ export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> 
 }
 export interface VNodeNode extends VNodeBase {
     is: typeof VNODE_NODE;
-    $tag: string;
+    $tag: number;
     $def: null;
     attrs: null;
     nodes: null;

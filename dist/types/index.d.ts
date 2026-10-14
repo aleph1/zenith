@@ -24,5 +24,5 @@ export declare const elem: {
 export declare const compDef: (componentDefinition: VNodeCompDefinition) => VNodeCompDefinition;
 export declare const comp: (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes) => VNodeComp;
 export declare const node: (el: Element) => VNodeNode;
-export declare const bind: (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray) => VNodeComp;
+export declare const bind: (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null) => VNodeComp;
 export { ns };

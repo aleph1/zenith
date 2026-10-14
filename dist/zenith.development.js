@@ -1,4 +1,4 @@
-/*! Zenith v1.0.0-beta.14 | MIT License | © 2022-2025 Daniel Barber */
+/*! Zenith v1.0.0-beta.15 | MIT License | © 2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 3;
@@ -45,7 +45,7 @@ const sync = () => {
       if (!--remaining) break;
     }
     if (redrawQueue.size) Promise.resolve().then(sync);
-    if (active && active !== document.activeElement && typeof active.focus === "function") {
+    if (active && document.activeElement === document.body) {
       active.focus();
     }
   }
@@ -74,7 +74,7 @@ const draw = (vNode, surgical) => {
 const _flattenReusableArray = [];
 const _flatten = (nodes, offset = 0, arr = []) => {
   let node2;
-  if (!(nodes && typeof nodes === "object" && nodes.length != null)) {
+  if (!nodes || nodes.length == null) {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
@@ -131,7 +131,7 @@ const _place = (vNode, parentEl, next) => {
   }
   return next;
 };
-const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, skipMemo) => {
+const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns) => {
   if (oldNode.el) {
     const newNodeType = newNode.is;
     if (newNodeType === oldNode.is) {
@@ -166,7 +166,7 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, skipMemo) =>
           newNode.el = oldNode.el;
           newNode.$h = oldNode.$h;
           newNode.nodes = oldNode.nodes;
-          if (skipMemo || oldNode.$tag & FLAG_IS_STALE || !newNode.$def.$memo || (newNode.$def.$memo === true ? newNode.attrs !== oldNode.attrs : !newNode.$def.$memo(newNode.attrs, oldNode.attrs))) {
+          if (oldNode.$tag & FLAG_IS_STALE || !(newNode.$def.$memo && (newNode.$def.$memo === true ? newNode.attrs === oldNode.attrs : newNode.$def.$memo(newNode.attrs, oldNode.attrs)))) {
             newNode.$tag &= ~FLAG_IS_STALE;
             _redrawComponent(newNode, parentEl, xmlns);
           }
@@ -188,7 +188,7 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, skipMemo) =>
     _create(parentNode, parentEl, newNode, xmlns);
   }
 };
-const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns, depth = 0) => {
+const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns) => {
   const newNodesLength = newNodes.length;
   const oldNodesLength = oldNodes.length;
   if (newNodesLength) {
@@ -379,21 +379,21 @@ const _unmount = (nodes) => {
   nodes = nodes;
   for (let i = 0; i < nodes.length; i++) {
     const node2 = nodes[i];
+    redrawQueue.delete(node2);
     if (node2.is === VNODE_COMP) {
-      if (node2.$tag & FLAG_HAS_REMOVE || node2.$def.remove) {
+      if (node2.$tag & FLAG_HAS_REMOVE) {
         if (!(node2.$tag & FLAG_REMOVE_CALLED)) {
           node2.$def.remove(node2);
         }
       }
-      if (node2.$tag & FLAG_HAS_REMOVED || node2.$def.removed) {
+      if (node2.$tag & FLAG_HAS_REMOVED) {
         node2.$def.removed(node2);
       }
     }
-    if (node2.$h && node2.nodes.length) {
+    if ((node2.$h || redrawQueue.size) && node2.nodes && node2.nodes.length) {
       _unmount(node2.nodes);
-      node2.nodes = null;
     }
-    node2.attrs = node2.nodes = node2.$tag = node2.$def = node2.el = node2.up = null;
+    node2.$tag = 0;
   }
 };
 const _detach = (vNode) => {
@@ -412,7 +412,7 @@ const _destroy = (vNode) => {
 };
 const _remove = (vNode) => {
   if (vNode.is === VNODE_COMP) {
-    if (vNode.$tag & FLAG_HAS_REMOVE || vNode.$def.remove) {
+    if (vNode.$tag & FLAG_HAS_REMOVE) {
       if (vNode.$tag & FLAG_IS_REMOVING) {
         return false;
       }
@@ -511,10 +511,8 @@ const comp = (componentDefinition, attrs = ALWAYS_EMPTY_OBJECT) => {
 const node = (el) => {
   return {
     is: VNODE_NODE,
-    $tag: el.nodeName.toLowerCase(),
-    // string: element name
+    $tag: 0,
     $def: null,
-    // always null for node
     attrs: null,
     nodes: null,
     up: null,
@@ -526,12 +524,20 @@ const RootWrapper = compDef({
 });
 const bind = (el, vNodeAnyOrArray) => {
   if (el == null) throw new Error("mount");
-  const rootComp = boundNodes.get(el) || comp(RootWrapper);
-  rootComp.attrs = { $nodes: vNodeAnyOrArray };
-  boundNodes.set(rootComp.el = el, rootComp);
-  draw(rootComp);
+  let root = boundNodes.get(el);
+  if (vNodeAnyOrArray === null) {
+    if (root) {
+      _destroy(root);
+      boundNodes.delete(el);
+    }
+    return null;
+  }
+  root = root || comp(RootWrapper);
+  root.attrs = { $nodes: vNodeAnyOrArray };
+  boundNodes.set(root.el = el, root);
+  draw(root);
   sync();
-  return rootComp;
+  return root;
 };
 
 export { bind, comp, compDef, diff, draw, elem, node, ns, sync };
