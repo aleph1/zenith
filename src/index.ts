@@ -517,7 +517,6 @@ const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
     nodes = _unmountReusableArray;
   }
   nodes = nodes as VNodeFlatArray;
-  //let node;
   for(let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if (node.is === VNODE_COMP) {
