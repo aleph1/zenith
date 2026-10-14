@@ -532,9 +532,9 @@ const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
     }
     if (node.$h && node.nodes.length) {
       _unmount(node.nodes);
-      node.nodes = null;
     }
-    node.attrs = node.nodes = node.$tag = node.$def = node.el = node.up = null;
+    // invalidate pending asynchronous removals
+    node.$tag = 0;
   }
 };
 
