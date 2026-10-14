@@ -673,8 +673,8 @@ export const comp = (componentDefinition: VNodeCompDefinition, attrs: VNodeCompA
 export const node = (el: Element): VNodeNode => {
   return {
     is: VNODE_NODE,
-    $tag: el.nodeName.toLowerCase(),    // string: element name
     $def: null,                          // always null for node
+    $tag: 0,
     attrs: null,
     nodes: null,
     up: null,
