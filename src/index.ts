@@ -556,7 +556,7 @@ const _destroy = (vNode: VNodeAny): void => {
 
 const _remove = (vNode: VNodeAny): boolean => {
   if (vNode.is === VNODE_COMP) {
-    if (vNode.$tag & FLAG_HAS_REMOVE || vNode.$def.remove) {
+    if (vNode.$tag & FLAG_HAS_REMOVE) {
       if ((vNode as VNodeComp).$tag & FLAG_IS_REMOVING) {
         return false;
       }
