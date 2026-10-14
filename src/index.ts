@@ -142,7 +142,7 @@ export const sync = (): void => {
       if (!--remaining) break;
     }
     if (redrawQueue.size) Promise.resolve().then(sync);
-    if (active && active !== document.activeElement && typeof active.focus === 'function') {
+    if (active && document.activeElement === document.body) {
       active.focus();
     }
   }
