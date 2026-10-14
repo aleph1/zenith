@@ -312,7 +312,6 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
   if(newNodesLength) {
     let oldNode;
     let newNode;
-    let oldPos;
     let i = 0;
     if(oldNodesLength) {
 
