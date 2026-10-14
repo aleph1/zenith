@@ -349,6 +349,26 @@ describe('Regression: diff flags, attributes and namespaces', () => {
     expect(app.querySelector('svg')!.namespaceURI).toBe(svgNS);
     expect(app.querySelector('rect')!.namespaceURI).toBe(svgNS);
   });
+
+  test('unbinding cancels pending component redraws', async () => {
+    const render = vi.fn(() => elem('span', 'content'));
+    const Child = compDef({ draw: render });
+    const Parent = compDef({ draw: () => comp(Child) });
+
+    const parent = comp(Parent);
+    bind(app, parent);
+
+    const child = parent.nodes[0];
+
+    draw(child, true);
+    bind(app, null);
+
+    await Promise.resolve();
+    sync();
+
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(app.children).toHaveLength(0);
+  });
 });
 
 describe('Namespace propagation', () => {
