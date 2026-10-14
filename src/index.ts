@@ -520,12 +520,12 @@ const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
   for(let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if (node.is === VNODE_COMP) {
-      if ((node.$tag & FLAG_HAS_REMOVE) || node.$def.remove) {
+      if (node.$tag & FLAG_HAS_REMOVE) {
         if (!(node.$tag & FLAG_REMOVE_CALLED)) {
           node.$def.remove(node);
         }
       }
-      if ((node.$tag & FLAG_HAS_REMOVED) || node.$def.removed) {
+      if (node.$tag & FLAG_HAS_REMOVED) {
         node.$def.removed(node);
       }
     }
