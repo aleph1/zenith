@@ -686,14 +686,22 @@ const RootWrapper = compDef({
   draw: (vNode) => vNode.attrs.$nodes,
 });
 
-export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray): VNodeComp => {
+export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null): VNodeComp => {
   if (DEBUG && el == null) throw new Error('mount');
-  const rootComp = boundNodes.get(el) || comp(RootWrapper);
-  rootComp.attrs = { $nodes: vNodeAnyOrArray };
-  boundNodes.set(rootComp.el = el, rootComp);
-  draw(rootComp);
+  let root = boundNodes.get(el);
+  if (vNodeAnyOrArray === null) {
+    if (root) {
+      _destroy(root);
+      boundNodes.delete(el);
+    }
+    return null;
+  }
+  root = root || comp(RootWrapper);
+  root.attrs = { $nodes: vNodeAnyOrArray };
+  boundNodes.set(root.el = el, root);
+  draw(root);
   sync();
-  return rootComp;
+  return root;
 };
 
 // ----------------------------------------
