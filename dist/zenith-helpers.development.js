@@ -1,5 +1,5 @@
 /*! Zenith Helpers v1.0.0-beta.15 | MIT License | © 2022-2025 Daniel Barber */
-import { node, draw } from './zenith.js';
+import { node, draw, compDef, bind } from './zenith.js';
 
 const keep = () => true;
 
@@ -149,9 +149,46 @@ const router = (routes, options = {}) => {
   };
 };
 
-const Portal = {
+const portals = /* @__PURE__ */ new WeakMap();
+const definition = {
   to: (vNode) => typeof vNode.attrs.to === "string" ? document.querySelector(vNode.attrs.to) : vNode.attrs.to,
-  draw: (vNode) => vNode.attrs.children
+  draw: (_vNode, oldChildren) => oldChildren || node(
+    document.createComment("")
+  ),
+  drawn(vNode) {
+    const placeholder = vNode.el;
+    let state = portals.get(placeholder);
+    if (!state) {
+      state = {
+        container: document.createElement("div"),
+        children: vNode.attrs.children,
+        pending: false,
+        active: true
+      };
+      portals.set(placeholder, state);
+    }
+    const target = definition.to(vNode);
+    if (target && state.container.parentNode !== target) {
+      target.appendChild(state.container);
+    }
+    state.children = vNode.attrs.children;
+    if (!state.pending) {
+      state.pending = true;
+      Promise.resolve().then(() => {
+        state.pending = false;
+        if (state.active) bind(state.container, state.children);
+      });
+    }
+  },
+  removed(vNode) {
+    const state = portals.get(vNode.el);
+    if (!state) return;
+    state.active = false;
+    bind(state.container, null);
+    state.container.remove();
+    portals.delete(vNode.el);
+  }
 };
+const Portal = compDef(definition);
 
 export { Portal, closest, cls, derived, html, inject, is, keep, router, signal, slot };

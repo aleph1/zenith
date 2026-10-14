@@ -43,12 +43,7 @@ describe('Development-only validation', () => {
   ])('%s', (_description, definition, message) => {
     expect(() => lib.compDef(definition as any)).toThrow(message as RegExp);
   });
-
-  test('rejects a portal target that is not an Element', () => {
-    const Child = lib.compDef({ draw: () => lib.elem('span', 'portal') });
-    expect(() => lib.bind(app, lib.comp(Child, { to: {} as Element }))).toThrow(/portal/i);
-  });
-
+  
   test('rejects an unkeyed component returning a removal Promise', () => {
     let show = true;
     const Leaving = lib.compDef({

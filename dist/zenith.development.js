@@ -37,7 +37,7 @@ const sync = () => {
   if (remaining) {
     const active = document.activeElement;
     for (const redrawNode of redrawQueue) {
-      targetEl = boundNodes.has(redrawNode.el) ? redrawNode.el : redrawNode.attrs && redrawNode.attrs.to || redrawNode.el && redrawNode.el.parentNode || redrawNode.up && redrawNode.up.el;
+      targetEl = boundNodes.has(redrawNode.el) ? redrawNode.el : redrawNode.el && redrawNode.el.parentNode || redrawNode.up && redrawNode.up.el;
       redrawQueue.delete(redrawNode);
       if (targetEl) {
         _redrawComponent(redrawNode, targetEl);
@@ -111,7 +111,7 @@ const _flatten = (nodes, offset = 0, arr = []) => {
   return arr;
 };
 const _lastRoot = (vNode) => {
-  if (vNode.is === VNODE_COMP && !vNode.attrs.to) {
+  if (vNode.is === VNODE_COMP) {
     for (let i = vNode.nodes.length - 1; i >= 0; i--) {
       const root = _lastRoot(vNode.nodes[i]);
       if (root) return root;
@@ -121,7 +121,7 @@ const _lastRoot = (vNode) => {
   return vNode.el;
 };
 const _place = (vNode, parentEl, next) => {
-  if (vNode.is === VNODE_COMP && !vNode.attrs.to) {
+  if (vNode.is === VNODE_COMP) {
     for (let i = vNode.nodes.length - 1; i >= 0; i--) {
       next = _place(vNode.nodes[i], parentEl, next);
     }
@@ -197,7 +197,7 @@ const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns) => {
     let i = 0;
     if (oldNodesLength) {
       if (newNodes.$keys && oldNodes.$keys) {
-        while (i < newNodesLength && i < oldNodesLength && newNodes[i].attrs.$key === oldNodes[i].attrs.$key) {
+        while (i < newNodesLength && i < oldNodesLength && newNodes[i].attrs.$key === oldNodes[i].attrs.$key && !(newNodes[i].is === VNODE_COMP && newNodes[i].attrs.$remove)) {
           _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
           i++;
         }
@@ -344,15 +344,8 @@ const _create = (parentNode, parentEl, vNode, xmlns) => {
         current.$h = true;
       }
     }
-    if (vNode.attrs.to) {
-      if (!(vNode.attrs.to instanceof Element)) {
-        throw new Error('For components that act as portals, "to" attribute must be an Element');
-      }
-      vNode.el = document.createComment("");
-      parentEl.insertBefore(vNode.el, null);
-    }
     for (let i = 0; i < vNode.nodes.length; i++) {
-      _create(vNode, vNode.attrs.to || parentEl, vNode.nodes[i], xmlns);
+      _create(vNode, parentEl, vNode.nodes[i], xmlns);
     }
     if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
     if (vNode.$def.drawn) vNode.$def.drawn(vNode, true);
@@ -365,7 +358,7 @@ const _redrawComponent = (vNode, parentEl, xmlns) => {
   const newChildren = vNode.$def.draw(vNode, oldChildren);
   vNode.$tag &= ~FLAG_IS_STALE;
   if (newChildren !== oldChildren) {
-    _updateNodes(vNode, vNode.attrs.to || parentEl, _flatten(newChildren), oldChildren, xmlns);
+    _updateNodes(vNode, parentEl, _flatten(newChildren), oldChildren, xmlns);
     if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
   }
   if (vNode.$def.drawn) vNode.$def.drawn(vNode);
@@ -401,7 +394,6 @@ const _detach = (vNode) => {
     for (let i = 0; i < vNode.nodes.length; i++) {
       _detach(vNode.nodes[i]);
     }
-    if (vNode.attrs.to && vNode.el) vNode.el.remove();
   } else if (vNode.el) {
     vNode.el.remove();
   }

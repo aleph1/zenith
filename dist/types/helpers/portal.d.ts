@@ -1,21 +1,16 @@
-import type { VNodeComp, VNodeCompDefinition, VNodeAnyOrArray } from '../vnode.defs';
+import type { VNode, VNodeArray, VNodeComp, VNodeCompDefinition } from '../vnode.defs';
 interface PortalAttrs {
     to: string | Element;
-    children: VNodeAnyOrArray;
+    children: VNode | VNodeArray;
 }
-/**
- * Renders children to a different DOM location.
- * Useful for modals, tooltips, and overlays that need
- * to escape their parent's stacking context or overflow.
- *
- * @example
- * comp(Portal, {
- *   to: '#modals',         // CSS selector
- *   to: document.body,     // or Element reference
- *   children: comp(Modal)
- * })
- */
-export declare const Portal: VNodeCompDefinition<PortalAttrs> & {
+declare const definition: VNodeCompDefinition<PortalAttrs> & {
     to: (vNode: VNodeComp<PortalAttrs>) => Element | null;
 };
+/**
+ * Render content into a separate DOM target with an independent Zenith root.
+ *
+ * comp(Portal, { to: '#modals', children: comp(Modal) })
+ * comp(Portal, { to: document.body, children: comp(Modal) })
+ */
+export declare const Portal: typeof definition;
 export {};

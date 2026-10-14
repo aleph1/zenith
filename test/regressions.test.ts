@@ -172,30 +172,6 @@ describe('Regression: component DOM ownership', () => {
     expect(app.querySelector('span b')).toBeNull();
   });
 
-  test('a portal unmount removes its own content without clearing another portal', () => {
-    const target = document.createElement('div');
-    document.body.appendChild(target);
-    let showFirst = true;
-
-    const First = compDef({ draw: () => elem('span', { id: 'first' }, 'first') });
-    const Second = compDef({ draw: () => elem('span', { id: 'second' }, 'second') });
-    const View = compDef({
-      draw: () => elem('section',
-        showFirst ? comp(First, { to: target }) : elem('em', 'gone'),
-        comp(Second, { to: target })
-      )
-    });
-    const view = comp(View);
-    bind(app, view);
-    expect(elementText(target)).toEqual(['first', 'second']);
-
-    showFirst = false;
-    redraw(view);
-
-    expect(target.querySelector('#first')).toBeNull();
-    expect(target.querySelector('#second')?.textContent).toBe('second');
-  });
-
   test('calling bind twice replaces the previous bound tree', () => {
     bind(app, elem('p', 'old'));
     bind(app, elem('p', 'new'));
