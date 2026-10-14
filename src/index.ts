@@ -318,11 +318,12 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
       // Determine if nodes require reconciling
       if (newNodes.$keys && oldNodes.$keys) {
         // Most renders don't change the order of keyed children.
-         while (i < newNodesLength && i < oldNodesLength &&
-                newNodes[i].attrs.$key === oldNodes[i].attrs.$key) {
-           _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
-           i++;
-         }
+        while (i < newNodesLength && i < oldNodesLength &&
+          newNodes[i].attrs.$key === oldNodes[i].attrs.$key &&
+          !(newNodes[i].is === VNODE_COMP && newNodes[i].attrs.$remove)) {
+          _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
+          i++;
+        }
          if (i < newNodesLength || i < oldNodesLength) {
            const oldByKey = new Map();
            for (let k = i; k < oldNodesLength; k++) {
