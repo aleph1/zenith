@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Zenith.js Demo</title>
+	<title>Zenith Sortable Table Demo</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../css/demos.css">
@@ -30,7 +30,7 @@
 <body>
 	<div id="app"></div>
 	<script type="module">
-		import { elem, comp, bind, draw } from '../../dist/zenith.development.js';
+		import { elem, comp, compDef, bind, draw } from '../../dist/zenith.js';
 		
 		let peopleCount = 0;
 		let personId = 0;
@@ -89,22 +89,22 @@
 			}
 		};
 
-		const SortableTableRow = {
+		const SortableTableRow = compDef({
 			draw: vNode => elem('tr',
 				vNode.attrs.data.map(datum => elem('td', {
 					class: datum.class,
 				}, typeof datum.value === 'function' ? datum.value() : datum.value))
 			),
 			drawn: (vNode, isFirstDraw) => {
-				if(isFirstDraw && vNode.dom) animate(vNode.dom, 'fade-in', fadeDuration);
+				if(isFirstDraw && vNode.el) animate(vNode.el, 'fade-in', fadeDuration);
 			},
 			remove: vNode => {
 				console.log('SortableTableRow.remove()');
-				console.log('key: ' + vNode.attrs.key);
-			  vNode.dom.classList.add('fade-out');
+				console.log('key: ' + vNode.attrs.$key);
+			  vNode.el.classList.add('fade-out');
 			  return new Promise(resolve => setTimeout(resolve, fadeDuration));
 			},
-			destroy: vNode => {
+			removed: vNode => {
 				// Actually remove from array after fade completes
 				for(let i = people.length - 1; i >= 0; i--) {
 					if(people[i] && people[i].id === vNode.attrs.id) {
@@ -113,9 +113,9 @@
 					}
 				}
 			}
-		};
+		});
 
-		const SortableTable = {
+		const SortableTable = compDef({
 			draw: vNode => {
 				return [
 					elem('table',
@@ -125,7 +125,7 @@
 									class: 'sort',
 									onclick(e) {
 										sortPeople((a,b) => a.id - b.id);
-										draw(vNode);
+										redrawApp();
 									}
 								}, 'ID'),
 								elem('th', {
@@ -138,7 +138,7 @@
 											if (nameA > nameB) return 1;
 											return 0;
 										});
-										draw(vNode);
+										redrawApp();
 									}
 								}, 'First Name'),
 								elem('th', {
@@ -151,14 +151,14 @@
 											if (nameA > nameB) return 1;
 											return 0;
 										});
-										draw(vNode);
+										redrawApp();
 									}
 								}, 'Last Name'),
 								elem('th', {
 									class: 'sort',
 									onclick(e) {
 										sortPeople((a,b) => a.age-b.age);
-										draw(vNode);
+										redrawApp();
 									}
 								}, 'Age'),
 								elem('th'),
@@ -166,7 +166,7 @@
 						),
 						elem('tbody',
 						  people.map(person => comp(SortableTableRow, {
-						    key: person.id,
+						    $key: person.id,
 						    $remove: person.deleted,  // ← Use $remove attribute
 						    data: [
 						      {
@@ -187,7 +187,7 @@
 						        value: () => elem('button', {
 						          onclick: e => {
 						            removePerson(person.id);
-						            draw(vNode);
+						            redrawApp();
 						          }
 						        }, 'x'),
 						        class: 'c',
@@ -199,39 +199,41 @@
 					)
 				];
 			},
-		};
+		});
 
-		const DemoControls = {
+		const DemoControls = compDef({
 			draw: vNode => elem('div',
 				elem('button', {
 					onclick(e) {
 						addPerson();
-						draw(vNode);
+						redrawApp();
 					}
 				}, 'add'),
 				elem('button', {
 					onclick(e) {
 						shuffle(people);
-						draw(vNode);
+						redrawApp();
 					}
 				}, 'shuffle'),
 				elem('button', {
 					onclick(e) {
 						people.push(people.shift());
-						draw(vNode);
+						redrawApp();
 					}
 				}, 'move first to last'),
 				elem('button', {
 					onclick(e) {
 						people.unshift(people.pop());
-						draw(vNode);
+						redrawApp();
 					}
 				}, 'move last to first'),
 				'Length: ' + peopleCount
 			),
-		};
+		});
 
-		bind(appEl, [comp(DemoControls), comp(SortableTable)]);
+		let appRoot;
+		const redrawApp = () => draw(appRoot);
+		appRoot = bind(appEl, [comp(DemoControls), comp(SortableTable)]);
 	</script>
 </body>
 </html>
