@@ -524,33 +524,24 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string): 
   if (vNode.$d.drawn) vNode.$d.drawn(vNode);
 };
 
-const _unmountReusableArray = [];
-
-const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
-  if (!Array.isArray(nodes)) {
-    _unmountReusableArray[0] = nodes as VNodeAny;
-    nodes = _unmountReusableArray;
-  }
-  nodes = nodes as VNodeFlatArray;
-  for(let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
+const _unmount = (node: VNodeAny): void => {
     redrawQueue.delete(node);
+
     if (node.is === VNODE_COMP) {
-      if (node.$d.remove) {
-        if (!(node.$t & FLAG_REMOVE_CALLED)) {
-          node.$d.remove(node);
+        if (node.$d.remove && !(node.$t & FLAG_REMOVE_CALLED)) {
+            node.$d.remove(node);
         }
-      }
-      if (node.$d.removed) {
-        node.$d.removed(node);
-      }
+        if (node.$d.removed) {
+            node.$d.removed(node);
+        }
+        node.$t = 0;
     }
-    if ((node.$h || redrawQueue.size) && node.nodes && node.nodes.length) {
-      _unmount(node.nodes);
+
+    if ((node.$h || redrawQueue.size) && node.nodes) {
+        for (let i = 0; i < node.nodes.length; i++) {
+            _unmount(node.nodes[i]);
+        }
     }
-    // invalidate pending asynchronous removals
-    node.$t = 0;
-  }
 };
 
 const _detach = (vNode: VNodeAny): void => {
