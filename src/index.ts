@@ -433,10 +433,9 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
     } else if (attr[0] !== '$' && (attr !== 'type' || newNode.$t !== 'input') && attr !== 'is' && attr !== 'xmlns') {
       valueType = typeof value;
       if (valueType === 'string' || valueType === 'number') {
-        if (attr === 'value') {
-          if (value !== oldAttrs[attr]) el.value = value;
-        } else if (value !== oldAttrs[attr]) {
-          el.setAttribute(attr, value + '');
+        if (value !== oldAttrs[attr]) {
+          if (attr === 'value') el.value = value;
+          else el.setAttribute(attr, value + '');
         }
       } else if (value === true) {
         if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
