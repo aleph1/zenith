@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { bind, comp, compDef, diff, draw, elem, sync } from '../src/index';
 import { redraw } from './utils'
 
@@ -170,30 +170,6 @@ describe('Regression: component DOM ownership', () => {
     expect(elementTags(app)).toEqual(['span', 'b']);
     expect(elementText(app)).toEqual(['first', 'second']);
     expect(app.querySelector('span b')).toBeNull();
-  });
-
-  test('a portal unmount removes its own content without clearing another portal', () => {
-    const target = document.createElement('div');
-    document.body.appendChild(target);
-    let showFirst = true;
-
-    const First = compDef({ draw: () => elem('span', { id: 'first' }, 'first') });
-    const Second = compDef({ draw: () => elem('span', { id: 'second' }, 'second') });
-    const View = compDef({
-      draw: () => elem('section',
-        showFirst ? comp(First, { to: target }) : elem('em', 'gone'),
-        comp(Second, { to: target })
-      )
-    });
-    const view = comp(View);
-    bind(app, view);
-    expect(elementText(target)).toEqual(['first', 'second']);
-
-    showFirst = false;
-    redraw(view);
-
-    expect(target.querySelector('#first')).toBeNull();
-    expect(target.querySelector('#second')?.textContent).toBe('second');
   });
 
   test('calling bind twice replaces the previous bound tree', () => {
@@ -888,4 +864,325 @@ describe('Focus preservation', () => {
     expect(input.selectionStart).toBe(3);
     expect(input.selectionEnd).toBe(7);
   });
+});
+
+describe('Regression: built-in portals', () => {
+    let app: HTMLDivElement;
+    const targets: HTMLElement[] = [];
+
+    const createTarget = () => {
+        const target = document.createElement('div');
+        document.body.append(target);
+        targets.push(target);
+        return target;
+    };
+
+    beforeEach(() => {
+        app = document.createElement('div');
+        document.body.append(app);
+    });
+
+    afterEach(() => {
+        bind(app, null);
+        app.remove();
+        for (const target of targets) target.remove();
+        targets.length = 0;
+    });
+
+    test('renders synchronously into its target and leaves a placeholder', () => {
+        const target = createTarget();
+        const Portal = compDef({ draw: () => elem('span', 'Portal content') });
+
+        bind(app, elem('main', comp(Portal, { to: target })));
+
+        const main = app.querySelector('main');
+        expect(main?.childNodes).toHaveLength(1);
+        expect(main?.firstChild?.nodeType).toBe(Node.COMMENT_NODE);
+        expect(app.querySelector('span')).toBeNull();
+        expect(target.textContent).toBe('Portal content');
+        expect(target.children).toHaveLength(1); // No wrapper element
+
+        bind(app, null);
+        expect(target.childNodes).toHaveLength(0);
+    });
+
+    test('updating portal content preserves DOM identity', () => {
+        const target = createTarget();
+        let value = 'Before';
+        const init = vi.fn();
+        const Content = compDef({ init, draw: (vnode) => elem('span', vnode.attrs.value) });
+        const Portal = compDef({ draw: (vnode) => comp(Content, { value: vnode.attrs.value }) });
+        const Parent = compDef({ draw: () => comp(Portal, { to: target, value }) });
+        const parent = comp(Parent);
+
+        bind(app, parent);
+        const original = target.querySelector('span');
+        expect(init).toHaveBeenCalledTimes(1);
+        value = 'After';
+        redraw(parent);
+        expect(target.textContent).toBe('After');
+        expect(target.querySelector('span')).toBe(original);
+        expect(init).toHaveBeenCalledTimes(1);
+    });
+
+    test('removing a portal nested inside an element cleans up DOM and lifecycle', () => {
+        const target = createTarget();
+        let visible = true;
+        const removed = vi.fn();
+        const Content = compDef({ draw: () => elem('span', 'Nested'), removed });
+        const Portal = compDef({ draw: () => comp(Content) });
+        const Parent = compDef({
+            draw: () => elem('div', visible ? comp(Portal, { to: target }) : null)
+        });
+        const parent = comp(Parent);
+        bind(app, parent);
+        expect(target.textContent).toBe('Nested');
+
+        visible = false;
+        redraw(parent);
+        expect(target.childNodes).toHaveLength(0);
+        expect(removed).toHaveBeenCalledTimes(1);
+        bind(app, null);
+        expect(removed).toHaveBeenCalledTimes(1);
+    });
+
+    test('removing an ancestor DOM element also cleans up nested portals', () => {
+        const target = createTarget();
+        let visible = true;
+        const removed = vi.fn();
+        const Content = compDef({ draw: () => elem('span', 'Nested'), removed });
+        const Portal = compDef({ draw: () => comp(Content) });
+        const Parent = compDef({
+            draw: () => visible
+                ? elem('section', elem('div', comp(Portal, { to: target })))
+                : elem('p', 'Replacement')
+        });
+        const parent = comp(Parent);
+        bind(app, parent);
+        visible = false;
+        redraw(parent);
+        expect(target.childNodes).toHaveLength(0);
+        expect(removed).toHaveBeenCalledTimes(1);
+    });
+
+    test('unbinding a portal with pending deferred removal destroys it immediately', async () => {
+        const target = createTarget();
+        let removing = false;
+        let resolveRemoval!: () => void;
+        const remove = vi.fn(() => new Promise<void>(resolve => { resolveRemoval = resolve; }));
+        const removed = vi.fn();
+        const Content = compDef({ draw: () => elem('span', 'Deferred'), remove, removed });
+        const Portal = compDef({
+            draw: () => comp(Content, { $key: 'content', $remove: removing })
+        });
+        const Parent = compDef({ draw: () => comp(Portal, { to: target }) });
+        const parent = comp(Parent);
+        bind(app, parent);
+
+        removing = true;
+        redraw(parent);
+        expect(remove).toHaveBeenCalledTimes(1);
+        expect(target.textContent).toBe('Deferred');
+        expect(removed).not.toHaveBeenCalled();
+
+        bind(app, null);
+        expect(app.childNodes).toHaveLength(0);
+        expect(target.childNodes).toHaveLength(0);
+        expect(removed).toHaveBeenCalledTimes(1);
+
+        resolveRemoval();
+        await Promise.resolve();
+        sync();
+        expect(target.childNodes).toHaveLength(0);
+        expect(removed).toHaveBeenCalledTimes(1);
+    });
+
+    test('multiple portals can coexist in one target', () => {
+        const target = createTarget();
+        const Portal = compDef({ draw: (vnode) => elem('span', vnode.attrs.label) });
+        bind(app, elem('main',
+            comp(Portal, { to: target, label: 'A' }),
+            comp(Portal, { to: target, label: 'B' })
+        ));
+        const labels = Array.from(target.querySelectorAll('span'), el => el.textContent);
+        expect(labels).toHaveLength(2);
+        expect(labels).toContain('A');
+        expect(labels).toContain('B');
+        bind(app, null);
+        expect(target.childNodes).toHaveLength(0);
+    });
+
+    test('removing one portal leaves another portal in the same target untouched', () => {
+        const target = createTarget();
+        let showFirst = true;
+        const First = compDef({ draw: () => elem('span', { id: 'first' }, 'first') });
+        const Second = compDef({ draw: () => elem('span', { id: 'second' }, 'second') });
+        const View = compDef({
+            draw: () => elem('section',
+                showFirst ? comp(First, { to: target }) : elem('em', 'gone'),
+                comp(Second, { to: target })
+            )
+        });
+        const view = comp(View);
+        bind(app, view);
+        const originalSecond = target.querySelector('#second');
+        showFirst = false;
+        redraw(view);
+        expect(target.querySelector('#first')).toBeNull();
+        expect(target.querySelector('#second')).toBe(originalSecond);
+        expect(target.querySelector('#second')?.textContent).toBe('second');
+        bind(app, null);
+        expect(target.childNodes).toHaveLength(0);
+    });
+
+    test('changing portal targets moves existing DOM without reinitializing', () => {
+        const targetA = createTarget();
+        const targetB = createTarget();
+        let target: Element = targetA;
+        const init = vi.fn();
+        const removed = vi.fn();
+        const Content = compDef({ init, draw: () => elem('span', 'Content'), removed });
+        const Portal = compDef({ draw: () => comp(Content) });
+        const Parent = compDef({ draw: () => comp(Portal, { to: target }) });
+        const parent = comp(Parent);
+        bind(app, parent);
+        const original = targetA.querySelector('span');
+        const placeholder = app.firstChild;
+
+        target = targetB;
+        redraw(parent);
+        expect(targetA.childNodes).toHaveLength(0);
+        expect(targetB.querySelector('span')).toBe(original);
+        expect(app.firstChild).toBe(placeholder);
+        expect(init).toHaveBeenCalledTimes(1);
+        expect(removed).not.toHaveBeenCalled();
+
+        bind(app, null);
+        expect(targetB.childNodes).toHaveLength(0);
+        expect(removed).toHaveBeenCalledTimes(1);
+    });
+
+    test('switching from an ordinary component to a portal preserves its DOM', () => {
+        const target = createTarget();
+        let to: Element | undefined;
+        const init = vi.fn();
+        const Content = compDef({ init, draw: () => [elem('span', 'A'), elem('span', 'B')] });
+        const Parent = compDef({ draw: () => elem('main', comp(Content, { to })) });
+        const parent = comp(Parent);
+        bind(app, parent);
+        const originals = Array.from(app.querySelectorAll('span'));
+
+        to = target;
+        redraw(parent);
+        expect(app.querySelector('main')?.firstChild?.nodeType).toBe(Node.COMMENT_NODE);
+        expect(target.querySelectorAll('span')).toHaveLength(2);
+        expect(Array.from(target.querySelectorAll('span'))).toEqual(originals);
+        expect(init).toHaveBeenCalledTimes(1);
+    });
+
+    test('switching from a portal back to an ordinary component preserves its DOM', () => {
+        const target = createTarget();
+        let to: Element | undefined = target;
+        const init = vi.fn();
+        const Content = compDef({ init, draw: () => [elem('span', 'A'), elem('span', 'B')] });
+        const Parent = compDef({ draw: () => elem('main', comp(Content, { to })) });
+        const parent = comp(Parent);
+        bind(app, parent);
+        const originals = Array.from(target.querySelectorAll('span'));
+
+        to = undefined;
+        redraw(parent);
+        expect(target.childNodes).toHaveLength(0);
+        expect(Array.from(app.querySelectorAll('span'))).toEqual(originals);
+        expect(app.querySelector('main')?.childNodes).toHaveLength(2);
+        expect(init).toHaveBeenCalledTimes(1);
+    });
+
+    test('rejects an invalid portal target when updating', () => {
+      const target = document.createElement('div');
+      document.body.append(target);
+
+      let currentTarget: Element = target;
+
+      const Child = compDef({
+          draw: () => elem('span', 'Portal content')
+      });
+
+      const Parent = compDef({
+          draw: () => comp(Child, { to: currentTarget })
+      });
+
+      const parent = comp(Parent);
+      bind(app, parent);
+
+      currentTarget = {} as Element;
+
+      expect(() => redraw(parent)).toThrow(
+          /For components that act as portals/
+      );
+
+      target.remove();
+  });
+
+  test('changing portal target and children in the same redraw', () => {
+      const targetA = document.createElement('div');
+      const targetB = document.createElement('div');
+      document.body.append(targetA, targetB);
+
+      let target = targetA;
+      let items = ['a', 'b'];
+
+      const init = vi.fn();
+      const removed = vi.fn();
+
+      const Item = compDef({
+          init,
+          draw(vnode) {
+              return elem('span', { id: vnode.attrs.id }, vnode.attrs.id);
+          },
+          removed
+      });
+
+      const Portal = compDef({
+          draw: () => items.map(id =>
+              comp(Item, { $key: id, id })
+          )
+      });
+
+      const Parent = compDef({
+          draw: () => comp(Portal, { to: target })
+      });
+
+      const parent = comp(Parent);
+      bind(app, parent);
+
+      const originalB = targetA.querySelector('#b');
+
+      expect(targetA.textContent).toBe('ab');
+      expect(init).toHaveBeenCalledTimes(2);
+
+      // Move the portal, remove a, preserve b, and add c.
+      target = targetB;
+      items = ['b', 'c'];
+      redraw(parent);
+
+      expect(targetA.childNodes).toHaveLength(0);
+      expect(targetB.textContent).toBe('bc');
+
+      expect(targetB.querySelector('#b')).toBe(originalB);
+      expect(targetB.querySelector('#a')).toBeNull();
+      expect(targetB.querySelector('#c')).not.toBeNull();
+
+      expect(init).toHaveBeenCalledTimes(3);
+      expect(removed).toHaveBeenCalledTimes(1);
+
+      bind(app, null);
+
+      expect(targetB.childNodes).toHaveLength(0);
+      expect(removed).toHaveBeenCalledTimes(3);
+
+      targetA.remove();
+      targetB.remove();
+  });
+
 });

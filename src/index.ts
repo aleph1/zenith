@@ -228,7 +228,9 @@ const _place = (vNode: VNodeAny, parentEl: Element, next: Node | null): Node | n
       next = _place(vNode.nodes[i], parentEl, next);
     }
   } else if (vNode.el) {
-    if (vNode.el.nextSibling !== next) parentEl.insertBefore(vNode.el, next);
+    if (vNode.el.parentNode !== parentEl || vNode.el.nextSibling !== next) {
+      parentEl.insertBefore(vNode.el, next);
+    }
     next = vNode.el;
   }
   return next;
@@ -270,6 +272,29 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
           newNode.el = oldNode.el as Element;
           newNode.$h = oldNode.$h;
           newNode.nodes = (oldNode as VNodeComp).nodes;
+          if (newNode.attrs.to !== oldNode.attrs.to) {
+            const target = newNode.attrs.to as Element | undefined;
+
+            if (DEBUG && target && !(target instanceof Element)) {
+                throw new Error('For components that act as portals, "to" attribute must be an Element');
+            }
+
+            if (target && !oldNode.attrs.to) {
+                newNode.el = document.createComment('');
+                parentEl.insertBefore(newNode.el, oldNode.el);
+            }
+
+            let next = target ? null : oldNode.el;
+
+            for (let i = newNode.nodes.length - 1; i >= 0; i--) {
+                next = _place(newNode.nodes[i], target || parentEl, next);
+            }
+
+            if (oldNode.attrs.to && !target) {
+                oldNode.el.remove();
+                newNode.el = newNode.nodes[0] && newNode.nodes[0].el;
+            }
+        }
           if(
             ((oldNode as VNodeComp).$tag & FLAG_IS_STALE)
             || !(newNode.$def.$memo &&
@@ -375,8 +400,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
     }
   } else {
     if (parentNode.is === VNODE_ELEM) {
-      parentEl.textContent = '';
-      _unmount(oldNodes);
+      for (let i = 0; i < oldNodesLength; i++) _destroy(oldNodes[i]);
     } else {
       for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
     }
@@ -480,10 +504,10 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
       }
       vNode.el = document.createComment('');
       parentEl.insertBefore(vNode.el, null);
-      //for(const child of vNode.nodes) {
+      parentEl = vNode.attrs.to as Element;
     }
     for(let i = 0; i < vNode.nodes.length; i++) {
-      _create(vNode, (vNode.attrs.to || parentEl) as Element, vNode.nodes[i], xmlns);
+      _create(vNode, parentEl, vNode.nodes[i], xmlns);
     }
     if (!vNode.el) vNode.el = vNode.nodes[0] && vNode.nodes[0].el;
     if (vNode.$def.drawn) vNode.$def.drawn(vNode, true);
@@ -533,13 +557,13 @@ const _unmount = (nodes: VNodeAny | VNodeFlatArray): void => {
 };
 
 const _detach = (vNode: VNodeAny): void => {
-  if (vNode.is === VNODE_COMP) {
+  if (vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
       _detach(vNode.nodes[i]);
     }
-    if (vNode.attrs.to && vNode.el) vNode.el.remove();
-  } else if (vNode.el) {
-    vNode.el.remove();
+  }
+  if (vNode.is !== VNODE_COMP || vNode.attrs.to) {
+    if (vNode.el) vNode.el.remove();
   }
 };
 
