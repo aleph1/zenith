@@ -479,7 +479,6 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
       ? document.createElementNS(xmlns, vNode.$t, vNode.attrs.is ? {is: vNode.attrs.is} : null)
       : document.createElement(vNode.$t, vNode.attrs.is ? {is: vNode.attrs.is} : null);
     _setElAttributes(vNode);
-    //for(const child of vNode.nodes) {
     for(let i = 0; i < vNode.nodes.length; i++) {
       _create(vNode, vNode.el, vNode.nodes[i], xmlns);
     }
