@@ -24,7 +24,7 @@ export interface VNodeNodeAttributes {
     [property: string]: any;
 }
 export interface VNodeCompDefinition<A extends VNodeCompAttributes = VNodeCompAttributes> {
-    $tag?: number;
+    $t?: number;
     init?: (vNode: VNodeComp<A>) => void;
     draw: (vNode: VNodeComp<A>, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
     drawn?: (vNode: VNodeComp<A>, isFirstDraw?: boolean) => void;
@@ -40,30 +40,30 @@ interface VNodeBase {
 }
 export interface VNodeElem extends VNodeBase {
     is: typeof VNODE_ELEM;
-    $tag: string;
-    $def: null;
+    $t: string;
+    $d: null;
     attrs: VNodeElemAttributes;
     nodes: VNodeFlatArray;
 }
 export interface VNodeText extends VNodeBase {
     is: typeof VNODE_TEXT;
-    $tag: string;
-    $def: null;
+    $t: string;
+    $d: null;
     attrs: null;
     nodes: null;
 }
 export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> extends VNodeBase {
     is: typeof VNODE_COMP;
-    $tag: number;
-    $def: VNodeCompDefinition;
+    $t: number;
+    $d: VNodeCompDefinition;
     attrs: A;
     nodes: VNodeFlatArray;
     provide?: Record<string, any>;
 }
 export interface VNodeNode extends VNodeBase {
     is: typeof VNODE_NODE;
-    $tag: number;
-    $def: null;
+    $t: number;
+    $d: null;
     attrs: null;
     nodes: null;
 }
@@ -77,6 +77,6 @@ export type VNodeChild = VNodeAny | string | number | boolean | null | undefined
 export type VNodeArray = Array<VNodeChild | VNodeArray>;
 export type VNodeAnyOrArray = VNodeChild | VNodeArray;
 export interface VNodeFlatArray extends Array<VNodeAny> {
-    $keys?: Map<any, any> | null;
+    $keys?: boolean;
 }
 export {};
