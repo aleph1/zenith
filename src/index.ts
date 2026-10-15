@@ -179,7 +179,7 @@ const _flatten = (
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
-  for (; offset < (nodes as ArrayLike<unknown>).length; offset++) {
+  for (offset; offset < (nodes as ArrayLike<unknown>).length; offset++) {
     node = nodes[offset];
 
     if (Array.isArray(node)) {
@@ -345,11 +345,17 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
            }
            const last = _lastRoot(oldNodes[oldNodesLength - 1]);
            let next: Node | null = last ? last.nextSibling : null;
-
            for (let k = newNodesLength - 1; k >= i; k--) {
              newNode = newNodes[k];
              const oldPos = oldByKey.get(newNode.attrs.$key);
-             if (oldPos !== undefined) {
+             if (oldPos === undefined) {
+               if (!newNode.attrs.$remove) {
+                _create(parentNode, parentEl, newNode, xmlns);
+               } else {
+                 newNodes.splice(k, 1);
+                 continue;
+               }
+             } else {
                oldNode = oldNodes[oldPos];
                oldByKey.delete(newNode.attrs.$key);
                if (newNode.is === VNODE_COMP && newNode.attrs.$remove) {
@@ -363,11 +369,6 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
                } else {
                  _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
                }
-             } else if (!newNode.attrs.$remove) {
-               _create(parentNode, parentEl, newNode, xmlns);
-             } else {
-               newNodes.splice(k, 1);
-               continue;
              }
 
              // Only reposition inserted nodes or nodes whose original index changed.
@@ -395,16 +396,14 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
         }
       }
     } else {
-      for(; i < newNodesLength; i++) {
+      for(i; i < newNodesLength; i++) {
         _create(parentNode, parentEl, newNodes[i], xmlns);
       }
     }
+  } else if (parentNode.is === VNODE_ELEM) {
+    for (let i = 0; i < oldNodesLength; i++) _destroy(oldNodes[i]);
   } else {
-    if (parentNode.is === VNODE_ELEM) {
-      for (let i = 0; i < oldNodesLength; i++) _destroy(oldNodes[i]);
-    } else {
-      for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
-    }
+    for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
   }
   parentNode.nodes = newNodes;
 };
