@@ -1185,4 +1185,99 @@ describe('Regression: built-in portals', () => {
       targetB.remove();
   });
 
+  test('portal DOM is detached before removed hook runs', () => {
+    const app = document.createElement('div');
+    const target = document.createElement('div');
+
+    document.body.append(app, target);
+
+    let visible = true;
+    let connectedAtRemoval: boolean | undefined;
+
+    const Portal = compDef({
+        draw: () => elem('span', 'Portal'),
+
+        removed: vNode => {
+            connectedAtRemoval = vNode.nodes[0].el.isConnected;
+        }
+    });
+
+    const Parent = compDef({
+        draw: () => elem('div',
+            visible ? elem('section',
+                comp(Portal, { to: target })
+            ) : null
+        )
+    });
+
+    const root = bind(app, comp(Parent));
+
+    visible = false;
+    draw(root);
+    sync();
+
+    expect(target.childNodes).toHaveLength(0);
+    expect(connectedAtRemoval).toBe(false);
+
+    bind(app, null);
+    app.remove();
+    target.remove();
+  });
+
+  test('clearing an element detaches nested portals and runs lifecycle hooks', () => {
+    const app = document.createElement('div');
+    const targetA = document.createElement('div');
+    const targetB = document.createElement('div');
+
+    document.body.append(app, targetA, targetB);
+
+    const removedA = vi.fn();
+    const removedB = vi.fn();
+
+    const InnerPortal = compDef({
+      draw: () => elem('span', 'Inner portal'),
+      removed: removedB,
+    });
+
+    const OuterPortal = compDef({
+      draw: () => [
+        elem('span', 'Outer portal'),
+        comp(InnerPortal, { to: targetB }),
+      ],
+      removed: removedA,
+    });
+
+    let visible = true;
+
+    const Parent = compDef({
+      draw: () => elem('div',
+        visible
+          ? elem('section',
+            comp(OuterPortal, { to: targetA })
+          )
+          : null
+      ),
+    });
+
+    const root = bind(app, comp(Parent));
+
+    expect(targetA.textContent).toBe('Outer portal');
+    expect(targetB.textContent).toBe('Inner portal');
+
+    visible = false;
+    draw(root);
+    sync();
+
+    expect(targetA.childNodes).toHaveLength(0);
+    expect(targetB.childNodes).toHaveLength(0);
+
+    expect(removedA).toHaveBeenCalledTimes(1);
+    expect(removedB).toHaveBeenCalledTimes(1);
+
+    bind(app, null);
+    app.remove();
+    targetA.remove();
+    targetB.remove();
+  });
+
 });
