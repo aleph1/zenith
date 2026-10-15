@@ -307,7 +307,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
         }
       } else if (newNodeType === VNODE_NODE) {
         if (newNode.el !== oldNode.el) {
-          parentEl.insertBefore(newNode.el, null);
+          parentEl.insertBefore(newNode.el, oldNode.el);
           oldNode.el.remove();
         }
       }
