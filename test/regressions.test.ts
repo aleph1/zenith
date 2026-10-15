@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { bind, comp, compDef, diff, draw, elem, sync } from '../src/index';
+import { bind, comp, compDef, diff, draw, elem, node, sync } from '../src/index';
 import { redraw } from './utils'
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -1280,4 +1280,33 @@ describe('Regression: built-in portals', () => {
     targetB.remove();
   });
 
+});
+
+test('preserves position when replacing a native DOM node', () => {
+    const container = document.createElement('div');
+    const first = document.createElement('span');
+    const second = document.createElement('span');
+
+    first.textContent = 'First';
+    second.textContent = 'Second';
+
+    bind(container, elem('div',
+        elem('span', 'Before'),
+        node(first),
+        elem('span', 'After')
+    ));
+
+    bind(container, elem('div',
+        elem('span', 'Before'),
+        node(second),
+        elem('span', 'After')
+    ));
+
+    const children = container.firstElementChild!.childNodes;
+
+    expect(children.length).toBe(3);
+    expect(children[0].textContent).toBe('Before');
+    expect(children[1]).toBe(second);
+    expect(children[2].textContent).toBe('After');
+    expect(first.isConnected).toBe(false);
 });
