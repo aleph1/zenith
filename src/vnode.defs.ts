@@ -93,5 +93,5 @@ export type VNodeArray = Array<VNodeChild | VNodeArray>;
 export type VNodeAnyOrArray = VNodeChild | VNodeArray;
 
 export interface VNodeFlatArray extends Array<VNodeAny> {
-  $keys?: Map<any, any> | null;
+  $keys?: boolean;
 }

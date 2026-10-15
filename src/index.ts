@@ -117,7 +117,6 @@ export const diff = {
 
 const ALWAYS_EMPTY_ARRAY = DEBUG ? Object.freeze([]) : [];
 const ALWAYS_EMPTY_OBJECT = DEBUG ? Object.freeze({}) : {};
-const ALWAYS_EMPTY_MAP = new Map();
 
 // ----------------------------------------
 // Flush pending updates
@@ -177,42 +176,36 @@ const _flattenReusableArray = [];
 const _flatten = (
   nodes: VNodeAnyOrArray | IArguments,
   offset: number = 0,
-  arr: VNodeFlatArray =
-  []
+  arr: VNodeFlatArray = []
 ): VNodeFlatArray => {
   let node;
   if (!nodes || (nodes as ArrayLike<unknown>).length == null) {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
-  for (offset; offset < (nodes as ArrayLike<unknown>).length; offset++) {
+  for (; offset < (nodes as ArrayLike<unknown>).length; offset++) {
     node = nodes[offset];
+
     if (Array.isArray(node)) {
-      _flatten(node, 0, arr);
-    } else if (node != null) {
-      if (node.is) {
-        if (arr.$keys === undefined) {
-          arr.$keys = node.attrs && '$key' in node.attrs ? ALWAYS_EMPTY_MAP : null;
-        } else if ((!arr.$keys) !== !(node.attrs && '$key' in node.attrs)) {
-          throw new Error(DEBUG ? 'Children have mixed keys...' : '$keys');
+        _flatten(node, 0, arr);
+    } else if (node != null && node !== true && node !== false) {
+        if (!node.is) {
+            node = {
+                is: VNODE_TEXT,
+                $t: node + '',
+                $d: null,
+                attrs: null,
+                nodes: null,
+                up: null,
+                el: null,
+            };
         }
         arr.push(node);
-      } else if (node !== true && node !== false) {
-        if (arr.$keys === undefined) {
-          arr.$keys = null;
-        } else if (arr.$keys) {
-          throw new Error(DEBUG ? 'Children have mixed keys. Wrap strings in elem(\'span\', {$key}, "My keyed string.")' : '$keys');
+        if (arr.$keys == null) {
+            arr.$keys = !!(node.attrs && '$key' in node.attrs);
+        } else if (arr.$keys !== !!(node.attrs && '$key' in node.attrs)) {
+            throw new Error(DEBUG ? 'Children have mixed keys...' : '$keys');
         }
-        arr.push({
-          is: VNODE_TEXT,
-          $tag: node + '',
-          $def: null,
-          attrs: null,
-          nodes: null,
-          up: null,
-          el: null,
-        });
-      }
     }
   }
   return arr;
