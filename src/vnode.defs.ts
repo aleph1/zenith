@@ -41,7 +41,7 @@ export interface VNodeCompDefinition<
 
 interface VNodeBase {
   $h?: boolean;
-  up: VNodeContainer | null;
+  $p: VNodeContainer | null;
   nodes: VNodeFlatArray | null;
   // The renderer stores different DOM element types here and assigns
   // dynamic DOM properties (including event handlers).

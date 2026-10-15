@@ -129,7 +129,7 @@ export const sync = (): void => {
     for (const redrawNode of redrawQueue) {
       targetEl = boundNodes.has(redrawNode.el) 
         ? redrawNode.el 
-        : (redrawNode.attrs && redrawNode.attrs.to) || (redrawNode.el && redrawNode.el.parentNode) || (redrawNode.up && redrawNode.up.el);
+        : (redrawNode.attrs && redrawNode.attrs.to) || (redrawNode.el && redrawNode.el.parentNode) || (redrawNode.$p && redrawNode.$p.el);
       redrawQueue.delete(redrawNode);
       if (targetEl) {
         _redrawComponent(redrawNode as VNodeComp, targetEl);
@@ -154,9 +154,9 @@ export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
     redrawQueue.add(vNode);
   } else {
     let current;
-    for (current = vNode; current.up; current = current.up);
+    for (current = vNode; current.$p; current = current.$p);
     redrawQueue.add(current);
-    for (current = vNode; current.up; current = current.up) {
+    for (current = vNode; current.$p; current = current.$p) {
       if (current.is === VNODE_COMP) {
         if (current.$t & FLAG_IS_STALE) break;
         current.$t |= FLAG_IS_STALE;
@@ -192,7 +192,7 @@ const _flatten = (
                 $d: null,
                 attrs: null,
                 nodes: null,
-                up: null,
+                $p: null,
                 el: null,
             };
         }
@@ -237,7 +237,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
     const newNodeType = newNode.is;
     if (newNodeType === oldNode.is) {
       if (newNodeType === VNODE_ELEM) {
-        newNode.up = parentNode;
+        newNode.$p = parentNode;
         if (newNode.$t === oldNode.$t) {
           newNode.el = oldNode.el as Element;
           newNode.$h = oldNode.$h;
@@ -263,7 +263,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
         if ((oldNode as VNodeComp).$t & FLAG_IS_REMOVING) {
           (oldNode as VNodeComp).$t &= ~FLAG_IS_REMOVING;
         }
-        newNode.up = parentNode;
+        newNode.$p = parentNode;
         if (newNode.$d === oldNode.$d) {
           newNode.el = oldNode.el as Element;
           newNode.$h = oldNode.$h;
@@ -360,7 +360,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
                oldByKey.delete(newNode.attrs.$key);
                if (newNode.is === VNODE_COMP && newNode.attrs.$remove) {
                  if ((oldNode.$t & FLAG_IS_REMOVING) || !_remove(oldNode)) {
-                   oldNode.up = parentNode;
+                   oldNode.$p = parentNode;
                    newNodes[k] = oldNode;
                  } else {
                    newNodes.splice(k, 1);
@@ -472,7 +472,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
 
 const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny, xmlns?: string): void => {
   if(vNode.is === VNODE_ELEM) {
-    vNode.up = parentNode;
+    vNode.$p = parentNode;
     xmlns = vNode.attrs && vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
     vNode.el = xmlns 
       ? document.createElementNS(xmlns, vNode.$t, vNode.attrs.is ? {is: vNode.attrs.is} : null)
@@ -487,11 +487,11 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     vNode.el = document.createTextNode(vNode.$t);
     parentEl.insertBefore(vNode.el, null);
   } else if(vNode.is === VNODE_COMP) {
-    vNode.up = parentNode;
+    vNode.$p = parentNode;
     if (vNode.$d.init) vNode.$d.init(vNode);
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
-      for (let current: VNodeContainer | null = vNode; current && !current.$h; current = current.up) {
+      for (let current: VNodeContainer | null = vNode; current && !current.$h; current = current.$p) {
         current.$h = true;
       }
     }
@@ -583,7 +583,7 @@ const _remove = (vNode: VNodeAny): boolean => {
         }
         const deferredDestroy = () => {
           if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
-            const parent = vNode.up;
+            const parent = vNode.$p;
             if (DEBUG && !parent) {
               console.warn(
                 'Promise resolved but component was already removed.',
@@ -625,7 +625,7 @@ export const elem: {
     $d: null,                   // always null for elem
     attrs: hasAttrs ? DEBUG ? Object.freeze(first) : first : ALWAYS_EMPTY_OBJECT,
     nodes: arguments.length > (hasAttrs ? 2 : 1) ? _flatten(arguments, hasAttrs ? 2 : 1) : ALWAYS_EMPTY_ARRAY,
-    up: null,
+    $p: null,
     el: null,
   } as VNodeElem;
 };
@@ -670,7 +670,7 @@ export const comp = (componentDefinition: VNodeCompDefinition, attrs: VNodeCompA
     $d: componentDefinition,           // object: component definition
     attrs: DEBUG ? attrs === ALWAYS_EMPTY_OBJECT ? attrs : Object.freeze(attrs) : attrs,
     nodes: ALWAYS_EMPTY_ARRAY as unknown as VNodeFlatArray,
-    up: null,
+    $p: null,
     el: null,
   };
 };
@@ -682,7 +682,7 @@ export const node = (el: Element): VNodeNode => {
     $d: null,
     attrs: null,
     nodes: null,
-    up: null,
+    $p: null,
     el,
   };
 };

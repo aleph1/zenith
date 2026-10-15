@@ -85,7 +85,7 @@ describe('Development-only validation', () => {
     lib.draw(view);
     lib.sync();
     // Invalid internal state to exercise the defensive console.warn branch.
-    leaving.up = null;
+    leaving.$p = null;
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     finish();
     await Promise.resolve();

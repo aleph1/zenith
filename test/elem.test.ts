@@ -8,7 +8,7 @@ describe('elem()', () => {
     const node = elem('div');
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', '$p', 'el']);
     expect(node).toHaveProperty('is', VNODE_ELEM);
     expect(node).toHaveProperty('$t', 'div');
     expect(node).toHaveProperty('attrs', {});
@@ -19,7 +19,7 @@ describe('elem()', () => {
     const node = elem('div', {id:'test'});
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', '$p', 'el']);
     expect(node).toHaveProperty('is', VNODE_ELEM);
     expect(node).toHaveProperty('$t', 'div');
     expect(typeof node.attrs).toBe('object');
@@ -43,7 +43,7 @@ describe('elem()', () => {
     const node = elem('svg');
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', '$p', 'el']);
     expect(node.is).toBe(VNODE_ELEM);
     expect(node.$t).toBe('svg');
     expect(node.attrs).toEqual({});
@@ -55,7 +55,7 @@ describe('elem()', () => {
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
     console.log(node);
-    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', '$p', 'el']);
     expect(node.is).toBe(VNODE_ELEM);
     expect(node.$t).toBe('math');
     expect(node.attrs).toEqual({});
