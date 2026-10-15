@@ -131,7 +131,7 @@ export const sync = (): void => {
       // possibly empty or outdated first-root reference.
       let current = redrawNode as VNodeContainer;
       while (current.$p && current.is === VNODE_COMP &&
-             current.$d !== RootWrapper && !current.attrs.to) {
+             !current.attrs.to) {
         current = current.$p;
       }
       targetEl = current.is === VNODE_COMP && current.attrs.to || current.el;
@@ -233,7 +233,7 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
       const root = siblings[i].el;
       if (root && root.parentNode === parentEl) return root;
     }
-    if (parent.is !== VNODE_COMP || parent.attrs.to || parent.$d === RootWrapper) break;
+    if (parent.is !== VNODE_COMP || parent.attrs.to) break;
     child = parent;
     parent = child.$p;
   }
@@ -245,7 +245,7 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
 const _syncRoot = (vNode: VNodeComp): void => {
   let child: VNodeContainer = vNode;
   let parent = child.$p;
-  while (parent && parent.is === VNODE_COMP && parent.$d !== RootWrapper && !parent.attrs.to) {
+  while (parent && parent.is === VNODE_COMP && !parent.attrs.to) {
     const first = _nextRoot(parent.nodes, 0, null);
     if (parent.el === first) break;
     parent.el = first;
@@ -508,8 +508,8 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string, a
   if (newChildren !== oldChildren) {
     const to = vNode.attrs.to as Element | undefined;
     _updateNodes(vNode, to || parentEl, _flatten(newChildren), oldChildren, xmlns,
-      to ? null : anchor === undefined ? (vNode.$d === RootWrapper ? null : _anchor(vNode, parentEl)) : anchor);
-    if (vNode.$d !== RootWrapper && !to) {
+      to ? null : anchor === undefined ? (vNode.$p ? _anchor(vNode, parentEl) : null) : anchor);
+    if (vNode.$p && !to) {
       vNode.el = _nextRoot(vNode.nodes, 0, null);
       _syncRoot(vNode);
     }
