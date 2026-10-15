@@ -544,14 +544,19 @@ const _unmount = (node: VNodeAny): void => {
     }
 };
 
-const _detach = (vNode: VNodeAny): void => {
+const _detach = (vNode: VNodeAny, skipRemove?: boolean | null): void => {
+  const portal = vNode.is === VNODE_COMP && vNode.attrs.to;
   if (vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
-      _detach(vNode.nodes[i]);
+      _detach(
+        vNode.nodes[i],
+        // null resets skipRemove for portals while compressing better than false
+        portal ? null : skipRemove || vNode.is === VNODE_ELEM
+      );
     }
   }
-  if (vNode.is !== VNODE_COMP || vNode.attrs.to) {
-    if (vNode.el) vNode.el.remove();
+  if (!skipRemove && vNode.el && (vNode.is !== VNODE_COMP || portal)) {
+    vNode.el.remove();
   }
 };
 
