@@ -1,4 +1,4 @@
-/*! Zenith 1.0.0-beta.16 | MIT License | ©2022-2025 Daniel Barber */
+/*! Zenith 1.0.0-beta.17 | MIT License | ©2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 3;
@@ -32,7 +32,7 @@ const sync = () => {
   if (remaining) {
     const active = document.activeElement;
     for (const redrawNode of redrawQueue) {
-      targetEl = boundNodes.has(redrawNode.el) ? redrawNode.el : redrawNode.attrs && redrawNode.attrs.to || redrawNode.el && redrawNode.el.parentNode || redrawNode.up && redrawNode.up.el;
+      targetEl = boundNodes.has(redrawNode.el) ? redrawNode.el : redrawNode.attrs && redrawNode.attrs.to || redrawNode.el && redrawNode.el.parentNode || redrawNode.$p && redrawNode.$p.el;
       redrawQueue.delete(redrawNode);
       if (targetEl) {
         _redrawComponent(redrawNode, targetEl);
@@ -53,9 +53,9 @@ const draw = (vNode, surgical) => {
     redrawQueue.add(vNode);
   } else {
     let current;
-    for (current = vNode; current.up; current = current.up) ;
+    for (current = vNode; current.$p; current = current.$p) ;
     redrawQueue.add(current);
-    for (current = vNode; current.up; current = current.up) {
+    for (current = vNode; current.$p; current = current.$p) {
       if (current.is === VNODE_COMP) {
         if (current.$t & FLAG_IS_STALE) break;
         current.$t |= FLAG_IS_STALE;
@@ -73,7 +73,7 @@ const _flatten = (nodes, offset = 0, arr = []) => {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
-  for (; offset < nodes.length; offset++) {
+  for (offset; offset < nodes.length; offset++) {
     node2 = nodes[offset];
     if (Array.isArray(node2)) {
       _flatten(node2, 0, arr);
@@ -85,7 +85,7 @@ const _flatten = (nodes, offset = 0, arr = []) => {
           $d: null,
           attrs: null,
           nodes: null,
-          up: null,
+          $p: null,
           el: null
         };
       }
@@ -127,7 +127,7 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns) => {
     const newNodeType = newNode.is;
     if (newNodeType === oldNode.is) {
       if (newNodeType === VNODE_ELEM) {
-        newNode.up = parentNode;
+        newNode.$p = parentNode;
         if (newNode.$t === oldNode.$t) {
           newNode.el = oldNode.el;
           newNode.$h = oldNode.$h;
@@ -152,7 +152,7 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns) => {
         if (oldNode.$t & FLAG_IS_REMOVING) {
           oldNode.$t &= ~FLAG_IS_REMOVING;
         }
-        newNode.up = parentNode;
+        newNode.$p = parentNode;
         if (newNode.$d === oldNode.$d) {
           newNode.el = oldNode.el;
           newNode.$h = oldNode.$h;
@@ -171,8 +171,8 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns) => {
               next = _place(newNode.nodes[i], target || parentEl, next);
             }
             if (oldNode.attrs.to && !target) {
-              oldNode.el.remove();
               newNode.el = newNode.nodes[0] && newNode.nodes[0].el;
+              oldNode.el.remove();
             }
           }
           if (oldNode.$t & FLAG_IS_STALE || !(newNode.$d.$memo && (newNode.$d.$memo === true ? newNode.attrs === oldNode.attrs : newNode.$d.$memo(newNode.attrs, oldNode.attrs)))) {
@@ -185,7 +185,7 @@ const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns) => {
         }
       } else if (newNodeType === VNODE_NODE) {
         if (newNode.el !== oldNode.el) {
-          parentEl.insertBefore(newNode.el, null);
+          parentEl.insertBefore(newNode.el, oldNode.el);
           oldNode.el.remove();
         }
       }
@@ -213,18 +213,26 @@ const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns) => {
         if (i < newNodesLength || i < oldNodesLength) {
           const oldByKey = /* @__PURE__ */ new Map();
           for (let k = i; k < oldNodesLength; k++) {
-            oldByKey.set(oldNodes[k].attrs.$key, oldNodes[k]);
+            oldByKey.set(oldNodes[k].attrs.$key, k);
           }
           const last = _lastRoot(oldNodes[oldNodesLength - 1]);
           let next = last ? last.nextSibling : null;
           for (let k = newNodesLength - 1; k >= i; k--) {
             newNode = newNodes[k];
-            oldNode = oldByKey.get(newNode.attrs.$key);
-            if (oldNode) {
+            const oldPos = oldByKey.get(newNode.attrs.$key);
+            if (oldPos === void 0) {
+              if (!newNode.attrs.$remove) {
+                _create(parentNode, parentEl, newNode, xmlns);
+              } else {
+                newNodes.splice(k, 1);
+                continue;
+              }
+            } else {
+              oldNode = oldNodes[oldPos];
               oldByKey.delete(newNode.attrs.$key);
               if (newNode.is === VNODE_COMP && newNode.attrs.$remove) {
                 if (oldNode.$t & FLAG_IS_REMOVING || !_remove(oldNode)) {
-                  oldNode.up = parentNode;
+                  oldNode.$p = parentNode;
                   newNodes[k] = oldNode;
                 } else {
                   newNodes.splice(k, 1);
@@ -233,15 +241,10 @@ const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns) => {
               } else {
                 _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
               }
-            } else if (!newNode.attrs.$remove) {
-              _create(parentNode, parentEl, newNode, xmlns);
-            } else {
-              newNodes.splice(k, 1);
-              continue;
             }
-            next = _place(newNodes[k], parentEl, next);
+            next = oldPos === void 0 || oldPos !== k || newNodes[k].el !== oldNode.el ? _place(newNodes[k], parentEl, next) : newNodes[k].el || next;
           }
-          for (const oldNode2 of oldByKey.values()) _remove(oldNode2);
+          for (const oldPos of oldByKey.values()) _remove(oldNodes[oldPos]);
         }
       } else {
         for (let i2 = newNodesLength; i2 < oldNodesLength; i2++) {
@@ -258,16 +261,14 @@ const _updateNodes = (parentNode, parentEl, newNodes, oldNodes, xmlns) => {
         }
       }
     } else {
-      for (; i < newNodesLength; i++) {
+      for (i; i < newNodesLength; i++) {
         _create(parentNode, parentEl, newNodes[i], xmlns);
       }
     }
+  } else if (parentNode.is === VNODE_ELEM) {
+    for (let i = 0; i < oldNodesLength; i++) _destroy(oldNodes[i]);
   } else {
-    if (parentNode.is === VNODE_ELEM) {
-      for (let i = 0; i < oldNodesLength; i++) _destroy(oldNodes[i]);
-    } else {
-      for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
-    }
+    for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
   }
   parentNode.nodes = newNodes;
 };
@@ -330,7 +331,7 @@ const _setElAttributes = (newNode, oldAttrs = ALWAYS_EMPTY_OBJECT) => {
 };
 const _create = (parentNode, parentEl, vNode, xmlns) => {
   if (vNode.is === VNODE_ELEM) {
-    vNode.up = parentNode;
+    vNode.$p = parentNode;
     xmlns = vNode.attrs && vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
     vNode.el = xmlns ? document.createElementNS(xmlns, vNode.$t, vNode.attrs.is ? { is: vNode.attrs.is } : null) : document.createElement(vNode.$t, vNode.attrs.is ? { is: vNode.attrs.is } : null);
     _setElAttributes(vNode);
@@ -343,11 +344,11 @@ const _create = (parentNode, parentEl, vNode, xmlns) => {
     vNode.el = document.createTextNode(vNode.$t);
     parentEl.insertBefore(vNode.el, null);
   } else if (vNode.is === VNODE_COMP) {
-    vNode.up = parentNode;
+    vNode.$p = parentNode;
     if (vNode.$d.init) vNode.$d.init(vNode);
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
-      for (let current = vNode; current && !current.$h; current = current.up) {
+      for (let current = vNode; current && !current.$h; current = current.$p) {
         current.$h = true;
       }
     }
@@ -378,40 +379,32 @@ const _redrawComponent = (vNode, parentEl, xmlns) => {
   }
   if (vNode.$d.drawn) vNode.$d.drawn(vNode);
 };
-const _unmountReusableArray = [];
-const _unmount = (nodes) => {
-  if (!Array.isArray(nodes)) {
-    _unmountReusableArray[0] = nodes;
-    nodes = _unmountReusableArray;
-  }
-  nodes = nodes;
-  for (let i = 0; i < nodes.length; i++) {
-    const node2 = nodes[i];
-    redrawQueue.delete(node2);
-    if (node2.is === VNODE_COMP) {
-      if (node2.$d.remove) {
-        if (!(node2.$t & FLAG_REMOVE_CALLED)) {
-          node2.$d.remove(node2);
-        }
-      }
-      if (node2.$d.removed) {
-        node2.$d.removed(node2);
-      }
-    }
-    if ((node2.$h || redrawQueue.size) && node2.nodes && node2.nodes.length) {
-      _unmount(node2.nodes);
-    }
+const _unmount = (node2) => {
+  redrawQueue.delete(node2);
+  if (node2.is === VNODE_COMP) {
+    node2.$d.remove && !(node2.$t & FLAG_REMOVE_CALLED) && node2.$d.remove(node2);
+    node2.$d.removed && node2.$d.removed(node2);
     node2.$t = 0;
   }
-};
-const _detach = (vNode) => {
-  if (vNode.nodes) {
-    for (let i = 0; i < vNode.nodes.length; i++) {
-      _detach(vNode.nodes[i]);
+  if ((node2.$h || redrawQueue.size) && node2.nodes) {
+    for (let i = 0; i < node2.nodes.length; i++) {
+      _unmount(node2.nodes[i]);
     }
   }
-  if (vNode.is !== VNODE_COMP || vNode.attrs.to) {
-    if (vNode.el) vNode.el.remove();
+};
+const _detach = (vNode, skipRemove) => {
+  const portal = vNode.is === VNODE_COMP && vNode.attrs.to;
+  if (vNode.nodes) {
+    for (let i = 0; i < vNode.nodes.length; i++) {
+      _detach(
+        vNode.nodes[i],
+        // null resets skipRemove for portals while compressing better than false
+        portal ? null : skipRemove || vNode.is === VNODE_ELEM
+      );
+    }
+  }
+  if (!skipRemove && vNode.el && (vNode.is !== VNODE_COMP || portal)) {
+    vNode.el.remove();
   }
 };
 const _destroy = (vNode) => {
@@ -434,7 +427,7 @@ const _remove = (vNode) => {
         }
         const deferredDestroy = () => {
           if (vNode.$t & FLAG_IS_REMOVING) {
-            const parent = vNode.up;
+            const parent = vNode.$p;
             if (!parent) {
               console.warn(
                 "Promise resolved but component was already removed.",
@@ -469,7 +462,7 @@ const elem = function(tag) {
     // always null for elem
     attrs: hasAttrs ? Object.freeze(first)  : ALWAYS_EMPTY_OBJECT,
     nodes: arguments.length > (hasAttrs ? 2 : 1) ? _flatten(arguments, hasAttrs ? 2 : 1) : ALWAYS_EMPTY_ARRAY,
-    up: null,
+    $p: null,
     el: null
   };
 };
@@ -511,7 +504,7 @@ const comp = (componentDefinition, attrs = ALWAYS_EMPTY_OBJECT) => {
     // object: component definition
     attrs: attrs === ALWAYS_EMPTY_OBJECT ? attrs : Object.freeze(attrs) ,
     nodes: ALWAYS_EMPTY_ARRAY,
-    up: null,
+    $p: null,
     el: null
   };
 };
@@ -522,7 +515,7 @@ const node = (el) => {
     $d: null,
     attrs: null,
     nodes: null,
-    up: null,
+    $p: null,
     el
   };
 };

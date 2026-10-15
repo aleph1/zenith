@@ -1,4 +1,4 @@
-/*! Zenith Helpers 1.0.0-beta.16 | MIT License | ©2022-2025 Daniel Barber */
+/*! Zenith Helpers 1.0.0-beta.17 | MIT License | ©2022-2025 Daniel Barber */
 import { node, draw } from './zenith.js';
 
 const keep = () => true;
@@ -34,7 +34,7 @@ const html = (value) => {
 };
 
 const closest = (vNode, predicate) => {
-  for (let current = vNode.up; current; current = current.up) {
+  for (let current = vNode.$p; current; current = current.$p) {
     if (predicate(current)) return current;
   }
 };
@@ -42,7 +42,7 @@ const closest = (vNode, predicate) => {
 const inject = (vNode, ...keys) => {
   const result = {};
   const needed = new Set(keys);
-  for (let current = vNode.up; current && needed.size > 0; current = current.up) {
+  for (let current = vNode.$p; current && needed.size > 0; current = current.$p) {
     if (current.is === VNODE_COMP && current.provide) {
       for (const key of needed) {
         if (current.provide[key] !== void 0) {
