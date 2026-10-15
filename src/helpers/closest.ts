@@ -13,7 +13,7 @@ import type { VNode } from '../vnode.defs';
  * const themed = closest(vNode, n => n.attrs?.theme);
  */
 export const closest = (vNode: VNode, predicate: (vNode: VNode) => boolean): VNode | undefined => {
-  for (let current = vNode.up; current; current = current.up) {
+  for (let current = vNode.$p; current; current = current.$p) {
     if (predicate(current)) return current;
   }
 };
