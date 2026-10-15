@@ -418,7 +418,6 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
     const value = newAttrs[attr];
     if (attr[0] === 'o' && attr[1] === 'n') {
       if (value !== oldAttrs[attr]) {
-        //const captured = value;
         el[attr] = typeof value === 'function'
           ? e => {
             if (value.call(e.currentTarget, e) === false) {
