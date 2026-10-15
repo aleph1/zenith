@@ -34,7 +34,7 @@ export interface VNodeCompDefinition<A extends VNodeCompAttributes = VNodeCompAt
 }
 interface VNodeBase {
     $h?: boolean;
-    up: VNodeContainer | null;
+    $p: VNodeContainer | null;
     nodes: VNodeFlatArray | null;
     el: any;
 }
