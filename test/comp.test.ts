@@ -95,3 +95,267 @@ describe('Component memoization', () => {
     expect(app.textContent).toBe('b');
   });
 });
+
+describe('stable component vnode identity', () => {
+    test('preserves identity across parent redraws and attribute updates', () => {
+        const container = document.createElement('div');
+        const initialized = [];
+        const rendered = [];
+        const removed = [];
+
+        const Child = compDef({
+            init(vnode) {
+                initialized.push(vnode);
+            },
+            draw(vnode) {
+                rendered.push(vnode);
+                return elem('span', vnode.attrs.label);
+            },
+            removed(vnode) {
+                removed.push(vnode);
+            }
+        });
+
+        bind(container, elem('div',
+            comp(Child, { label: 'First' })
+        ));
+
+        const original = initialized[0];
+
+        bind(container, elem('div',
+            comp(Child, { label: 'Second' })
+        ));
+
+        expect(initialized).toHaveLength(1);
+        expect(rendered.every(vnode => vnode === original)).toBe(true);
+        expect(original.attrs.label).toBe('Second');
+        expect(container.textContent).toBe('Second');
+
+        bind(container, null);
+
+        expect(removed).toEqual([original]);
+    });
+
+    test('preserves component identity when keyed siblings are reordered', () => {
+        const container = document.createElement('div');
+        const instances = new Map();
+        const removed = [];
+
+        const Item = compDef({
+            init(vnode) {
+                instances.set(vnode.attrs.id, vnode);
+            },
+            draw(vnode) {
+                return elem('span', vnode.attrs.id);
+            },
+            removed(vnode) {
+                removed.push(vnode);
+            }
+        });
+
+        const render = ids => elem('div',
+            ids.map(id => comp(Item, { $key: id, id }))
+        );
+
+        bind(container, render(['a', 'b', 'c']));
+
+        const a = instances.get('a');
+        const b = instances.get('b');
+        const c = instances.get('c');
+
+        bind(container, render(['c', 'a', 'b']));
+
+        expect(container.textContent).toBe('cab');
+        expect(instances.size).toBe(3);
+
+        // The retained vnode references should still belong to the tree.
+        const root = bind(container, render(['b', 'c', 'a']));
+        const children = root.nodes[0].nodes;
+
+        expect(children[0]).toBe(b);
+        expect(children[1]).toBe(c);
+        expect(children[2]).toBe(a);
+        expect(container.textContent).toBe('bca');
+
+        bind(container, null);
+
+        expect(removed).toHaveLength(3);
+        expect(removed).toContain(a);
+        expect(removed).toContain(b);
+        expect(removed).toContain(c);
+    });
+
+    test('preserves identity when a component changes portal targets', () => {
+        const container = document.createElement('div');
+        const targetA = document.createElement('div');
+        const targetB = document.createElement('div');
+
+        const initialized = [];
+        const removed = [];
+
+        const Child = compDef({
+            init(vnode) {
+                initialized.push(vnode);
+            },
+            draw(vnode) {
+                return elem('span', vnode.attrs.label);
+            },
+            removed(vnode) {
+                removed.push(vnode);
+            }
+        });
+
+        const render = (to, label) =>
+            elem('div', comp(Child, { to, label }));
+
+        bind(container, render(targetA, 'First'));
+
+        const original = initialized[0];
+
+        expect(targetA.textContent).toBe('First');
+
+        bind(container, render(targetB, 'Second'));
+
+        expect(initialized).toHaveLength(1);
+        expect(targetA.textContent).toBe('');
+        expect(targetB.textContent).toBe('Second');
+        expect(original.attrs.to).toBe(targetB);
+
+        // Portal back into the normal DOM tree.
+        bind(container, render(undefined, 'Third'));
+
+        expect(targetB.textContent).toBe('');
+        expect(container.textContent).toBe('Third');
+        expect(initialized).toHaveLength(1);
+
+        bind(container, null);
+
+        expect(removed).toEqual([original]);
+    });
+
+    test('preserves component-owned data until removal', () => {
+        const container = document.createElement('div');
+        const state = new Map();
+        const initialized = [];
+        const removed = [];
+
+        const Counter = compDef({
+            init(vnode) {
+                initialized.push(vnode);
+                state.set(vnode, { count: 0 });
+            },
+            draw(vnode) {
+                const counter = state.get(vnode);
+                return elem('span',
+                    `${vnode.attrs.label}: ${counter.count}`
+                );
+            },
+            removed(vnode) {
+                removed.push(vnode);
+                state.delete(vnode);
+            }
+        });
+
+        bind(container, elem('div',
+            comp(Counter, { label: 'First' })
+        ));
+
+        const original = initialized[0];
+        state.get(original).count = 5;
+
+        bind(container, elem('div',
+            comp(Counter, { label: 'Second' })
+        ));
+
+        expect(container.textContent).toBe('Second: 5');
+        expect(initialized).toHaveLength(1);
+        expect(state.size).toBe(1);
+        expect(state.has(original)).toBe(true);
+
+        bind(container, null);
+
+        expect(removed).toEqual([original]);
+        expect(state.size).toBe(0);
+    });
+
+    test('preserves identity when asynchronous removal is cancelled', async () => {
+      const container = document.createElement('div');
+      let resolveRemoval!: () => void;
+      let original;
+      let initCount = 0;
+      let removeCount = 0;
+      let removedCount = 0;
+
+      const Child = compDef({
+          init(vnode) {
+              original = vnode;
+              initCount++;
+          },
+
+          draw(vnode) {
+              return elem('span', vnode.attrs.label);
+          },
+
+          remove() {
+              removeCount++;
+              return new Promise<void>(resolve => {
+                  resolveRemoval = resolve;
+              });
+          },
+
+          removed() {
+              removedCount++;
+          }
+      });
+
+      const render = (label: string, removing = false) =>
+          elem('div',
+              comp(Child, {
+                  $key: 'child',
+                  $remove: removing,
+                  label
+              })
+          );
+
+      // Mount the component.
+      bind(container, render('First'));
+
+      expect(initCount).toBe(1);
+      expect(container.textContent).toBe('First');
+
+      // Start a deferred removal.
+      bind(container, render('First', true));
+
+      expect(removeCount).toBe(1);
+      expect(removedCount).toBe(0);
+      expect(container.textContent).toBe('First');
+
+      // Reintroduce the same keyed component before removal completes.
+      bind(container, render('Second'));
+
+      expect(initCount).toBe(1);
+      expect(original.attrs.label).toBe('Second');
+      expect(container.textContent).toBe('Second');
+
+      // Resolve the original removal Promise.
+      resolveRemoval();
+      await Promise.resolve();
+
+      // The cancelled removal must not destroy the retained component.
+      expect(removedCount).toBe(0);
+      expect(container.textContent).toBe('Second');
+      expect(original.el.parentNode).not.toBeNull();
+
+      // Verify the component can still update.
+      bind(container, render('Third'));
+
+      expect(original.attrs.label).toBe('Third');
+      expect(container.textContent).toBe('Third');
+      expect(initCount).toBe(1);
+
+      // Cleanup: removal begins again, so resolve its new Promise.
+      bind(container, null);
+
+      expect(removedCount).toBe(1);
+  });
+});

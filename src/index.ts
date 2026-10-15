@@ -232,7 +232,7 @@ const _place = (vNode: VNodeAny, parentEl: Element, next: Node | null): Node | n
   return next;
 };
 
-const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns: string): void => {
+const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns: string): VNodeAny => {
   if (oldNode.el) {
     const newNodeType = newNode.is;
     if (newNodeType === oldNode.is) {
@@ -259,48 +259,45 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
         newNode.el = oldNode.el;
         if (newNode.$t !== oldNode.$t) newNode.el.textContent = newNode.$t;
       } else if (newNodeType === VNODE_COMP) {
-        // Clear removal flag if updating a vnode that was being removed
-        if ((oldNode as VNodeComp).$t & FLAG_IS_REMOVING) {
-          (oldNode as VNodeComp).$t &= ~FLAG_IS_REMOVING;
-        }
-        newNode.$p = parentNode;
         if (newNode.$d === oldNode.$d) {
-          newNode.el = oldNode.el as Element;
-          newNode.$h = oldNode.$h;
-          newNode.nodes = (oldNode as VNodeComp).nodes;
-          if (newNode.attrs.to !== oldNode.attrs.to) {
-            const target = newNode.attrs.to as Element | undefined;
+          // Keep the mounted component instance, including custom properties.
+          const oldAttrs = oldNode.attrs;
+          const newAttrs = newNode.attrs;
+          oldNode.$p = parentNode;
+          oldNode.attrs = newAttrs;
+          (oldNode as VNodeComp).$t &= ~FLAG_IS_REMOVING;
+          if (newAttrs.to !== oldAttrs.to) {
+            const target = newAttrs.to as Element | undefined;
 
             if (DEBUG && target && !(target instanceof Element)) {
                 throw new Error('For components that act as portals, "to" attribute must be an Element');
             }
 
-            if (target && !oldNode.attrs.to) {
-                newNode.el = document.createComment('');
-                parentEl.insertBefore(newNode.el, oldNode.el);
+            if (target && !oldAttrs.to) {
+                oldNode.el = parentEl.insertBefore(document.createComment(''), oldNode.el);
             }
 
             let next = target ? null : oldNode.el;
 
-            for (let i = newNode.nodes.length - 1; i >= 0; i--) {
-                next = _place(newNode.nodes[i], target || parentEl, next);
+            for (let i = oldNode.nodes.length - 1; i >= 0; i--) {
+                next = _place(oldNode.nodes[i], target || parentEl, next);
             }
 
-            if (oldNode.attrs.to && !target) {
-                newNode.el = newNode.nodes[0] && newNode.nodes[0].el;
+            if (oldAttrs.to && !target) {
                 oldNode.el.remove();
+                oldNode.el = oldNode.nodes[0] && oldNode.nodes[0].el;
             }
-        }
-          if(
-            ((oldNode as VNodeComp).$t & FLAG_IS_STALE)
-            || !(newNode.$d.$memo &&
-              (newNode.$d.$memo === true
-                ? newNode.attrs === oldNode.attrs
-                : newNode.$d.$memo(newNode.attrs, oldNode.attrs)))
-          ) {
-            newNode.$t &= ~FLAG_IS_STALE;
-            _redrawComponent(newNode as VNodeComp, parentEl, xmlns);
           }
+          if (
+              ((oldNode as VNodeComp).$t & FLAG_IS_STALE) ||
+              !(oldNode.$d.$memo &&
+                  (oldNode.$d.$memo === true
+                      ? newAttrs === oldAttrs
+                      : oldNode.$d.$memo(newAttrs, oldAttrs)))
+          ) {
+            _redrawComponent(oldNode as VNodeComp, parentEl, xmlns);
+          }
+          return oldNode;
         } else {
           _create(parentNode, parentEl, newNode, xmlns);
           _remove(oldNode);
@@ -318,6 +315,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
   } else {
     _create(parentNode, parentEl, newNode, xmlns);
   }
+  return newNode;
 };
 
 const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VNodeFlatArray, oldNodes:VNodeFlatArray, xmlns?: string): void => {
@@ -335,7 +333,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
         while (i < newNodesLength && i < oldNodesLength &&
           newNodes[i].attrs.$key === oldNodes[i].attrs.$key &&
           !(newNodes[i].is === VNODE_COMP && newNodes[i].attrs.$remove)) {
-          _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
+          newNodes[i] = _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns);
           i++;
         }
          if (i < newNodesLength || i < oldNodesLength) {
@@ -367,7 +365,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
                    continue;
                  }
                } else {
-                 _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
+                 newNodes[k] = _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
                }
              }
 
@@ -389,7 +387,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
           oldNode = oldNodes[i];
           newNode = newNodes[i];
           if(oldNode && oldNode.el) {
-            _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
+            newNodes[i] = _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
           } else {
             _create(parentNode, parentEl, newNode, xmlns);
           }
