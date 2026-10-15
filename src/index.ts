@@ -341,37 +341,42 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
          if (i < newNodesLength || i < oldNodesLength) {
            const oldByKey = new Map();
            for (let k = i; k < oldNodesLength; k++) {
-             oldByKey.set(oldNodes[k].attrs.$key, oldNodes[k]);
+             oldByKey.set(oldNodes[k].attrs.$key, k);
            }
            const last = _lastRoot(oldNodes[oldNodesLength - 1]);
            let next: Node | null = last ? last.nextSibling : null;
-  
+
            for (let k = newNodesLength - 1; k >= i; k--) {
              newNode = newNodes[k];
-             oldNode = oldByKey.get(newNode.attrs.$key);
-             if (oldNode) {
+             const oldPos = oldByKey.get(newNode.attrs.$key);
+             if (oldPos !== undefined) {
+               oldNode = oldNodes[oldPos];
                oldByKey.delete(newNode.attrs.$key);
                if (newNode.is === VNODE_COMP && newNode.attrs.$remove) {
                  if ((oldNode.$t & FLAG_IS_REMOVING) || !_remove(oldNode)) {
                    oldNode.up = parentNode;
                    newNodes[k] = oldNode;
-                } else {
-                  newNodes.splice(k, 1);
-                  continue;
-                }
-              } else {
-                _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
-              }
+                 } else {
+                   newNodes.splice(k, 1);
+                   continue;
+                 }
+               } else {
+                 _updateNode(parentNode, parentEl, newNode, oldNode, xmlns);
+               }
+             } else if (!newNode.attrs.$remove) {
+               _create(parentNode, parentEl, newNode, xmlns);
+             } else {
+               newNodes.splice(k, 1);
+               continue;
+             }
 
-            } else if (!newNode.attrs.$remove) {
-              _create(parentNode, parentEl, newNode, xmlns);
-            } else {
-              newNodes.splice(k, 1);
-              continue;
-            }
-            next = _place(newNodes[k], parentEl, next);
-          }
-          for (const oldNode of oldByKey.values()) _remove(oldNode);
+             // Only reposition inserted nodes or nodes whose original index changed.
+             // For retained nodes, keep the first DOM root as the next anchor.
+             next = oldPos === undefined || oldPos !== k || newNodes[k].el !== oldNode.el
+               ? _place(newNodes[k], parentEl, next)
+               : newNodes[k].el || next;
+           }
+           for (const oldPos of oldByKey.values()) _remove(oldNodes[oldPos]);
         }
       } else {
         
