@@ -8,9 +8,9 @@ describe('elem()', () => {
     const node = elem('div');
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    expect(node).toHaveOnlyProperties(['is', '$tag', '$def', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
     expect(node).toHaveProperty('is', VNODE_ELEM);
-    expect(node).toHaveProperty('$tag', 'div');
+    expect(node).toHaveProperty('$t', 'div');
     expect(node).toHaveProperty('attrs', {});
     expect(node).toHaveProperty('nodes', []);
   });
@@ -19,9 +19,9 @@ describe('elem()', () => {
     const node = elem('div', {id:'test'});
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    expect(node).toHaveOnlyProperties(['is', '$tag', '$def', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
     expect(node).toHaveProperty('is', VNODE_ELEM);
-    expect(node).toHaveProperty('$tag', 'div');
+    expect(node).toHaveProperty('$t', 'div');
     expect(typeof node.attrs).toBe('object');
     expect(node.attrs).toHaveOnlyProperties(['id']);
     expect(node.attrs).toHaveProperty('id', 'test');
@@ -43,9 +43,9 @@ describe('elem()', () => {
     const node = elem('svg');
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    expect(node).toHaveOnlyProperties(['is', '$tag', '$def', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
     expect(node.is).toBe(VNODE_ELEM);
-    expect(node.$tag).toBe('svg');
+    expect(node.$t).toBe('svg');
     expect(node.attrs).toEqual({});
     expect(node.nodes).toEqual([]);
   });
@@ -55,9 +55,9 @@ describe('elem()', () => {
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
     console.log(node);
-    expect(node).toHaveOnlyProperties(['is', '$tag', '$def', 'attrs', 'nodes', 'up', 'el']);
+    expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', 'up', 'el']);
     expect(node.is).toBe(VNODE_ELEM);
-    expect(node.$tag).toBe('math');
+    expect(node.$t).toBe('math');
     expect(node.attrs).toEqual({});
     expect(node.nodes).toEqual([]);
   });
@@ -92,7 +92,7 @@ describe('elem()', () => {
     expect(node.nodes).toHaveLength(1);
     expect(node.nodes[0]).toMatchObject({
       is: VNODE_ELEM,
-      $tag: 'div',
+      $t: 'div',
       attrs: {},
       nodes: [],
     });
@@ -103,7 +103,7 @@ describe('elem()', () => {
     expect(node.nodes).toHaveLength(1);
     expect(node.nodes[0]).toMatchObject({
       is: VNODE_ELEM,
-      $tag: 'div',
+      $t: 'div',
       attrs: {},
       nodes: [],
     });
@@ -114,13 +114,13 @@ describe('elem()', () => {
     expect(node.nodes).toHaveLength(2);
     expect(node.nodes[0]).toMatchObject({
       is: VNODE_ELEM,
-        $tag: 'div',
+        $t: 'div',
       attrs: {},
       nodes: [],
     });
     expect(node.nodes[1]).toMatchObject({
       is: VNODE_ELEM,
-      $tag: 'p',
+      $t: 'p',
       attrs: {},
       nodes: [],
     });
@@ -129,19 +129,19 @@ describe('elem()', () => {
   test('Handles array with multiple elem() children', () => {
     const node = elem('div', [elem('div'), elem('p')]);
     expect(node.nodes).toHaveLength(2);
-    expect(node.nodes.map(child => child.$tag)).toEqual(['div', 'p']);
+    expect(node.nodes.map(child => child.$t)).toEqual(['div', 'p']);
   });
 
   test('Filters null and undefined children', () => {
     const node = elem('div', null, elem('span'), undefined, elem('p'));
     expect(node.nodes).toHaveLength(2);
-    expect(node.nodes.map(child => child.$tag)).toEqual(['span', 'p']);
+    expect(node.nodes.map(child => child.$t)).toEqual(['span', 'p']);
   });
 
   test('Filters boolean children', () => {
     const node = elem('div', false, elem('span'), true, elem('p'));
     expect(node.nodes).toHaveLength(2);
-    expect(node.nodes.map(child => child.$tag)).toEqual(['span', 'p']);
+    expect(node.nodes.map(child => child.$t)).toEqual(['span', 'p']);
   });
 
   test('Filters nullish and boolean values from nested arrays', () => {
@@ -152,7 +152,7 @@ describe('elem()', () => {
       [elem('p'), null],
     ]);
     expect(node.nodes).toHaveLength(2);
-    expect(node.nodes.map(child => child.$tag)).toEqual(['span', 'p']);
+    expect(node.nodes.map(child => child.$t)).toEqual(['span', 'p']);
   });
 
   test('Handles only filtered children', () => {

@@ -42,7 +42,7 @@ describe('comp()', () => {
       draw: () => null
     };
     const comp1 = comp(compDef);
-    expect(comp1.$def).toBe(compDef);
+    expect(comp1.$d).toBe(compDef);
   });
 });
 
