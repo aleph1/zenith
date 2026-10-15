@@ -1310,3 +1310,26 @@ test('preserves position when replacing a native DOM node', () => {
     expect(children[2].textContent).toBe('After');
     expect(first.isConnected).toBe(false);
 });
+
+test('preserves a native DOM node when replacing its parent', () => {
+    const container = document.createElement('div');
+    const canvas = document.createElement('canvas');
+
+    bind(container,
+        elem('section', node(canvas))
+    );
+
+    expect(canvas.parentElement?.tagName).toBe('SECTION');
+
+    bind(container,
+        elem('article', node(canvas))
+    );
+
+    expect(container.querySelector('article canvas')).toBe(canvas);
+    expect(canvas.parentElement?.tagName).toBe('ARTICLE');
+
+    bind(container, null);
+    expect(container.contains(canvas)).toBe(false);
+    expect(container.firstChild).toBeNull();
+    expect(canvas.isConnected).toBe(false);
+});

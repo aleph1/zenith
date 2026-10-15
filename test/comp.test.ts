@@ -358,4 +358,231 @@ describe('stable component vnode identity', () => {
 
       expect(removedCount).toBe(1);
   });
+
+  test('preserves an empty component instance across parent redraws', () => {
+    const container = document.createElement('div');
+    const init = vi.fn();
+    const removed = vi.fn();
+    let original;
+
+    const Child = compDef({
+        init(vnode) {
+            original = vnode;
+            init();
+        },
+        draw(vnode) {
+            return vnode.attrs.visible
+                ? elem('span', 'Visible')
+                : [];
+        },
+        removed
+    });
+
+    const render = visible =>
+        elem('div', comp(Child, { visible }));
+
+    bind(container, render(false));
+    expect(init).toHaveBeenCalledTimes(1);
+
+    bind(container, render(true));
+
+    expect(init).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toBe('Visible');
+
+    bind(container, null);
+    expect(removed).toHaveBeenCalledTimes(1);
+  });
+
+  test('updates component el when its root element changes', () => {
+      const container = document.createElement('div');
+      let original;
+
+      const Child = compDef({
+          init(vnode) {
+              original = vnode;
+          },
+          draw(vnode) {
+              return elem(vnode.attrs.tag, 'Content');
+          }
+      });
+
+      const render = tag =>
+          elem('div', comp(Child, { tag }));
+
+      bind(container, render('span'));
+
+      const first = original.el;
+      expect(first.tagName).toBe('SPAN');
+
+      bind(container, render('strong'));
+
+      const second = container.querySelector('strong');
+
+      expect(second).not.toBeNull();
+      expect(original.el).toBe(second);
+      expect(original.el).not.toBe(first);
+
+      bind(container, null);
+  });
+
+  test('inserts newly visible component content in sibling order', () => {
+      const container = document.createElement('div');
+
+      const Child = compDef({
+          draw(vnode) {
+              return vnode.attrs.visible
+                  ? elem('span', 'Middle')
+                  : [];
+          }
+      });
+
+      const render = visible => elem('div',
+          elem('span', 'Before'),
+          comp(Child, { visible }),
+          elem('span', 'After')
+      );
+
+      bind(container, render(false));
+      bind(container, render(true));
+
+      expect(
+          [...container.firstElementChild.children]
+              .map(el => el.textContent)
+      ).toEqual(['Before', 'Middle', 'After']);
+
+      bind(container, null);
+  });
+
+  test('preserves position when empty component gains multiple roots', () => {
+      const container = document.createElement('div');
+      let child;
+      let visible = false;
+
+      const Child = compDef({
+          init(vnode) {
+              child = vnode;
+          },
+          draw() {
+              return visible
+                  ? [elem('span', 'A'), elem('span', 'B')]
+                  : [];
+          }
+      });
+
+      bind(container, elem('div',
+          elem('span', 'Before'),
+          comp(Child),
+          elem('span', 'After')
+      ));
+
+      visible = true;
+      draw(child, true);
+      sync();
+
+      expect([...container.firstElementChild.children]
+          .map(el => el.textContent)
+      ).toEqual(['Before', 'A', 'B', 'After']);
+
+      visible = false;
+      draw(child, true);
+      sync();
+
+      expect([...container.firstElementChild.children]
+          .map(el => el.textContent)
+      ).toEqual(['Before', 'After']);
+
+      bind(container, null);
+  });
+
+});
+
+test('updates ancestor el when a nested component changes its root', () => {
+    const container = document.createElement('div');
+    let child: ReturnType<typeof comp>;
+    let parent: ReturnType<typeof comp>;
+    let visible = false;
+
+    const Child = compDef({
+        init(vnode) {
+            child = vnode;
+        },
+        draw() {
+            return visible ? elem('span', 'Visible') : [];
+        }
+    });
+
+    const Parent = compDef({
+        init(vnode) {
+            parent = vnode;
+        },
+        draw() {
+            return comp(Child);
+        }
+    });
+
+    bind(container, elem('div', comp(Parent)));
+
+    expect(parent!.el).toBeNull();
+    expect(child!.el).toBeNull();
+
+    visible = true;
+    draw(child!, true);
+    sync();
+
+    expect(container.textContent).toBe('Visible');
+    expect(parent!.el).toBe(child!.el);
+    expect(parent!.el?.parentNode).toBe(container.firstChild);
+
+    bind(container, null);
+});
+
+test('redraws nested components after their original root is replaced', () => {
+    const container = document.createElement('div');
+
+    let child: ReturnType<typeof comp>;
+    let middle: ReturnType<typeof comp>;
+    let visible = false;
+    let extra = false;
+
+    const Child = compDef({
+        init(vnode) {
+            child = vnode;
+        },
+        draw() {
+            return visible ? elem('span', 'Child') : [];
+        }
+    });
+
+    const Middle = compDef({
+        init(vnode) {
+            middle = vnode;
+        },
+        draw() {
+            return extra
+                ? [comp(Child), elem('b', 'Extra')]
+                : comp(Child);
+        }
+    });
+
+    const Outer = compDef({
+        draw() {
+            return comp(Middle);
+        }
+    });
+
+    bind(container, elem('div', comp(Outer)));
+
+    visible = true;
+    draw(child!, true);
+    sync();
+
+    expect(container.textContent).toBe('Child');
+
+    extra = true;
+    draw(middle!, true);
+
+    expect(() => sync()).not.toThrow();
+    expect(container.textContent).toBe('ChildExtra');
+
+    bind(container, null);
 });
