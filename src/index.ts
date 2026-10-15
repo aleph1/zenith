@@ -527,12 +527,8 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string): 
 const _unmount = (node: VNodeAny): void => {
   redrawQueue.delete(node);
   if (node.is === VNODE_COMP) {
-    if (node.$d.remove && !(node.$t & FLAG_REMOVE_CALLED)) {
-        node.$d.remove(node);
-    }
-    if (node.$d.removed) {
-        node.$d.removed(node);
-    }
+    node.$d.remove && !(node.$t & FLAG_REMOVE_CALLED) && node.$d.remove(node);
+    node.$d.removed && node.$d.removed(node);
     node.$t = 0;
   }
   if ((node.$h || redrawQueue.size) && node.nodes) {
