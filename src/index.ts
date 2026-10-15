@@ -287,8 +287,8 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
             }
 
             if (oldNode.attrs.to && !target) {
-                oldNode.el.remove();
                 newNode.el = newNode.nodes[0] && newNode.nodes[0].el;
+                oldNode.el.remove();
             }
         }
           if(
