@@ -444,12 +444,12 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
       } else if (attr === 'style') {
         if (typeof oldAttrs.style === 'string') {
           el.removeAttribute('style');
-        } else {
-          for (const oldAttr in (oldAttrs.style || ALWAYS_EMPTY_OBJECT)) {
-            if (!(oldAttr in value)) {
-              el.style[oldAttr] = '';
+        } else if (oldAttrs.style) {
+            for (const oldAttr in oldAttrs.style) {
+                if (!(oldAttr in value)) {
+                    el.style[oldAttr] = '';
+                }
             }
-          }
         }
         Object.assign(el.style, value);
       }
