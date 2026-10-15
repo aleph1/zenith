@@ -346,6 +346,8 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
            for (let k = newNodesLength - 1; k >= i; k--) {
              newNode = newNodes[k];
              const oldPos = oldByKey.get(newNode.attrs.$key);
+             // Preserve the old DOM root for placement checks even if the vnode is retained.
+             const oldEl = oldPos === k && oldNodes[oldPos].el;
              if (oldPos === undefined) {
                if (!newNode.attrs.$remove) {
                 _create(parentNode, parentEl, newNode, xmlns);
@@ -371,7 +373,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes:VN
 
              // Only reposition inserted nodes or nodes whose original index changed.
              // For retained nodes, keep the first DOM root as the next anchor.
-             next = oldPos === undefined || oldPos !== k || newNodes[k].el !== oldNode.el
+             next = oldPos === undefined || oldPos !== k || newNodes[k].el !== oldEl
                ? _place(newNodes[k], parentEl, next)
                : newNodes[k].el || next;
            }
@@ -471,7 +473,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
 const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny, xmlns?: string): void => {
   if(vNode.is === VNODE_ELEM) {
     vNode.$p = parentNode;
-    xmlns = vNode.attrs && vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
+    xmlns = vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
     vNode.el = xmlns 
       ? document.createElementNS(xmlns, vNode.$t, vNode.attrs.is ? {is: vNode.attrs.is} : null)
       : document.createElement(vNode.$t, vNode.attrs.is ? {is: vNode.attrs.is} : null);
@@ -482,8 +484,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     parentEl.insertBefore(vNode.el, null);
   } else if(vNode.is === VNODE_TEXT) {
     vNode = vNode as VNodeText;
-    vNode.el = document.createTextNode(vNode.$t);
-    parentEl.insertBefore(vNode.el, null);
+    vNode.el = parentEl.insertBefore(document.createTextNode(vNode.$t), null);
   } else if(vNode.is === VNODE_COMP) {
     vNode.$p = parentNode;
     if (vNode.$d.init) vNode.$d.init(vNode);
@@ -497,8 +498,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
       if(DEBUG && !(vNode.attrs.to instanceof Element)) {
         throw new Error('For components that act as portals, "to" attribute must be an Element');
       }
-      vNode.el = document.createComment('');
-      parentEl.insertBefore(vNode.el, null);
+      vNode.el = parentEl.insertBefore(document.createComment(''), null);
       parentEl = vNode.attrs.to as Element;
     }
     for(let i = 0; i < vNode.nodes.length; i++) {
@@ -558,44 +558,42 @@ const _destroy = (vNode: VNodeAny): void => {
 };
 
 const _remove = (vNode: VNodeAny): boolean => {
-  if (vNode.is === VNODE_COMP) {
-    if (vNode.$d.remove) {
-      if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
-        return false;
+  if (vNode.is === VNODE_COMP && vNode.$d.remove) {
+    if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
+      return false;
+    }
+    // Mark _remove() as called before calling it
+    (vNode as VNodeComp).$t |= FLAG_REMOVE_CALLED | FLAG_IS_REMOVING;
+    const deferred = vNode.$d.remove(vNode);
+    if (deferred && deferred.then) {
+      if (DEBUG && !('$key' in vNode.attrs)) {
+        throw new Error(
+          'Component remove() returned a Promise but component has no $key attribute.\n' +
+          'Deferred removal requires a key to track the component during exit.\n' +
+          'Add a $key and use $remove flag. Example:\n' +
+          'comp(MyComponent, { $key: item.id, $remove: item.deleted })'
+        );
       }
-      // Mark _remove() as called before calling it
-      (vNode as VNodeComp).$t |= FLAG_REMOVE_CALLED | FLAG_IS_REMOVING;
-      const deferred = vNode.$d.remove(vNode);
-      if (deferred && deferred.then) {
-        if (DEBUG && !('$key' in vNode.attrs)) {
-          throw new Error(
-            'Component remove() returned a Promise but component has no $key attribute.\n' +
-            'Deferred removal requires a key to track the component during exit.\n' +
-            'Add a $key and use $remove flag. Example:\n' +
-            'comp(MyComponent, { $key: item.id, $remove: item.deleted })'
-          );
-        }
-        const deferredDestroy = () => {
-          if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
-            const parent = vNode.$p;
-            if (DEBUG && !parent) {
-              console.warn(
-                'Promise resolved but component was already removed.',
-                'This usually means the component was removed without using $remove attribute.'
-              );
-              return;
-            }
-            if (parent) {
-              const i = parent.nodes.indexOf(vNode);
-              if (i !== -1) parent.nodes.splice(i, 1);
-            }
-            _destroy(vNode);
-            draw(parent);
+      const deferredDestroy = () => {
+        if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
+          const parent = vNode.$p;
+          if (DEBUG && !parent) {
+            console.warn(
+              'Promise resolved but component was already removed.',
+              'This usually means the component was removed without using $remove attribute.'
+            );
+            return;
           }
-        };
-        deferred.then(deferredDestroy, deferredDestroy);
-        return false;
-      }
+          if (parent) {
+            const i = parent.nodes.indexOf(vNode);
+            if (i !== -1) parent.nodes.splice(i, 1);
+          }
+          _destroy(vNode);
+          draw(parent);
+        }
+      };
+      deferred.then(deferredDestroy, deferredDestroy);
+      return false;
     }
   }
   _destroy(vNode);
