@@ -3,9 +3,9 @@ import esbuild from 'rollup-plugin-esbuild';
 import terser from '@rollup/plugin-terser';
 
 const version = process.env.npm_package_version;
-const copyright = `| MIT License | © 2022-2025 Daniel Barber */`;
-const zenithBanner = `/*! Zenith v${version} ${copyright}`;
-const helpersBanner = `/*! Zenith Helpers v${version} ${copyright}`;
+const copyright = `| MIT License | ©2022-2025 Daniel Barber */`;
+const zenithBanner = `/*! Zenith ${version} ${copyright}`;
+const helpersBanner = `/*! Zenith Helpers ${version} ${copyright}`;
 
 const reservedExports = ['elem', 'comp', 'node', 'compDef', 'bind', 'draw', 'sync', 'ns', 'diff'];
 const reservedHelpers = ['keep', 'is', 'cls', 'slot', 'html', 'closest', 'inject', 'signal', 'derived', 'router', 'Portal'];
