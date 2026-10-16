@@ -422,23 +422,24 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
     el.setAttribute('type', newAttrs.type);
   }
   for (attr in newAttrs) {
-    // value is kept in the loop as it may be a function,
-    // with value.call() being used in the event handler
     const value = newAttrs[attr];
+    // Controlled properties must check the live DOM, even when vnodes agree.
+    // Keep object-valued styles eligible for in-place mutations.
+    if (value === oldAttrs[attr] && (!value || typeof value !== 'object') &&
+        attr !== 'value' && attr !== 'checked' && attr !== 'selected') continue;
+
     if (attr[0] === 'o' && attr[1] === 'n') {
-      if (value !== oldAttrs[attr]) {
-        el[attr] = typeof value === 'function'
-          ? e => {
-            if (value.call(e.currentTarget, e) === false) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-            if (e.draw !== false) {
-              draw(newNode);
-            }
+      el[attr] = typeof value === 'function'
+        ? e => {
+          if (value.call(e.currentTarget, e) === false) {
+            e.preventDefault();
+            e.stopPropagation();
           }
-          : null;
-      }
+          if (e.draw !== false) {
+            draw(newNode);
+          }
+        }
+        : null;
     } else if (
       attr[0] !== '$' &&
       (attr !== 'type' || newNode.$t !== 'input') &&
@@ -448,15 +449,26 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
     ) {
       valueType = typeof value;
       if (valueType === 'string' || valueType === 'number') {
-        if (value !== oldAttrs[attr]) {
-          if (attr === 'value') el.value = value;
-          else el.setAttribute(attr, '' + value);
+        if (attr === 'value') {
+          if (newNode.$t === 'input' || newNode.$t === 'textarea') {
+            // Don't disturb a matching value/caret or assign a file path.
+            if (el.value !== '' + value &&
+                !(newNode.$t === 'input' && el.type === 'file' && value !== '')) {
+              el.value = value;
+            }
+          } else if (value !== oldAttrs[attr]) {
+            // Option values must be set explicitly, even when the current
+            // property reads as '' before its text children are created.
+            el.value = value;
+          }
+        } else {
+          el.setAttribute(attr, '' + value);
         }
       } else if (value === true || value === false) {
         if (attr === 'checked' || attr === 'selected') {
           if (el[attr] !== value) el[attr] = value;
         } else if (value) {
-          if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
+          el.setAttribute(attr, attr);
         } else if (oldAttrs[attr]) {
           el.removeAttribute(attr);
         }
