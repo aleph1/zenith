@@ -131,10 +131,7 @@ export const sync = (): void => {
       // Resolve the real DOM container from the logical tree, never a component's
       // possibly empty or outdated first-root reference.
       let current = redrawNode as VNodeContainer;
-      while (current.$p && current.is === VNODE_COMP &&
-             !current.attrs.to) {
-        current = current.$p;
-      }
+      for(;current.$p && current.is === VNODE_COMP && !current.attrs.to; current = current.$p);
       targetEl = current.is === VNODE_COMP && current.attrs.to || current.el;
       redrawQueue.delete(redrawNode);
       if (targetEl) _redrawComponent(redrawNode as VNodeComp, targetEl);
@@ -156,8 +153,8 @@ export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
     }
     redrawQueue.add(vNode);
   } else {
-    let current;
-    for (current = vNode; current.$p; current = current.$p);
+    let current = vNode;
+    for (current; current.$p; current = current.$p);
     redrawQueue.add(current);
     for (current = vNode; current.$p; current = current.$p) {
       if (current.is === VNODE_COMP) {
@@ -182,7 +179,7 @@ const _flatten = (
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
-  for (offset; offset < (nodes as ArrayLike<unknown>).length; offset++) {
+  for (; offset < (nodes as ArrayLike<unknown>).length; offset++) {
     node = nodes[offset];
 
     if (Array.isArray(node)) {
@@ -240,7 +237,7 @@ const _place = (vNode: VNodeAny, parentEl: Element, next: Node | null): Node | n
 const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
   let child: VNodeAny = vNode;
   let parent = child.$p;
-  while (parent) {
+  for(; parent; parent = child.$p) {
     const siblings = parent.nodes;
     for (let i = siblings.indexOf(child) + 1; i < siblings.length; i++) {
       const root = siblings[i].el;
@@ -248,7 +245,6 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
     }
     if (parent.is !== VNODE_COMP || parent.attrs.to) break;
     child = parent;
-    parent = child.$p;
   }
   return null;
 };
@@ -258,12 +254,11 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
 const _syncRoot = (vNode: VNodeComp): void => {
   let child: VNodeContainer = vNode;
   let parent = child.$p;
-  while (parent && parent.is === VNODE_COMP && !parent.attrs.to) {
+  for(; parent && parent.is === VNODE_COMP && !parent.attrs.to; parent = child.$p) {
     const first = _nextRoot(parent.nodes, 0, null);
     if (parent.el === first) break;
     parent.el = first;
     child = parent;
-    parent = child.$p;
   }
 };
 
@@ -351,11 +346,11 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: V
     if (oldNodesLength) {
       if (newNodes.$keys && oldNodes.$keys) {
         // Fast path for stable keyed prefix.
-        while (i < newNodesLength && i < oldNodesLength &&
+        for(;
+          i < newNodesLength && i < oldNodesLength &&
           newNodes[i].attrs.$key === oldNodes[i].attrs.$key &&
-          !(newNodes[i].is === VNODE_COMP && newNodes[i].attrs.$remove)) {
+          !(newNodes[i].is === VNODE_COMP && newNodes[i].attrs.$remove); i++) {
           newNodes[i] = _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns, _nextRoot(oldNodes, i + 1, anchor));
-          i++;
         }
         if (i < newNodesLength || i < oldNodesLength) {
           const oldByKey = new Map();
