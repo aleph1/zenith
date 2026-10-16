@@ -207,6 +207,17 @@ const _flatten = (
         }
     }
   }
+  // catch duplicate keys in debug mode
+  if (DEBUG && arr.$keys) {
+    const seen = new Set();
+    for (const node of arr) {
+      const key = node.attrs.$key;
+      if (seen.has(key)) {
+        throw new Error('Duplicate sibling key: ' + String(key));
+      }
+      seen.add(key);
+    }
+  }
   return arr;
 };
 
