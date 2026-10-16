@@ -90,7 +90,8 @@ const ns = {
 
 const FLAG_IS_STALE = 1;      // needs redraw
 const FLAG_IS_REMOVING = 2;   // being removed
-const FLAG_REMOVE_CALLED = 4; // remove() called
+const FLAG_IS_ACTIVE = 4;     // to avoid stale redraws
+const FLAG_REMOVE_CALLED = 8; // remove() called
 
 const DIFF_NONE = 1;  // Skip everything
 const DIFF_SELF = 2;  // Only diff attributes
@@ -150,6 +151,7 @@ export const sync = (): void => {
 export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
   if (surgical) {
     if (vNode.is === VNODE_COMP) {
+      if (!(vNode.$t & FLAG_IS_ACTIVE)) return;
       vNode.$t |= FLAG_IS_STALE;
     }
     redrawQueue.add(vNode);
@@ -479,6 +481,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     vNode.el = parentEl.insertBefore(document.createTextNode(vNode.$t), anchor);
   } else if (vNode.is === VNODE_COMP) {
     vNode.$p = parentNode;
+    vNode.$t |= FLAG_IS_ACTIVE;
     if (vNode.$d.init) vNode.$d.init(vNode);
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
@@ -517,16 +520,16 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string, a
   if (vNode.$d.drawn) vNode.$d.drawn(vNode);
 };
 
-const _unmount = (node: VNodeAny): void => {
-  redrawQueue.delete(node);
-  if (node.is === VNODE_COMP) {
-    node.$d.remove && !(node.$t & FLAG_REMOVE_CALLED) && node.$d.remove(node);
-    node.$d.removed && node.$d.removed(node);
-    node.$t = 0;
+const _unmount = (vNode: VNodeAny): void => {
+  redrawQueue.delete(vNode);
+  if (vNode.is === VNODE_COMP) {
+    vNode.$d.remove && !(vNode.$t & FLAG_REMOVE_CALLED) && vNode.$d.remove(vNode);
+    vNode.$d.removed && vNode.$d.removed(vNode);
+    vNode.$t = 0;
   }
-  if ((node.$h || redrawQueue.size) && node.nodes) {
-    for (let i = 0; i < node.nodes.length; i++) {
-      _unmount(node.nodes[i]);
+  if ((vNode.$h || redrawQueue.size) && vNode.nodes) {
+    for (let i = 0; i < vNode.nodes.length; i++) {
+      _unmount(vNode.nodes[i]);
     }
   }
 };
@@ -545,11 +548,15 @@ const _detach = (vNode: VNodeAny, skipRemove?: boolean | null): void => {
   if (!skipRemove && vNode.el && (vNode.is !== VNODE_COMP || portal)) {
     vNode.el.remove();
   }
+  if (vNode.is === VNODE_COMP) {
+    (vNode as VNodeComp).$t &= ~FLAG_IS_ACTIVE;
+  }
 };
 
 const _destroy = (vNode: VNodeAny): void => {
   _detach(vNode);
   _unmount(vNode);
+  vNode.$p = null;
 };
 
 const _remove = (vNode: VNodeAny): boolean => {
@@ -690,6 +697,7 @@ export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null)
   }
   root = root || comp(RootWrapper);
   root.attrs = { $nodes: vNodeAnyOrArray };
+  root.$t |= FLAG_IS_ACTIVE;
   boundNodes.set(root.el = el, root);
   draw(root);
   sync();
