@@ -185,23 +185,17 @@ const _flatten = (
     if (Array.isArray(node)) {
         _flatten(node, 0, arr);
     } else if (node != null && node !== true && node !== false) {
-        if (!node.is) {
-            node = {
-                is: VNODE_TEXT,
-                $t: '' + node,
-                $d: null,
-                attrs: null,
-                nodes: null,
-                $p: null,
-                el: null,
-            };
-        }
-        arr.push(node);
-        if (arr.$keys == null) {
-            arr.$keys = !!(node.attrs && '$key' in node.attrs);
-        } else if (arr.$keys !== !!(node.attrs && '$key' in node.attrs)) {
-            throw new Error(DEBUG ? 'Children have mixed keys...' : '$keys');
-        }
+      if (!node.is) {
+        node = _vNode<VNodeText>(
+          VNODE_TEXT, '' + node, null, null, null
+        );
+      }
+      const keyed = !!(node.attrs && '$key' in node.attrs);
+      if (arr.length && keyed !== !!arr.$keys) {
+        throw new Error(DEBUG ? 'Children have mixed keys...' : '$keys');
+      }
+      if (keyed) arr.$keys = true;
+      arr.push(node);
     }
   }
   // catch duplicate keys in debug mode
