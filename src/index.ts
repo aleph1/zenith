@@ -418,13 +418,40 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
   let valueType;
   const el = newNode.el;
   const newAttrs = newNode.attrs;
-  if (newNode.$t === 'input' && newAttrs.type) { //} && newAttrs.type !== oldAttrs.type) { // benchmark extra test
-    el.setAttribute('type', newAttrs.type);
+
+  // Remove first: HTML attribute names can be case-insensitive.
+  for (attr in oldAttrs) {
+    if (!(attr in newAttrs)) {
+      if (attr[0] === 'o' && attr[1] === 'n') {
+        el[attr] = null;
+      } else if (
+        newNode.$t !== 'select' ||
+        (attr !== 'value' && attr !== 'selectedIndex')
+      ) {
+        el.removeAttribute(attr);
+      }
+    }
   }
+
+  // Set input type before value, including a transition away from type=file.
+  if (newNode.$t === 'input') {
+    if (newAttrs.type) {
+      if (newAttrs.type !== oldAttrs.type) el.setAttribute('type', newAttrs.type);
+    } else if ('type' in newAttrs && oldAttrs.type) {
+      el.removeAttribute('type');
+    }
+  }
+
   for (attr in newAttrs) {
     const value = newAttrs[attr];
-    // Controlled properties must check the live DOM, even when vnodes agree.
-    // Keep object-valued styles eligible for in-place mutations.
+
+    // Explicit undefined relinquishes control of live form state.
+    if (value === undefined &&
+        (attr === 'checked' || attr === 'selected' ||
+        (attr === 'value' && (newNode.$t === 'input' || newNode.$t === 'textarea')))) continue;
+
+    // Controlled properties must still inspect the live DOM.
+    // Object styles can be mutated in place.
     if (value === oldAttrs[attr] && (!value || typeof value !== 'object') &&
         attr !== 'value' && attr !== 'checked' && attr !== 'selected') continue;
 
@@ -435,9 +462,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
             e.preventDefault();
             e.stopPropagation();
           }
-          if (e.draw !== false) {
-            draw(newNode);
-          }
+          if (e.draw !== false) draw(newNode);
         }
         : null;
     } else if (
@@ -451,14 +476,12 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
       if (valueType === 'string' || valueType === 'number') {
         if (attr === 'value') {
           if (newNode.$t === 'input' || newNode.$t === 'textarea') {
-            // Don't disturb a matching value/caret or assign a file path.
             if (el.value !== '' + value &&
                 !(newNode.$t === 'input' && el.type === 'file' && value !== '')) {
               el.value = value;
             }
           } else if (value !== oldAttrs[attr]) {
-            // Option values must be set explicitly, even when the current
-            // property reads as '' before its text children are created.
+            // Preserve an explicit empty option value before children exist.
             el.value = value;
           }
         } else {
@@ -473,30 +496,17 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
           el.removeAttribute(attr);
         }
       } else if (!value) {
-        if (oldAttrs[attr]) el.removeAttribute(attr);
+        // 0 and '' were real attribute values; truthiness is insufficient.
+        if (attr in oldAttrs) el.removeAttribute(attr);
       } else if (attr === 'style') {
         if (typeof oldAttrs.style === 'string') {
           el.removeAttribute('style');
         } else if (oldAttrs.style) {
           for (const oldAttr in oldAttrs.style) {
-            if (!(oldAttr in value)) {
-              el.style[oldAttr] = '';
-            }
+            if (!(oldAttr in value)) el.style[oldAttr] = '';
           }
         }
         Object.assign(el.style, value);
-      }
-    }
-  }
-  for (attr in oldAttrs) {
-    if (!(attr in newAttrs)) {
-      if (attr[0] === 'o' && attr[1] === 'n') {
-        el[attr] = null;
-      } else if (
-        newNode.$t !== 'select' ||
-        (attr !== 'value' && attr !== 'selectedIndex')
-      ) {
-        el.removeAttribute(attr);
       }
     }
   }
