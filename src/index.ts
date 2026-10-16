@@ -457,21 +457,25 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
           if (attr === 'value') el.value = value;
           else el.setAttribute(attr, '' + value);
         }
-      } else if (value === true) {
+      } else if (value === true || value === false) {
         if (attr === 'checked' || attr === 'selected') {
-          el[attr] = !!value;
-        } else if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
+          if (el[attr] !== value) el[attr] = value;
+        } else if (value) {
+          if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
+        } else if (oldAttrs[attr]) {
+          el.removeAttribute(attr);
+        }
       } else if (!value) {
         if (oldAttrs[attr]) el.removeAttribute(attr);
       } else if (attr === 'style') {
         if (typeof oldAttrs.style === 'string') {
           el.removeAttribute('style');
         } else if (oldAttrs.style) {
-            for (const oldAttr in oldAttrs.style) {
-                if (!(oldAttr in value)) {
-                    el.style[oldAttr] = '';
-                }
+          for (const oldAttr in oldAttrs.style) {
+            if (!(oldAttr in value)) {
+              el.style[oldAttr] = '';
             }
+          }
         }
         Object.assign(el.style, value);
       }
