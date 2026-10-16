@@ -447,7 +447,9 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
           else el.setAttribute(attr, '' + value);
         }
       } else if (value === true) {
-        if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
+        if (attr === 'checked' || attr === 'selected') {
+          el[attr] = !!value;
+        } else if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
       } else if (!value) {
         if (oldAttrs[attr]) el.removeAttribute(attr);
       } else if (attr === 'style') {
