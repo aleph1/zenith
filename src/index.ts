@@ -278,6 +278,9 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
       } else {
         newNode.nodes = oldNode.nodes;
       }
+      if (newNode.$t === 'select' && (diffFlags & DIFF_SELF)) {
+        _setSelectAttributes(newNode);
+      }
       return newNode;
     } else if (newNodeType === VNODE_TEXT) {
       newNode.el = oldNode.el;
@@ -430,7 +433,13 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
           }
           : null;
       }
-    } else if (attr[0] !== '$' && (attr !== 'type' || newNode.$t !== 'input') && attr !== 'is' && attr !== 'xmlns') {
+    } else if (
+      attr[0] !== '$' &&
+      (attr !== 'type' || newNode.$t !== 'input') &&
+      attr !== 'is' &&
+      attr !== 'xmlns' &&
+      !(newNode.$t === 'select' && (attr === 'value' || attr === 'selectedIndex'))
+    ) {
       valueType = typeof value;
       if (valueType === 'string' || valueType === 'number') {
         if (value !== oldAttrs[attr]) {
@@ -459,10 +468,34 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
     if (!(attr in newAttrs)) {
       if (attr[0] === 'o' && attr[1] === 'n') {
         el[attr] = null;
-      } else {
+      } else if (
+        newNode.$t !== 'select' ||
+        (attr !== 'value' && attr !== 'selectedIndex')
+      ) {
         el.removeAttribute(attr);
       }
     }
+  }
+};
+
+// Select values must be applied after options are created or updated.
+// Unlike ordinary attributes, selection is browser-managed state:
+// undefined leaves it unchanged, null clears it, and selectedIndex
+// takes precedence over value when both are provided.
+const _setSelectAttributes = (vNode: VNodeElem): void => {
+  const el = vNode.el as HTMLSelectElement;
+  const attrs = vNode.attrs;
+  const value = attrs.value;
+  if (value !== undefined) {
+    if (value === null) {
+      if (el.selectedIndex !== -1) el.selectedIndex = -1;
+    } else if (el.value !== '' + value || el.selectedIndex === -1) {
+      el.value = value;
+    }
+  }
+  if (attrs.selectedIndex != null &&
+    el.selectedIndex !== attrs.selectedIndex) {
+    el.selectedIndex = attrs.selectedIndex;
   }
 };
 
@@ -475,6 +508,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
       : document.createElement(vNode.$t, vNode.attrs.is ? {is: vNode.attrs.is} : null);
     _setElAttributes(vNode);
     for (let i = 0; i < vNode.nodes.length; i++) _create(vNode, vNode.el, vNode.nodes[i], xmlns);
+    if (vNode.$t === 'select') _setSelectAttributes(vNode);
     parentEl.insertBefore(vNode.el, anchor);
   } else if (vNode.is === VNODE_TEXT) {
     vNode = vNode as VNodeText;
