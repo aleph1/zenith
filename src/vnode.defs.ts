@@ -71,6 +71,8 @@ export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> 
   attrs: A;
   nodes: VNodeFlatArray;
   provide?: Record<string, any>;
+  /** Optional, application-managed instance state. */
+  state?: Record<string, any>;
 }
 
 export interface VNodeNode extends VNodeBase {

@@ -586,3 +586,88 @@ test('redraws nested components after their original root is replaced', () => {
 
     bind(container, null);
 });
+
+test('preserves component state across redraws and keyed moves', () => {
+    const container = document.createElement('div');
+    const instances = new Map<string, ReturnType<typeof comp>>();
+
+    const Counter = compDef({
+        init(vnode) {
+            vnode.state = { count: 0 };
+            instances.set(vnode.attrs.$key, vnode);
+        },
+
+        draw(vnode) {
+            return elem('span', vnode.state!.count);
+        }
+    });
+
+    const render = (keys: string[]) =>
+        elem('div', keys.map($key =>
+            comp(Counter, { $key })
+        ));
+
+    bind(container, render(['a', 'b']));
+
+    const a = instances.get('a')!;
+    const b = instances.get('b')!;
+
+    a.state!.count = 5;
+
+    // Mutating state does not automatically redraw.
+    expect(container.textContent).toBe('00');
+
+    draw(a, true);
+    sync();
+
+    expect(container.textContent).toBe('50');
+
+    // Reordering retains the original component instances.
+    bind(container, render(['b', 'a']));
+
+    expect(instances.get('a')).toBe(a);
+    expect(instances.get('b')).toBe(b);
+    expect(a.state!.count).toBe(5);
+    expect(b.state!.count).toBe(0);
+    expect(container.textContent).toBe('05');
+
+    bind(container, null);
+});
+
+test('preserves state through cleanup and resets it on remount', () => {
+    const container = document.createElement('div');
+
+    let initCount = 0;
+    const removedStates: number[] = [];
+
+    const Counter = compDef({
+        init(vnode) {
+            vnode.state = { id: ++initCount };
+        },
+
+        draw(vnode) {
+            return elem('span', vnode.state!.id);
+        },
+
+        removed(vnode) {
+            removedStates.push(vnode.state!.id);
+        }
+    });
+
+    bind(container, comp(Counter));
+
+    expect(container.textContent).toBe('1');
+
+    bind(container, null);
+
+    expect(removedStates).toEqual([1]);
+
+    bind(container, comp(Counter));
+
+    expect(container.textContent).toBe('2');
+    expect(initCount).toBe(2);
+
+    bind(container, null);
+
+    expect(removedStates).toEqual([1, 2]);
+});
