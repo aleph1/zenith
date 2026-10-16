@@ -191,7 +191,7 @@ const _flatten = (
         if (!node.is) {
             node = {
                 is: VNODE_TEXT,
-                $t: node + '',
+                $t: '' + node,
                 $d: null,
                 attrs: null,
                 nodes: null,
@@ -444,7 +444,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
       if (valueType === 'string' || valueType === 'number') {
         if (value !== oldAttrs[attr]) {
           if (attr === 'value') el.value = value;
-          else el.setAttribute(attr, value + '');
+          else el.setAttribute(attr, '' + value);
         }
       } else if (value === true) {
         if (oldAttrs[attr] !== true) el.setAttribute(attr, attr);
