@@ -254,7 +254,7 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
 const _syncRoot = (vNode: VNodeComp): void => {
   let child: VNodeContainer = vNode;
   let parent = child.$p;
-  for(; parent && parent.is === VNODE_COMP && !parent.attrs.to; parent = child.$p) {
+  for(; parent && parent.is === VNODE_COMP && parent.$p && !parent.attrs.to; parent = child.$p) {
     const first = _nextRoot(parent.nodes, 0, null);
     if (parent.el === first) break;
     parent.el = first;
