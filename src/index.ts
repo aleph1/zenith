@@ -297,7 +297,10 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
       const newAttrs = newNode.attrs;
       oldNode.$p = parentNode;
       oldNode.attrs = newAttrs;
-      (oldNode as VNodeComp).$t &= ~FLAG_IS_REMOVING;
+      if ((oldNode as VNodeComp).$t & FLAG_IS_REMOVING) {
+        if(oldNode.$r) oldNode.$r = null;
+        (oldNode as VNodeComp).$t &= ~FLAG_IS_REMOVING;
+      }
       if (newAttrs.to !== oldAttrs.to) {
         const target = newAttrs.to as Element | undefined;
         if (DEBUG && target && !(target instanceof Element)) {
@@ -644,8 +647,10 @@ const _remove = (vNode: VNodeAny): boolean => {
           'comp(MyComponent, { $key: item.id, $remove: item.deleted })'
         );
       }
+      const token = vNode.$r = {};
       const deferredDestroy = () => {
-        if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
+        if (vNode.$r === token && vNode.$t & FLAG_IS_REMOVING) {
+          vNode.$r = null;
           const parent = vNode.$p;
           if (DEBUG && !parent) {
             console.warn(
