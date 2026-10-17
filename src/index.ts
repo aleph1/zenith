@@ -145,12 +145,11 @@ export const sync = (): void => {
 
 // Redraw a node
 // - Reuse current to avoid an additional variable declaration
-// - Optimized for performance and minification
 export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
+  if ((vNode.is & VNODE_COMP) && !(vNode.is & FLAG_IS_ACTIVE)) return;
   if (surgical) {
-    if (vNode.is === VNODE_COMP) {
-      if (!(vNode.$t & FLAG_IS_ACTIVE)) return;
-      vNode.$t |= FLAG_IS_STALE;
+    if (vNode.is & VNODE_COMP) {
+      vNode.is |= FLAG_IS_STALE;
     }
     redrawQueue.add(vNode);
   } else {
@@ -158,9 +157,9 @@ export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
     for (current; current.$p; current = current.$p);
     redrawQueue.add(current);
     for (current = vNode; current.$p; current = current.$p) {
-      if (current.is === VNODE_COMP) {
-        if (current.$t & FLAG_IS_STALE) break;
-        current.$t |= FLAG_IS_STALE;
+      if (current.is & VNODE_COMP) {
+        if (current.is & FLAG_IS_STALE) break;
+        current.is |= FLAG_IS_STALE;
       }
     }
   }
@@ -255,7 +254,7 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
       const root = siblings[i].el;
       if (root && root.parentNode === parentEl) return root;
     }
-    if (parent.is !== VNODE_COMP || parent.attrs.to) break;
+    if (!(parent.is & VNODE_COMP)) break;
     child = parent;
   }
   return null;
@@ -266,7 +265,7 @@ const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
 const _syncRoot = (vNode: VNodeComp): void => {
   let child: VNodeContainer = vNode;
   let parent = child.$p;
-  for(; parent && parent.is === VNODE_COMP && parent.$p && !parent.attrs.to; parent = child.$p) {
+  for(; parent && (parent.is & VNODE_COMP) && parent.$p; parent = child.$p) {
     const first = _nextRoot(parent.nodes, 0, null);
     if (parent.el === first) break;
     parent.el = first;
@@ -283,67 +282,49 @@ const _nextRoot = (nodes: VNodeFlatArray, i: number, anchor: Node | null): Node 
 };
 
 const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns?: string, anchor: Node | null = null): VNodeAny => {
-  const newNodeType = newNode.is;
-  if (newNodeType === oldNode.is) {
-    if (newNodeType === VNODE_ELEM && newNode.$t === oldNode.$t) {
-      newNode.$p = parentNode;
-      newNode.el = oldNode.el as Element;
-      newNode.$h = oldNode.$h;
-      const diffFlags = newNode.attrs.$diff || DIFF_ALL;
-      if (diffFlags & DIFF_SELF) _setElAttributes(newNode, oldNode.attrs);
-      if (diffFlags & DIFF_NODES) {
-        _updateNodes(newNode, newNode.el, newNode.nodes, oldNode.nodes, newNode.attrs.xmlns || ns[newNode.$t] || xmlns);
-      } else {
-        newNode.nodes = oldNode.nodes;
-      }
-      if (newNode.$t === 'select' && (diffFlags & DIFF_SELF)) {
-        _setSelectAttributes(newNode);
-      }
-      return newNode;
-    } else if (newNodeType === VNODE_TEXT) {
-      newNode.el = oldNode.el;
-      if (newNode.$t !== oldNode.$t) newNode.el.textContent = newNode.$t;
-      return newNode;
-    } else if (newNodeType === VNODE_COMP && newNode.$d === oldNode.$d) {
-      const oldAttrs = oldNode.attrs;
-      const newAttrs = newNode.attrs;
-      oldNode.$p = parentNode;
-      oldNode.attrs = newAttrs;
-      if ((oldNode as VNodeComp).$t & FLAG_IS_REMOVING) {
-        if(oldNode.$r) oldNode.$r = null;
-        (oldNode as VNodeComp).$t &= ~FLAG_IS_REMOVING;
-      }
-      if (newAttrs.to !== oldAttrs.to) {
-        const target = newAttrs.to as Element | undefined;
-        if (DEBUG && target && !(target instanceof Element)) {
-          throw new Error('For components that act as portals, "to" attribute must be an Element');
-        }
-        if (target && !oldAttrs.to) {
-          oldNode.el = parentEl.insertBefore(document.createComment(''), oldNode.el || anchor);
-        }
-        let next = target ? null : oldNode.el || anchor;
-        for (let i = oldNode.nodes.length - 1; i >= 0; i--) {
-          next = _place(oldNode.nodes[i], target || parentEl, next);
-        }
-        if (oldAttrs.to && !target) {
-          oldNode.el.remove();
-          oldNode.el = _nextRoot(oldNode.nodes, 0, null);
-        }
-        _syncRoot(oldNode as VNodeComp);
-      }
-      if (((oldNode as VNodeComp).$t & FLAG_IS_STALE) ||
-          !(oldNode.$d.$memo && (oldNode.$d.$memo === true
-             ? newAttrs === oldAttrs : oldNode.$d.$memo(newAttrs, oldAttrs)))) {
-        _redrawComponent(oldNode as VNodeComp, parentEl, xmlns, anchor);
-      }
-      return oldNode;
-    } else if (newNodeType === VNODE_NODE) {
-      if (newNode.el !== oldNode.el) {
-        parentEl.insertBefore(newNode.el, oldNode.el);
-        oldNode.el.remove();
-      }
-      return newNode;
+  const newNodeType = newNode.is & oldNode.is & TYPE_MASK;
+  if (newNodeType === VNODE_ELEM && newNode.$t === oldNode.$t) {
+    newNode = newNode as VNodeElem;
+    newNode.$p = parentNode;
+    newNode.el = oldNode.el as Element;
+    newNode.$h = oldNode.$h;
+    const diffFlags = newNode.attrs.$diff || DIFF_ALL;
+    if (diffFlags & DIFF_SELF) _setElAttributes(newNode, oldNode.attrs);
+    if (diffFlags & DIFF_NODES) {
+      _updateNodes(newNode, newNode.el, newNode.nodes, oldNode.nodes,
+        newNode.$t === 'foreignObject' ? undefined : newNode.attrs.xmlns || ns[newNode.$t] || xmlns);
+    } else {
+      newNode.nodes = oldNode.nodes;
     }
+    if (newNode.$t === 'select' && (diffFlags & DIFF_SELF)) {
+      _setSelectAttributes(newNode);
+    }
+    return newNode;
+  } else if (newNodeType === VNODE_TEXT) {
+    newNode.el = oldNode.el;
+    if (newNode.$t !== oldNode.$t) newNode.el.textContent = newNode.$t;
+    return newNode;
+  } else if (newNodeType === VNODE_COMP && newNode.$d === oldNode.$d) {
+    const oldAttrs = oldNode.attrs;
+    const newAttrs = oldNode.attrs = newNode.attrs;
+    oldNode = oldNode as VNodeComp;
+    oldNode.$p = parentNode;
+    if (oldNode.is & FLAG_IS_REMOVING) {
+      oldNode.$r = null;
+      oldNode.is &= ~FLAG_IS_REMOVING;
+    }
+    if (oldNode.is & FLAG_IS_STALE ||
+        !(oldNode.$d.$memo && (oldNode.$d.$memo === true
+           ? newAttrs === oldAttrs : oldNode.$d.$memo(newAttrs, oldAttrs)))) {
+      _redrawComponent(oldNode, parentEl, xmlns, anchor);
+    }
+    return oldNode;
+  } else if (newNodeType === VNODE_NODE) {
+    if (newNode.el !== oldNode.el) {
+      parentEl.insertBefore(newNode.el, oldNode.el);
+      oldNode.el.remove();
+    }
+    return newNode;
   }
   // A replacement may have no previous DOM root at all.
   _create(parentNode, parentEl, newNode, xmlns, oldNode.el || anchor);
@@ -364,7 +345,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: V
         for(;
           i < newNodesLength && i < oldNodesLength &&
           newNodes[i].attrs.$key === oldNodes[i].attrs.$key &&
-          !(newNodes[i].is === VNODE_COMP && newNodes[i].attrs.$remove); i++) {
+          !((newNodes[i].is & VNODE_COMP) && newNodes[i].attrs.$remove); i++) {
           newNodes[i] = _updateNode(parentNode, parentEl, newNodes[i], oldNodes[i], xmlns, _nextRoot(oldNodes, i + 1, anchor));
         }
         if (i < newNodesLength || i < oldNodesLength) {
@@ -385,8 +366,8 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: V
             } else {
               oldNode = oldNodes[oldPos];
               oldByKey.delete(newNode.attrs.$key);
-              if (newNode.is === VNODE_COMP && newNode.attrs.$remove) {
-                if ((oldNode.$t & FLAG_IS_REMOVING) || !_remove(oldNode)) {
+              if ((newNode.is & VNODE_COMP) && newNode.attrs.$remove) {
+                if ((oldNode.is & FLAG_IS_REMOVING) || !_remove(oldNode)) {
                   oldNode.$p = parentNode;
                   newNodes[k] = oldNode;
                 } else {
@@ -420,7 +401,7 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: V
     } else {
       for (; i < newNodesLength; i++) _create(parentNode, parentEl, newNodes[i], xmlns, anchor);
     }
-  } else if (parentNode.is === VNODE_ELEM) {
+  } else if (parentNode.is & VNODE_ELEM) {
     for (let i = 0; i < oldNodesLength; i++) _destroy(oldNodes[i]);
   } else {
     for (let i = 0; i < oldNodesLength; i++) _remove(oldNodes[i]);
@@ -549,7 +530,7 @@ const _setSelectAttributes = (vNode: VNodeElem): void => {
 };
 
 const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny, xmlns?: string, anchor: Node | null = null): void => {
-  if (vNode.is === VNODE_ELEM) {
+  if (vNode.is & VNODE_ELEM) {
     vNode.$p = parentNode;
     xmlns = vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
     vNode.el = xmlns
@@ -559,29 +540,22 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     for (let i = 0; i < vNode.nodes.length; i++) _create(vNode, vNode.el, vNode.nodes[i], xmlns);
     if (vNode.$t === 'select') _setSelectAttributes(vNode);
     parentEl.insertBefore(vNode.el, anchor);
-  } else if (vNode.is === VNODE_TEXT) {
+  } else if (vNode.is & VNODE_TEXT) {
     vNode = vNode as VNodeText;
     vNode.el = parentEl.insertBefore(document.createTextNode(vNode.$t), anchor);
-  } else if (vNode.is === VNODE_COMP) {
+  } else if (vNode.is & VNODE_COMP) {
+    vNode = vNode as VNodeComp;
     vNode.$p = parentNode;
-    vNode.$t |= FLAG_IS_ACTIVE;
+    vNode.is |= FLAG_IS_ACTIVE;
     if (vNode.$d.init) vNode.$d.init(vNode);
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
       for (let current: VNodeContainer | null = vNode; current && !current.$h; current = current.$p) current.$h = true;
     }
-    if (vNode.attrs.to) {
-      if (DEBUG && !(vNode.attrs.to instanceof Element)) {
-        throw new Error('For components that act as portals, "to" attribute must be an Element');
-      }
-      vNode.el = parentEl.insertBefore(document.createComment(''), anchor);
-      parentEl = vNode.attrs.to as Element;
-      anchor = null;
-    }
     for (let i = 0; i < vNode.nodes.length; i++) _create(vNode, parentEl, vNode.nodes[i], xmlns, anchor);
-    if (!vNode.attrs.to) vNode.el = _nextRoot(vNode.nodes, 0, null);
-    if (vNode.$d.drawn) vNode.$d.drawn(vNode, true);
-  } else if (vNode.is === VNODE_NODE) {
+    vNode.el = _nextRoot(vNode.nodes, 0, null);
+    if (vNode.$d.drawn) drawnQueue.push(vNode, true);
+  } else if (vNode.is & VNODE_NODE) {
     parentEl.insertBefore(vNode.el, anchor);
   }
 };
@@ -589,13 +563,12 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
 const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string, anchor?: Node | null): void => {
   const oldChildren = vNode.nodes;
   // Clearing before drawing preserves a redraw requested during draw().
-  vNode.$t &= ~FLAG_IS_STALE;
+  vNode.is &= ~FLAG_IS_STALE;
   const newChildren = vNode.$d.draw(vNode, oldChildren);
   if (newChildren !== oldChildren) {
-    const to = vNode.attrs.to as Element | undefined;
-    _updateNodes(vNode, to || parentEl, _flatten(newChildren), oldChildren, xmlns,
-      to ? null : anchor === undefined ? (vNode.$p ? _anchor(vNode, parentEl) : null) : anchor);
-    if (vNode.$p && !to) {
+    _updateNodes(vNode, parentEl, _flatten(newChildren), oldChildren, xmlns,
+      anchor === undefined ? (vNode.$p ? _anchor(vNode, parentEl) : null) : anchor);
+    if (vNode.$p) {
       vNode.el = _nextRoot(vNode.nodes, 0, null);
       _syncRoot(vNode);
     }
@@ -605,10 +578,11 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string, a
 
 const _unmount = (vNode: VNodeAny): void => {
   redrawQueue.delete(vNode);
-  if (vNode.is === VNODE_COMP) {
-    vNode.$d.remove && !(vNode.$t & FLAG_REMOVE_CALLED) && vNode.$d.remove(vNode);
+  if (vNode.is & VNODE_COMP) {
+    vNode = vNode as VNodeComp;
+    vNode.$d.remove && !(vNode.is & FLAG_REMOVE_CALLED) && vNode.$d.remove(vNode);
     vNode.$d.removed && vNode.$d.removed(vNode);
-    vNode.$t = 0;
+    vNode.is &= TYPE_MASK;
   }
   if ((vNode.$h || redrawQueue.size) && vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
@@ -617,22 +591,17 @@ const _unmount = (vNode: VNodeAny): void => {
   }
 };
 
-const _detach = (vNode: VNodeAny, skipRemove?: boolean | null): void => {
-  const portal = vNode.is === VNODE_COMP && vNode.attrs.to;
+const _detach = (vNode: VNodeAny, skipRemove?: boolean): void => {
   if (vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
-      _detach(
-        vNode.nodes[i],
-        // null resets skipRemove for portals while compressing better than false
-        portal ? null : skipRemove || vNode.is === VNODE_ELEM
-      );
+      _detach(vNode.nodes[i], skipRemove || (vNode.is & VNODE_ELEM));
     }
   }
-  if (!skipRemove && vNode.el && (vNode.is !== VNODE_COMP || portal)) {
+  if (!skipRemove && vNode.el && !(vNode.is & VNODE_COMP)) {
     vNode.el.remove();
   }
-  if (vNode.is === VNODE_COMP) {
-    (vNode as VNodeComp).$t &= ~FLAG_IS_ACTIVE;
+  if (vNode.is & VNODE_COMP) {
+    (vNode as VNodeComp).is &= ~FLAG_IS_ACTIVE;
   }
 };
 
@@ -643,12 +612,13 @@ const _destroy = (vNode: VNodeAny): void => {
 };
 
 const _remove = (vNode: VNodeAny): boolean => {
-  if (vNode.is === VNODE_COMP && vNode.$d.remove) {
-    if ((vNode as VNodeComp).$t & FLAG_IS_REMOVING) {
+  if ((vNode.is & VNODE_COMP) && vNode.$d.remove) {
+    if ((vNode as VNodeComp).is & FLAG_IS_REMOVING) {
       return false;
     }
+    vNode = (vNode as VNodeComp);
     // Mark _remove() as called before calling it
-    (vNode as VNodeComp).$t |= FLAG_REMOVE_CALLED | FLAG_IS_REMOVING;
+    vNode.is |= FLAG_REMOVE_CALLED | FLAG_IS_REMOVING;
     const deferred = vNode.$d.remove(vNode);
     if (deferred && deferred.then) {
       if (DEBUG && !('$key' in vNode.attrs)) {
@@ -661,7 +631,7 @@ const _remove = (vNode: VNodeAny): boolean => {
       }
       const token = vNode.$r = {};
       const deferredDestroy = () => {
-        if (vNode.$r === token && vNode.$t & FLAG_IS_REMOVING) {
+        if (vNode.$r === token && vNode.is & FLAG_IS_REMOVING) {
           vNode.$r = null;
           const parent = vNode.$p;
           if (DEBUG && !parent) {
@@ -769,7 +739,7 @@ export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null)
   }
   root = root || comp(RootWrapper);
   root.attrs = { $nodes: vNodeAnyOrArray };
-  root.$t |= FLAG_IS_ACTIVE;
+  root.is |= FLAG_IS_ACTIVE;
   boundNodes.set(root.el = el, root);
   draw(root);
   sync();
