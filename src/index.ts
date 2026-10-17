@@ -230,7 +230,7 @@ const _flatten = (
 };
 
 const _place = (vNode: VNodeAny, parentEl: Element, next: Node | null): Node | null => {
-  if (vNode.is === VNODE_COMP && !vNode.attrs.to) {
+  if (vNode.is & VNODE_COMP) {
     for (let i = vNode.nodes.length - 1; i >= 0; i--) {
       next = _place(vNode.nodes[i], parentEl, next);
     }
