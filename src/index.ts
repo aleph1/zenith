@@ -167,6 +167,23 @@ export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
   }
 };
 
+const _vNode = <T extends VNodeAny>(
+  is: T['is'],
+  $t: T['$t'],
+  $d: T['$d'],
+  attrs: T['attrs'],
+  nodes: T['nodes'],
+  el: Element | null = null,
+): T => ({
+  is,
+  $t,
+  $d,
+  attrs,
+  nodes,
+  el,
+  $p: null,
+} as T);
+
 const _flattenReusableArray = [];
 const _flatten = (
   nodes: VNodeAnyOrArray | IArguments,
@@ -174,7 +191,7 @@ const _flatten = (
   arr: VNodeFlatArray = []
 ): VNodeFlatArray => {
   let node;
-  if (!nodes || (nodes as ArrayLike<unknown>).length == null) {
+  if (typeof nodes === 'string' || !nodes || (nodes as ArrayLike<unknown>).length == null) {
     _flattenReusableArray[0] = nodes;
     nodes = _flattenReusableArray;
   }
@@ -676,18 +693,15 @@ export const elem: {
     (tag: string): VNodeElem
     (tag: string, attrs:VNodeElemAttributes, ...args:VNodeArray): VNodeElem
     (tag: string, ...args:VNodeArray): VNodeElem;
-} = function(tag: string): VNodeElem {
-  const first = arguments[1];
-  const hasAttrs = first && typeof first === 'object' && !Array.isArray(first) && !('$t' in first);
-  return {
-    is: VNODE_ELEM,
-    $t: tag,                    // string: element name
-    $d: null,                   // always null for elem
-    attrs: hasAttrs ? DEBUG ? Object.freeze(first) : first : ALWAYS_EMPTY_OBJECT,
-    nodes: arguments.length > (hasAttrs ? 2 : 1) ? _flatten(arguments, hasAttrs ? 2 : 1) : ALWAYS_EMPTY_ARRAY,
-    $p: null,
-    el: null,
-  } as VNodeElem;
+} = function(tag: string, attrs?: VNodeElemAttributes | VNodeArray[number]): VNodeElem {
+  const hasAttrs = attrs && typeof attrs === 'object' && !Array.isArray(attrs) && !('$t' in attrs);
+  return _vNode<VNodeElem>(
+    VNODE_ELEM, tag, null,
+    hasAttrs ? DEBUG ? Object.freeze(attrs) : attrs : ALWAYS_EMPTY_OBJECT,
+    arguments.length > (hasAttrs ? 2 : 1)
+      ? _flatten(arguments, hasAttrs ? 2 : 1)
+      : ALWAYS_EMPTY_ARRAY
+  );
 };
 
 export const compDef = (componentDefinition: VNodeCompDefinition): VNodeCompDefinition => {
@@ -724,27 +738,17 @@ export const compDef = (componentDefinition: VNodeCompDefinition): VNodeCompDefi
 }
 
 export const comp = (componentDefinition: VNodeCompDefinition, attrs: VNodeCompAttributes = ALWAYS_EMPTY_OBJECT): VNodeComp => {
-  return {
-    is: VNODE_COMP,
-    $t: 0,  // number: flags
-    $d: componentDefinition,           // object: component definition
-    attrs: DEBUG ? attrs === ALWAYS_EMPTY_OBJECT ? attrs : Object.freeze(attrs) : attrs,
-    nodes: ALWAYS_EMPTY_ARRAY as unknown as VNodeFlatArray,
-    $p: null,
-    el: null,
-  };
+  return _vNode<VNodeComp>(
+    VNODE_COMP,
+    null,
+    componentDefinition,
+    DEBUG ? attrs === ALWAYS_EMPTY_OBJECT ? attrs : Object.freeze(attrs) : attrs,
+    ALWAYS_EMPTY_ARRAY
+  );
 };
 
 export const node = (el: Element): VNodeNode => {
-  return {
-    is: VNODE_NODE,
-    $t: 0,
-    $d: null,
-    attrs: null,
-    nodes: null,
-    $p: null,
-    el,
-  };
+  return _vNode<VNodeNode>(VNODE_NODE, null, null, null, null, el);
 };
 
 const RootWrapper = compDef({
