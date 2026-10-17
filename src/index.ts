@@ -71,7 +71,7 @@ const DEBUG = window.DEBUG ?? false;
 // Internal state
 // ----------------------------------------
 
-const boundNodes = new Map();
+const boundNodes = new WeakMap();
 const redrawQueue = new Set<VNodeAny>();
 
 // ----------------------------------------
