@@ -226,6 +226,7 @@ const _flatten = (
       seen.add(key);
     }
   }
+  _flattenReusableArray[0] = null;
   return arr;
 };
 
