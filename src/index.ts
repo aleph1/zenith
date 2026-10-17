@@ -49,6 +49,7 @@ import {
   VNODE_COMP,
   VNODE_NODE,
   VNODE_COMPDEF,
+  VNODE_TYPE_MASK,
   VNodeElem,
   VNodeText,
   VNodeComp,
@@ -469,8 +470,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
       attr !== 'xmlns' &&
       !(newNode.$t === 'select' && (attr === 'value' || attr === 'selectedIndex'))
     ) {
-      valueType = typeof value;
-      if (valueType === 'string' || valueType === 'number') {
+      if (typeof value === 'string' || typeof value === 'number') {
         if (attr === 'value') {
           if (newNode.$t === 'input' || newNode.$t === 'textarea') {
             if (el.value !== '' + value &&
