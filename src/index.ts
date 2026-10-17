@@ -113,7 +113,7 @@ export const diff = {
 // and to keep object shape consistent
 // ----------------------------------------
 
-const ALWAYS_EMPTY_ARRAY = DEBUG ? Object.freeze([]) : [];
+const ALWAYS_EMPTY_ARRAY = (DEBUG ? Object.freeze([]) : []) as unknown as VNodeFlatArray;
 const ALWAYS_EMPTY_OBJECT = DEBUG ? Object.freeze({}) : {};
 
 // ----------------------------------------
