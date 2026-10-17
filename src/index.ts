@@ -10,9 +10,10 @@
 //   Called on mount and every update
 //
 // drawn(vNode, isFirstDraw): 
-//   Called after component is rendered to DOM
+//   Called after DOM insertion/reconciliation completes
+//   vNode.el is current, and connected if the bound container is connected
 //   isFirstDraw is true only on initial mount
-//   Use for DOM manipulation, entry animations
+//   Use for DOM measurement, manipulation, entry animations
 //
 // remove(vNode): 
 //   Called when component is being removeda
@@ -74,6 +75,9 @@ const DEBUG = window.DEBUG ?? false;
 
 const boundNodes = new WeakMap();
 const redrawQueue = new Set<VNodeAny>();
+const drawnQueue: (VNodeComp | boolean)[] = [];
+let renderDepth = 0;
+let flushingDrawn = false;
 
 // ----------------------------------------
 // Namespaces
@@ -125,22 +129,57 @@ const ALWAYS_EMPTY_OBJECT = DEBUG ? Object.freeze({}) : {};
 // ----------------------------------------
 
 export const sync = (): void => {
-  let remaining = redrawQueue.size;
-  let targetEl;
-  if (remaining) {
-    const active = document.activeElement as HTMLElement;
-    for (const redrawNode of redrawQueue) {
-      // Resolve the real DOM container from the logical tree, never a component's
-      // possibly empty or outdated first-root reference.
-      let current = redrawNode as VNodeContainer;
-      for(;current.$p && current.is === VNODE_COMP && !current.attrs.to; current = current.$p);
-      targetEl = current.is === VNODE_COMP && current.attrs.to || current.el;
-      redrawQueue.delete(redrawNode);
-      if (targetEl) _redrawComponent(redrawNode as VNodeComp, targetEl);
-      if (!--remaining) break;
+  renderDepth++;
+
+  try {
+    let remaining = redrawQueue.size;
+    let targetEl;
+    if (remaining) {
+      const active = document.activeElement as HTMLElement;
+
+      for (const redrawNode of redrawQueue) {
+        // Resolve the real DOM container from the logical tree.
+        let current = redrawNode as VNodeContainer;
+        for (; current.$p && (current.is & VNODE_COMP); current = current.$p);
+        targetEl = current.el;
+        redrawQueue.delete(redrawNode);
+        if (targetEl) {
+          const namespace = targetEl.namespaceURI;
+          _redrawComponent(
+            redrawNode as VNodeComp,
+            targetEl,
+            namespace === 'http://www.w3.org/1999/xhtml' ||
+            (namespace === ns.svg && targetEl.localName === 'foreignObject')
+              ? undefined : namespace || undefined
+          );
+        }
+        if (!--remaining) break;
+      }
+      if (redrawQueue.size) Promise.resolve().then(sync);
+      if (active && active !== document.body &&
+          document.activeElement === document.body) {
+        active.focus();
+      }
     }
-    if (redrawQueue.size) Promise.resolve().then(sync);
-    if (active && document.activeElement === document.body) active.focus();
+  } catch (error) {
+    // Discard callbacks from an incomplete reconciliation
+    drawnQueue.length = 0;
+    throw error;
+  } finally {
+    if (--renderDepth === 0 && !flushingDrawn) {
+      flushingDrawn = true;
+      try {
+        for (let i = 0; i < drawnQueue.length; i++) {
+          const vNode = drawnQueue[i++] as VNodeComp;
+          if (vNode.is & FLAG_IS_ACTIVE) {
+            vNode.$d.drawn(vNode, drawnQueue[i] as boolean);
+          }
+        }
+      } finally {
+        drawnQueue.length = 0;
+        flushingDrawn = false;
+      }
+    }
   }
 };
 
@@ -579,7 +618,7 @@ const _redrawComponent = (vNode: VNodeComp, parentEl: Element, xmlns?: string, a
       _syncRoot(vNode);
     }
   }
-  if (vNode.$d.drawn) vNode.$d.drawn(vNode);
+  if (vNode.$d.drawn) drawnQueue.push(vNode, false);
 };
 
 const _unmount = (vNode: VNodeAny): void => {
