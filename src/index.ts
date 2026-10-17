@@ -481,7 +481,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
             el.value = value;
           }
         } else {
-          el.setAttribute(attr, '' + value);
+          el.setAttribute(attr, value as string);
         }
       } else if (value === true || value === false) {
         if (attr === 'checked' || attr === 'selected') {
