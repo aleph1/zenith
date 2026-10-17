@@ -704,8 +704,8 @@ export const compDef = (componentDefinition: VNodeCompDefinition): VNodeCompDefi
   }
   // Only copy known component properties
   return Object.freeze({
-    is: VNODE_COMPDEF,
     ...componentDefinition,
+    is: VNODE_COMPDEF,
   });
 }
 
