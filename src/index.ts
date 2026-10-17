@@ -541,6 +541,7 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
         ? document.createElement(vNode.$t, { is: vNode.attrs.is })
         : document.createElement(vNode.$t);
     _setElAttributes(vNode);
+    if (vNode.$t === 'foreignObject') xmlns = undefined;
     for (let i = 0; i < vNode.nodes.length; i++) _create(vNode, vNode.el, vNode.nodes[i], xmlns);
     if (vNode.$t === 'select') _setSelectAttributes(vNode);
     parentEl.insertBefore(vNode.el, anchor);
