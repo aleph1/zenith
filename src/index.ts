@@ -243,8 +243,8 @@ const _place = (vNode: VNodeAny, parentEl: Element, next: Node | null): Node | n
   return next;
 };
 
-// Look past empty siblings, then ascend through ordinary components to find
-// the next node sharing this DOM parent. Stop at elements and portal targets.
+// Look past empty siblings, then ascend through components to find
+// the next node sharing this DOM parent. Stop at elements.
 const _anchor = (vNode: VNodeAny, parentEl: Element): Node | null => {
   let child: VNodeAny = vNode;
   let parent = child.$p;
