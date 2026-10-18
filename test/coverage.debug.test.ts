@@ -6,7 +6,6 @@
  * These tests must run in Vitest's DOM environment (jsdom or happy-dom).
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { elem} from '../src/index';
 
 type Framework = typeof import('../src/index');
 let lib: Framework;
@@ -27,7 +26,7 @@ afterEach(() => {
 });
 
 test('Element attributes are frozen in DEBUG mode', () => {
-  const node = elem('div', { id: 'test' });
+  const node = lib.elem('div', { id: 'test' });
   expect(Object.isFrozen(node.attrs)).toBe(true);
 });
 
