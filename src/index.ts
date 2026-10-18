@@ -343,7 +343,7 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
     return newNode;
   } else if (newNodeType === VNODE_TEXT) {
     newNode.el = oldNode.el;
-    if (newNode.$t !== oldNode.$t) newNode.el.textContent = newNode.$t;
+    if (newNode.$t !== oldNode.$t) newNode.el.nodeValue = newNode.$t;
     return newNode;
   } else if (newNodeType === VNODE_COMP && newNode.$d === oldNode.$d) {
     const oldAttrs = oldNode.attrs;
