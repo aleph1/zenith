@@ -623,3 +623,246 @@ test('preserves state through cleanup and resets it on remount', () => {
 
     expect(removedStates).toEqual([1, 2]);
 });
+
+test('removed components cannot redraw their former parent', () => {
+    const container = document.createElement('div');
+
+    let child: ReturnType<typeof comp>;
+    let visible = true;
+    let renders = 0;
+
+    const Child = compDef({
+        init(vnode) {
+            child = vnode;
+        },
+        draw() {
+            return elem('span', 'Child');
+        }
+    });
+
+    const Parent = compDef({
+        draw() {
+            renders++;
+            return elem('div',
+                visible
+                    ? comp(Child)
+                    : elem('span', 'Removed')
+            );
+        }
+    });
+
+    const root = bind(container, comp(Parent));
+
+    visible = false;
+    draw(root);
+    sync();
+
+    expect(container.textContent).toBe('Removed');
+
+    const before = renders;
+
+    // This component has already been destroyed.
+    draw(child!);
+    sync();
+
+    // Its former parent must not redraw.
+    expect(renders).toBe(before);
+    expect(container.textContent).toBe('Removed');
+
+    bind(container, null);
+});
+describe('content outlet convention', () => {
+  test('renders externally supplied nodes and updates them with a targeted redraw', () => {
+    const container = document.createElement('div');
+    const Outlet = compDef({ draw: vNode => vNode.attrs.$nodes });
+    const outlet = comp(Outlet, { $nodes: [] });
+
+    bind(container, elem('div', elem('i', 'Before'), outlet, elem('i', 'After')));
+    expect(container.textContent).toBe('BeforeAfter');
+
+    outlet.attrs = { $nodes: [elem('span', 'First')] };
+    draw(outlet, true);
+    sync();
+
+    const span = container.querySelector('span');
+    expect(container.textContent).toBe('BeforeFirstAfter');
+
+    outlet.attrs = { $nodes: [elem('span', 'Updated')] };
+    draw(outlet, true);
+    sync();
+
+    expect(container.querySelector('span')).toBe(span);
+    expect(container.textContent).toBe('BeforeUpdatedAfter');
+
+    bind(container, null);
+  });
+
+  test('reorders keyed contributions without remounting unchanged components', () => {
+    const container = document.createElement('div');
+    const initialized = new Map<string, ReturnType<typeof comp>>();
+    const removed = vi.fn();
+    let outlet!: ReturnType<typeof comp>;
+    let ids = ['a', 'b', 'c'];
+
+    const Item = compDef({
+      init(vNode) {
+        initialized.set(vNode.attrs.id, vNode);
+      },
+      draw(vNode) {
+        return elem('button', vNode.attrs.id);
+      },
+      removed
+    });
+    const Outlet = compDef({
+      init(vNode) {
+        outlet = vNode;
+      },
+      draw() {
+        return ids.map(id => comp(Item, { $key: id, id }));
+      }
+    });
+
+    bind(container, elem('div', elem('i', 'Before'), comp(Outlet), elem('i', 'After')));
+    const buttons = new Map(['a', 'b', 'c'].map(id => [
+      id, [...container.querySelectorAll('button')].find(el => el.textContent === id)!
+    ]));
+
+    ids = ['c', 'a', 'b'];
+    draw(outlet, true);
+    sync();
+
+    expect([...container.querySelectorAll('button')].map(el => el.textContent)).toEqual(ids);
+    for (const id of ids) {
+      expect([...container.querySelectorAll('button')].find(el => el.textContent === id))
+        .toBe(buttons.get(id));
+    }
+    expect(initialized.size).toBe(3);
+    expect(removed).not.toHaveBeenCalled();
+
+    ids = ['c', 'd', 'a'];
+    draw(outlet, true);
+    sync();
+
+    expect([...container.querySelectorAll('button')].map(el => el.textContent)).toEqual(ids);
+    expect(container.textContent).toBe('BeforecdaAfter');
+    expect([...container.querySelectorAll('button')].find(el => el.textContent === 'c'))
+      .toBe(buttons.get('c'));
+    expect([...container.querySelectorAll('button')].find(el => el.textContent === 'a'))
+      .toBe(buttons.get('a'));
+    expect(initialized.size).toBe(4);
+    expect(removed).toHaveBeenCalledTimes(1);
+    expect(removed).toHaveBeenCalledWith(initialized.get('b'));
+
+    bind(container, null);
+  });
+
+  test('withdraws contributions when their owning components unmount', () => {
+    const container = document.createElement('div');
+    const contributions = new Map<string, string>();
+    const removed = vi.fn();
+    let outlet!: ReturnType<typeof comp>;
+
+    const Controls = compDef({
+      draw(vNode) {
+        return elem('button', vNode.attrs.label);
+      }
+    });
+    const Outlet = compDef({
+      init(vNode) {
+        outlet = vNode;
+      },
+      draw() {
+        return [...contributions].map(([id, label]) =>
+          comp(Controls, { $key: id, label })
+        );
+      }
+    });
+    const Owner = compDef({
+      init(vNode) {
+        contributions.set(vNode.attrs.id, vNode.attrs.id);
+        draw(outlet, true);
+      },
+      draw(vNode) {
+        return elem('span', vNode.attrs.id);
+      },
+      removed(vNode) {
+        contributions.delete(vNode.attrs.id);
+        removed(vNode);
+        draw(outlet, true);
+      }
+    });
+    const render = (ids: string[]) => elem('div',
+      elem('aside', comp(Outlet)),
+      elem('main', ids.map(id => comp(Owner, { $key: id, id })))
+    );
+
+    bind(container, render(['brush', 'crop']));
+    sync();
+    expect([...container.querySelectorAll('aside button')].map(el => el.textContent))
+      .toEqual(['brush', 'crop']);
+    expect(contributions.size).toBe(2);
+
+    bind(container, render(['crop']));
+    sync();
+    expect([...container.querySelectorAll('aside button')].map(el => el.textContent))
+      .toEqual(['crop']);
+    expect(contributions.has('brush')).toBe(false);
+    expect(removed).toHaveBeenCalledTimes(1);
+
+    bind(container, render([]));
+    sync();
+    expect(container.querySelectorAll('aside button')).toHaveLength(0);
+    expect(contributions.size).toBe(0);
+    expect(removed).toHaveBeenCalledTimes(2);
+
+    bind(container, null);
+  });
+
+  test('preserves sibling order and ancestor roots across empty and multi-root transitions', () => {
+    const container = document.createElement('div');
+    let outlet!: ReturnType<typeof comp>;
+    let wrapper!: ReturnType<typeof comp>;
+    let content: any = null;
+
+    const Outlet = compDef({
+      init(vNode) {
+        outlet = vNode;
+      },
+      draw: () => content
+    });
+    const Wrapper = compDef({
+      init(vNode) {
+        wrapper = vNode;
+      },
+      draw: () => comp(Outlet)
+    });
+
+    bind(container, elem('div', elem('i', 'Before'), comp(Wrapper), elem('i', 'After')));
+    const parent = container.firstElementChild!;
+    const children = () => [...parent.children].map(el => el.textContent);
+    expect(children()).toEqual(['Before', 'After']);
+    expect(wrapper.el).toBeNull();
+
+    content = [elem('b', 'A'), elem('b', 'B')];
+    draw(outlet, true);
+    sync();
+    expect(children()).toEqual(['Before', 'A', 'B', 'After']);
+    expect(wrapper.el).toBe(parent.children[1]);
+    expect(outlet.el).toBe(wrapper.el);
+
+    content = elem('strong', 'Single');
+    draw(outlet, true);
+    sync();
+    expect(children()).toEqual(['Before', 'Single', 'After']);
+    expect(wrapper.el).toBe(parent.children[1]);
+
+    content = null;
+    draw(outlet, true);
+    sync();
+    expect(children()).toEqual(['Before', 'After']);
+    expect(wrapper.el).toBeNull();
+    expect(outlet.el).toBeNull();
+
+    bind(container, null);
+  });
+});
