@@ -54,7 +54,6 @@ describe('elem()', () => {
     const node = elem('math');
     expect(node).not.toBeNull();
     expect(typeof node).toBe('object');
-    console.log(node);
     expect(node).toHaveOnlyProperties(['is', '$t', '$d', 'attrs', 'nodes', '$p', 'el']);
     expect(node.is).toBe(VNODE_ELEM);
     expect(node.$t).toBe('math');
