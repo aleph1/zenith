@@ -88,4 +88,12 @@ describe('Development-only validation', () => {
       expect.any(String),
     );
   });
+
+  test('rejects duplicate sibling keys in debug mode', () => {
+    expect(() => lib.elem('ul',
+      lib.elem('li', { $key: 'a' }, 'First'),
+      lib.elem('li', { $key: 'a' }, 'Second')
+    )).toThrow(/Duplicate sibling key/);
+  });
+
 });
