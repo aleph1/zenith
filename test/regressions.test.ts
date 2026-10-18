@@ -6,6 +6,11 @@ const SVG = 'http://www.w3.org/2000/svg';
 const MATH = 'http://www.w3.org/1998/Math/MathML';
 const HTML = 'http://www.w3.org/1999/xhtml';
 
+const ns = {
+  svg: SVG,
+  math: MATH,
+};
+
 let app: HTMLElement;
 beforeEach(() => {
   document.body.innerHTML = '<div id="app"></div>';
@@ -866,422 +871,6 @@ describe('Focus preservation', () => {
   });
 });
 
-describe('Regression: built-in portals', () => {
-    let app: HTMLDivElement;
-    const targets: HTMLElement[] = [];
-
-    const createTarget = () => {
-        const target = document.createElement('div');
-        document.body.append(target);
-        targets.push(target);
-        return target;
-    };
-
-    beforeEach(() => {
-        app = document.createElement('div');
-        document.body.append(app);
-    });
-
-    afterEach(() => {
-        bind(app, null);
-        app.remove();
-        for (const target of targets) target.remove();
-        targets.length = 0;
-    });
-
-    test('renders synchronously into its target and leaves a placeholder', () => {
-        const target = createTarget();
-        const Portal = compDef({ draw: () => elem('span', 'Portal content') });
-
-        bind(app, elem('main', comp(Portal, { to: target })));
-
-        const main = app.querySelector('main');
-        expect(main?.childNodes).toHaveLength(1);
-        expect(main?.firstChild?.nodeType).toBe(Node.COMMENT_NODE);
-        expect(app.querySelector('span')).toBeNull();
-        expect(target.textContent).toBe('Portal content');
-        expect(target.children).toHaveLength(1); // No wrapper element
-
-        bind(app, null);
-        expect(target.childNodes).toHaveLength(0);
-    });
-
-    test('updating portal content preserves DOM identity', () => {
-        const target = createTarget();
-        let value = 'Before';
-        const init = vi.fn();
-        const Content = compDef({ init, draw: (vnode) => elem('span', vnode.attrs.value) });
-        const Portal = compDef({ draw: (vnode) => comp(Content, { value: vnode.attrs.value }) });
-        const Parent = compDef({ draw: () => comp(Portal, { to: target, value }) });
-        const parent = comp(Parent);
-
-        bind(app, parent);
-        const original = target.querySelector('span');
-        expect(init).toHaveBeenCalledTimes(1);
-        value = 'After';
-        redraw(parent);
-        expect(target.textContent).toBe('After');
-        expect(target.querySelector('span')).toBe(original);
-        expect(init).toHaveBeenCalledTimes(1);
-    });
-
-    test('removing a portal nested inside an element cleans up DOM and lifecycle', () => {
-        const target = createTarget();
-        let visible = true;
-        const removed = vi.fn();
-        const Content = compDef({ draw: () => elem('span', 'Nested'), removed });
-        const Portal = compDef({ draw: () => comp(Content) });
-        const Parent = compDef({
-            draw: () => elem('div', visible ? comp(Portal, { to: target }) : null)
-        });
-        const parent = comp(Parent);
-        bind(app, parent);
-        expect(target.textContent).toBe('Nested');
-
-        visible = false;
-        redraw(parent);
-        expect(target.childNodes).toHaveLength(0);
-        expect(removed).toHaveBeenCalledTimes(1);
-        bind(app, null);
-        expect(removed).toHaveBeenCalledTimes(1);
-    });
-
-    test('removing an ancestor DOM element also cleans up nested portals', () => {
-        const target = createTarget();
-        let visible = true;
-        const removed = vi.fn();
-        const Content = compDef({ draw: () => elem('span', 'Nested'), removed });
-        const Portal = compDef({ draw: () => comp(Content) });
-        const Parent = compDef({
-            draw: () => visible
-                ? elem('section', elem('div', comp(Portal, { to: target })))
-                : elem('p', 'Replacement')
-        });
-        const parent = comp(Parent);
-        bind(app, parent);
-        visible = false;
-        redraw(parent);
-        expect(target.childNodes).toHaveLength(0);
-        expect(removed).toHaveBeenCalledTimes(1);
-    });
-
-    test('unbinding a portal with pending deferred removal destroys it immediately', async () => {
-        const target = createTarget();
-        let removing = false;
-        let resolveRemoval!: () => void;
-        const remove = vi.fn(() => new Promise<void>(resolve => { resolveRemoval = resolve; }));
-        const removed = vi.fn();
-        const Content = compDef({ draw: () => elem('span', 'Deferred'), remove, removed });
-        const Portal = compDef({
-            draw: () => comp(Content, { $key: 'content', $remove: removing })
-        });
-        const Parent = compDef({ draw: () => comp(Portal, { to: target }) });
-        const parent = comp(Parent);
-        bind(app, parent);
-
-        removing = true;
-        redraw(parent);
-        expect(remove).toHaveBeenCalledTimes(1);
-        expect(target.textContent).toBe('Deferred');
-        expect(removed).not.toHaveBeenCalled();
-
-        bind(app, null);
-        expect(app.childNodes).toHaveLength(0);
-        expect(target.childNodes).toHaveLength(0);
-        expect(removed).toHaveBeenCalledTimes(1);
-
-        resolveRemoval();
-        await Promise.resolve();
-        sync();
-        expect(target.childNodes).toHaveLength(0);
-        expect(removed).toHaveBeenCalledTimes(1);
-    });
-
-    test('multiple portals can coexist in one target', () => {
-        const target = createTarget();
-        const Portal = compDef({ draw: (vnode) => elem('span', vnode.attrs.label) });
-        bind(app, elem('main',
-            comp(Portal, { to: target, label: 'A' }),
-            comp(Portal, { to: target, label: 'B' })
-        ));
-        const labels = Array.from(target.querySelectorAll('span'), el => el.textContent);
-        expect(labels).toHaveLength(2);
-        expect(labels).toContain('A');
-        expect(labels).toContain('B');
-        bind(app, null);
-        expect(target.childNodes).toHaveLength(0);
-    });
-
-    test('removing one portal leaves another portal in the same target untouched', () => {
-        const target = createTarget();
-        let showFirst = true;
-        const First = compDef({ draw: () => elem('span', { id: 'first' }, 'first') });
-        const Second = compDef({ draw: () => elem('span', { id: 'second' }, 'second') });
-        const View = compDef({
-            draw: () => elem('section',
-                showFirst ? comp(First, { to: target }) : elem('em', 'gone'),
-                comp(Second, { to: target })
-            )
-        });
-        const view = comp(View);
-        bind(app, view);
-        const originalSecond = target.querySelector('#second');
-        showFirst = false;
-        redraw(view);
-        expect(target.querySelector('#first')).toBeNull();
-        expect(target.querySelector('#second')).toBe(originalSecond);
-        expect(target.querySelector('#second')?.textContent).toBe('second');
-        bind(app, null);
-        expect(target.childNodes).toHaveLength(0);
-    });
-
-    test('changing portal targets moves existing DOM without reinitializing', () => {
-        const targetA = createTarget();
-        const targetB = createTarget();
-        let target: Element = targetA;
-        const init = vi.fn();
-        const removed = vi.fn();
-        const Content = compDef({ init, draw: () => elem('span', 'Content'), removed });
-        const Portal = compDef({ draw: () => comp(Content) });
-        const Parent = compDef({ draw: () => comp(Portal, { to: target }) });
-        const parent = comp(Parent);
-        bind(app, parent);
-        const original = targetA.querySelector('span');
-        const placeholder = app.firstChild;
-
-        target = targetB;
-        redraw(parent);
-        expect(targetA.childNodes).toHaveLength(0);
-        expect(targetB.querySelector('span')).toBe(original);
-        expect(app.firstChild).toBe(placeholder);
-        expect(init).toHaveBeenCalledTimes(1);
-        expect(removed).not.toHaveBeenCalled();
-
-        bind(app, null);
-        expect(targetB.childNodes).toHaveLength(0);
-        expect(removed).toHaveBeenCalledTimes(1);
-    });
-
-    test('switching from an ordinary component to a portal preserves its DOM', () => {
-        const target = createTarget();
-        let to: Element | undefined;
-        const init = vi.fn();
-        const Content = compDef({ init, draw: () => [elem('span', 'A'), elem('span', 'B')] });
-        const Parent = compDef({ draw: () => elem('main', comp(Content, { to })) });
-        const parent = comp(Parent);
-        bind(app, parent);
-        const originals = Array.from(app.querySelectorAll('span'));
-
-        to = target;
-        redraw(parent);
-        expect(app.querySelector('main')?.firstChild?.nodeType).toBe(Node.COMMENT_NODE);
-        expect(target.querySelectorAll('span')).toHaveLength(2);
-        expect(Array.from(target.querySelectorAll('span'))).toEqual(originals);
-        expect(init).toHaveBeenCalledTimes(1);
-    });
-
-    test('switching from a portal back to an ordinary component preserves its DOM', () => {
-        const target = createTarget();
-        let to: Element | undefined = target;
-        const init = vi.fn();
-        const Content = compDef({ init, draw: () => [elem('span', 'A'), elem('span', 'B')] });
-        const Parent = compDef({ draw: () => elem('main', comp(Content, { to })) });
-        const parent = comp(Parent);
-        bind(app, parent);
-        const originals = Array.from(target.querySelectorAll('span'));
-
-        to = undefined;
-        redraw(parent);
-        expect(target.childNodes).toHaveLength(0);
-        expect(Array.from(app.querySelectorAll('span'))).toEqual(originals);
-        expect(app.querySelector('main')?.childNodes).toHaveLength(2);
-        expect(init).toHaveBeenCalledTimes(1);
-    });
-
-    test('rejects an invalid portal target when updating', () => {
-      const target = document.createElement('div');
-      document.body.append(target);
-
-      let currentTarget: Element = target;
-
-      const Child = compDef({
-          draw: () => elem('span', 'Portal content')
-      });
-
-      const Parent = compDef({
-          draw: () => comp(Child, { to: currentTarget })
-      });
-
-      const parent = comp(Parent);
-      bind(app, parent);
-
-      currentTarget = {} as Element;
-
-      expect(() => redraw(parent)).toThrow(
-          /For components that act as portals/
-      );
-
-      target.remove();
-  });
-
-  test('changing portal target and children in the same redraw', () => {
-      const targetA = document.createElement('div');
-      const targetB = document.createElement('div');
-      document.body.append(targetA, targetB);
-
-      let target = targetA;
-      let items = ['a', 'b'];
-
-      const init = vi.fn();
-      const removed = vi.fn();
-
-      const Item = compDef({
-          init,
-          draw(vnode) {
-              return elem('span', { id: vnode.attrs.id }, vnode.attrs.id);
-          },
-          removed
-      });
-
-      const Portal = compDef({
-          draw: () => items.map(id =>
-              comp(Item, { $key: id, id })
-          )
-      });
-
-      const Parent = compDef({
-          draw: () => comp(Portal, { to: target })
-      });
-
-      const parent = comp(Parent);
-      bind(app, parent);
-
-      const originalB = targetA.querySelector('#b');
-
-      expect(targetA.textContent).toBe('ab');
-      expect(init).toHaveBeenCalledTimes(2);
-
-      // Move the portal, remove a, preserve b, and add c.
-      target = targetB;
-      items = ['b', 'c'];
-      redraw(parent);
-
-      expect(targetA.childNodes).toHaveLength(0);
-      expect(targetB.textContent).toBe('bc');
-
-      expect(targetB.querySelector('#b')).toBe(originalB);
-      expect(targetB.querySelector('#a')).toBeNull();
-      expect(targetB.querySelector('#c')).not.toBeNull();
-
-      expect(init).toHaveBeenCalledTimes(3);
-      expect(removed).toHaveBeenCalledTimes(1);
-
-      bind(app, null);
-
-      expect(targetB.childNodes).toHaveLength(0);
-      expect(removed).toHaveBeenCalledTimes(3);
-
-      targetA.remove();
-      targetB.remove();
-  });
-
-  test('portal DOM is detached before removed hook runs', () => {
-    const app = document.createElement('div');
-    const target = document.createElement('div');
-
-    document.body.append(app, target);
-
-    let visible = true;
-    let connectedAtRemoval: boolean | undefined;
-
-    const Portal = compDef({
-        draw: () => elem('span', 'Portal'),
-
-        removed: vNode => {
-            connectedAtRemoval = vNode.nodes[0].el.isConnected;
-        }
-    });
-
-    const Parent = compDef({
-        draw: () => elem('div',
-            visible ? elem('section',
-                comp(Portal, { to: target })
-            ) : null
-        )
-    });
-
-    const root = bind(app, comp(Parent));
-
-    visible = false;
-    draw(root);
-    sync();
-
-    expect(target.childNodes).toHaveLength(0);
-    expect(connectedAtRemoval).toBe(false);
-
-    bind(app, null);
-    app.remove();
-    target.remove();
-  });
-
-  test('clearing an element detaches nested portals and runs lifecycle hooks', () => {
-    const app = document.createElement('div');
-    const targetA = document.createElement('div');
-    const targetB = document.createElement('div');
-
-    document.body.append(app, targetA, targetB);
-
-    const removedA = vi.fn();
-    const removedB = vi.fn();
-
-    const InnerPortal = compDef({
-      draw: () => elem('span', 'Inner portal'),
-      removed: removedB,
-    });
-
-    const OuterPortal = compDef({
-      draw: () => [
-        elem('span', 'Outer portal'),
-        comp(InnerPortal, { to: targetB }),
-      ],
-      removed: removedA,
-    });
-
-    let visible = true;
-
-    const Parent = compDef({
-      draw: () => elem('div',
-        visible
-          ? elem('section',
-            comp(OuterPortal, { to: targetA })
-          )
-          : null
-      ),
-    });
-
-    const root = bind(app, comp(Parent));
-
-    expect(targetA.textContent).toBe('Outer portal');
-    expect(targetB.textContent).toBe('Inner portal');
-
-    visible = false;
-    draw(root);
-    sync();
-
-    expect(targetA.childNodes).toHaveLength(0);
-    expect(targetB.childNodes).toHaveLength(0);
-
-    expect(removedA).toHaveBeenCalledTimes(1);
-    expect(removedB).toHaveBeenCalledTimes(1);
-
-    bind(app, null);
-    app.remove();
-    targetA.remove();
-    targetB.remove();
-  });
-
-});
-
 test('preserves position when replacing a native DOM node', () => {
     const container = document.createElement('div');
     const first = document.createElement('span');
@@ -1332,4 +921,743 @@ test('preserves a native DOM node when replacing its parent', () => {
     expect(container.contains(canvas)).toBe(false);
     expect(container.firstChild).toBeNull();
     expect(canvas.isConnected).toBe(false);
+});
+
+
+describe('bound root container', () => {
+  let tbody: HTMLTableSectionElement;
+
+  beforeEach(() => {
+    tbody = document.createElement('tbody');
+  });
+
+  afterEach(() => {
+    bind(tbody, null);
+  });
+
+  test('preserves the binding container across nested keyed redraws', () => {
+    let ids: number[] = [];
+
+    const Row = compDef({
+      draw: vnode => elem('tr',
+        elem('td', vnode.attrs.id)
+      )
+    });
+
+    const Rows = compDef({
+      draw: () => ids.map(id =>
+        comp(Row, { $key: id, id })
+      )
+    });
+
+    const root = bind(tbody, comp(Rows));
+
+    const update = (next: number[]) => {
+      ids = next;
+      draw(root);
+      sync();
+    };
+
+    const rendered = () =>
+      Array.from(tbody.querySelectorAll('td'),
+        td => td.textContent
+      );
+
+    expect(root.el).toBe(tbody);
+
+    // Empty component gains multiple roots.
+    update([1, 2, 3]);
+    expect(rendered()).toEqual(['1', '2', '3']);
+    expect(root.el).toBe(tbody);
+
+    // Keyed reordering.
+    update([1, 3, 2]);
+    expect(rendered()).toEqual(['1', '3', '2']);
+    expect(root.el).toBe(tbody);
+
+    // All roots disappear.
+    update([]);
+    expect(rendered()).toEqual([]);
+    expect(root.el).toBe(tbody);
+
+    // New roots appear again.
+    update([4, 5, 6]);
+    expect(rendered()).toEqual(['4', '5', '6']);
+    expect(root.el).toBe(tbody);
+  });
+});
+
+// A keyed component remains in its parent's vnode list while $remove is true,
+// allowing a subsequent update to revive the same component instance.
+describe('async removal revival', () => {
+  let container: HTMLDivElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    bind(container, null);
+    container.remove();
+  });
+
+  const deferred = () => {
+    let resolve!: () => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<void>((yes, no) => {
+      resolve = yes;
+      reject = no;
+    });
+    return { promise, resolve, reject };
+  };
+
+  const setup = () => {
+    let phase: 'active' | 'removing' | 'hidden' = 'active';
+    let removeCalls = 0;
+    let removedCalls = 0;
+    let initCalls = 0;
+    let itemVNode: ReturnType<typeof comp> | undefined;
+    const pending: ReturnType<typeof deferred>[] = [];
+
+    const Item = compDef({
+      init(vNode) {
+        initCalls++;
+        itemVNode = vNode;
+      },
+      draw: () => elem('span', 'Item'),
+      remove() {
+        removeCalls++;
+        const attempt = deferred();
+        pending.push(attempt);
+        return attempt.promise;
+      },
+      removed() { removedCalls++; }
+    });
+
+    const Parent = compDef({
+      draw: () => phase === 'hidden'
+        ? []
+        : [comp(Item, { $key: 'item', $remove: phase === 'removing' })]
+    });
+
+    const root = bind(container, comp(Parent));
+    const update = (next: typeof phase) => {
+      phase = next;
+      draw(root);
+      sync();
+    };
+
+    return {
+      update,
+      setPhase(next: typeof phase) { phase = next; },
+      pending,
+      get itemVNode() { return itemVNode!; },
+      get removeCalls() { return removeCalls; },
+      get removedCalls() { return removedCalls; },
+      get initCalls() { return initCalls; }
+    };
+  };
+
+  test('an obsolete resolution cannot destroy a newer pending removal', async () => {
+    const state = setup();
+    const element = container.querySelector('span');
+
+    state.update('removing'); // A
+    const tokenA = state.itemVNode.$r;
+    expect(tokenA).toBeTruthy();
+
+    state.update('active'); // Revive
+    expect(state.itemVNode.$r).toBeNull();
+
+    state.update('removing'); // B
+    const tokenB = state.itemVNode.$r;
+    expect(tokenB).toBeTruthy();
+    expect(tokenB).not.toBe(tokenA);
+    expect(state.removeCalls).toBe(2);
+    expect(state.initCalls).toBe(1);
+
+    state.pending[0].resolve(); // A finishes first
+    await Promise.resolve();
+    sync();
+
+    expect(container.querySelector('span')).toBe(element);
+    expect(state.removedCalls).toBe(0);
+    expect(state.itemVNode.$r).toBe(tokenB);
+
+    state.setPhase('hidden');
+    state.pending[1].resolve(); // B finishes
+    await Promise.resolve();
+    sync();
+
+    expect(container.querySelector('span')).toBeNull();
+    expect(state.removedCalls).toBe(1);
+    expect(state.itemVNode.$r).toBeNull();
+  });
+
+  test('a newer removal completes once even if the older promise settles last', async () => {
+    const state = setup();
+    state.update('removing'); // A
+    state.update('active');
+    state.update('removing'); // B
+
+    state.setPhase('hidden');
+    state.pending[1].resolve(); // B finishes first
+    await Promise.resolve();
+    sync();
+
+    expect(container.querySelector('span')).toBeNull();
+    expect(state.removedCalls).toBe(1);
+    expect(state.itemVNode.$r).toBeNull();
+
+    state.pending[0].resolve(); // A finishes late
+    await Promise.resolve();
+    sync();
+
+    expect(container.querySelector('span')).toBeNull();
+    expect(state.removedCalls).toBe(1);
+    expect(state.removeCalls).toBe(2);
+  });
+
+  test('revival invalidates a pending removal even when its promise rejects', async () => {
+    const state = setup();
+    const element = container.querySelector('span');
+
+    state.update('removing');
+    expect(state.itemVNode.$r).toBeTruthy();
+
+    state.update('active'); // Revive without starting removal B
+    expect(state.itemVNode.$r).toBeNull();
+
+    state.pending[0].reject(new Error('cancelled'));
+    await Promise.resolve();
+    sync();
+
+    expect(container.querySelector('span')).toBe(element);
+    expect(state.removedCalls).toBe(0);
+    expect(state.removeCalls).toBe(1);
+    expect(state.initCalls).toBe(1);
+    expect(state.itemVNode.$r).toBeNull();
+  });
+
+  test('repeated $remove updates start only one pending removal', async () => {
+    const state = setup();
+    state.update('removing');
+    const token = state.itemVNode.$r;
+    state.update('removing');
+    state.update('removing');
+
+    expect(state.removeCalls).toBe(1);
+    expect(state.itemVNode.$r).toBe(token);
+    expect(container.querySelector('span')).not.toBeNull();
+
+    state.setPhase('hidden');
+    state.pending[0].resolve();
+    await Promise.resolve();
+    sync();
+
+    expect(state.removedCalls).toBe(1);
+    expect(state.itemVNode.$r).toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+  });
+
+  test('unbind destroys immediately and ignores late promise settlement', async () => {
+    const state = setup();
+    state.update('removing');
+    bind(container, null);
+
+    expect(state.removedCalls).toBe(1);
+    expect(container.querySelector('span')).toBeNull();
+
+    state.pending[0].resolve();
+    await Promise.resolve();
+    sync();
+
+    expect(state.removedCalls).toBe(1);
+    expect(container.querySelector('span')).toBeNull();
+  });
+});
+
+// Regression tests for namespace transitions, stale redraws, and child normalization.
+// Uses only public APIs; no special vnode or namespace bookkeeping is required.
+describe('namespace and lifecycle regressions', () => {
+  let host: HTMLDivElement;
+
+  beforeEach(() => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+  });
+
+  afterEach(() => {
+    bind(host, null);
+    host.remove();
+  });
+
+  test('surgical replacement retains SVG namespace under an SVG vnode', () => {
+    let child!: ReturnType<typeof comp>;
+    let tag = 'circle';
+    const Shape = compDef({
+      init(vNode) { child = vNode; },
+      draw() { return elem(tag); }
+    });
+
+    bind(host, elem('svg', comp(Shape)));
+    expect(host.querySelector('circle')?.namespaceURI).toBe(ns.svg);
+
+    tag = 'rect';
+    draw(child, true);
+    sync();
+
+    const rect = host.querySelector('rect');
+    expect(rect).not.toBeNull();
+    expect(rect?.namespaceURI).toBe(ns.svg);
+  });
+
+  test('binding directly to an existing SVG container uses its namespace', () => {
+    const svg = document.createElementNS(ns.svg, 'svg');
+    host.appendChild(svg);
+    let child!: ReturnType<typeof comp>;
+    let tag = 'circle';
+    const Shape = compDef({
+      init(vNode) { child = vNode; },
+      draw() { return elem(tag); }
+    });
+
+    bind(svg, comp(Shape));
+    expect(svg.firstElementChild?.namespaceURI).toBe(ns.svg);
+
+    tag = 'rect';
+    draw(child, true);
+    sync();
+    expect(svg.firstElementChild?.localName).toBe('rect');
+    expect(svg.firstElementChild?.namespaceURI).toBe(ns.svg);
+
+    bind(svg, null);
+  });
+
+  test('SVG foreignObject children are HTML on creation and after reconciliation', () => {
+    const view = (tag: string) => elem('svg',
+      elem('foreignObject', elem(tag, 'Content'))
+    );
+
+    bind(host, view('div'));
+    expect(host.querySelector('foreignObject')?.namespaceURI).toBe(ns.svg);
+    expect(host.querySelector('foreignObject')?.firstElementChild?.namespaceURI)
+      .toBe('http://www.w3.org/1999/xhtml');
+
+    bind(host, view('section'));
+    expect(host.querySelector('foreignObject')?.firstElementChild?.localName).toBe('section');
+    expect(host.querySelector('foreignObject')?.firstElementChild?.namespaceURI)
+      .toBe('http://www.w3.org/1999/xhtml');
+  });
+
+  test('surgical redraw inside foreignObject creates HTML, including nested SVG', () => {
+    let child!: ReturnType<typeof comp>;
+    let nested = false;
+    const Content = compDef({
+      init(vNode) { child = vNode; },
+      draw() {
+        return nested
+          ? elem('div', elem('svg', elem('circle')))
+          : elem('span', 'Before');
+      }
+    });
+
+    bind(host, elem('svg', elem('foreignObject', comp(Content))));
+    nested = true;
+    draw(child, true);
+    sync();
+
+    const div = host.querySelector('foreignObject')?.firstElementChild;
+    expect(div?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
+    expect(div?.querySelector('svg')?.namespaceURI).toBe(ns.svg);
+    expect(div?.querySelector('circle')?.namespaceURI).toBe(ns.svg);
+  });
+
+  test('surgical redraw inside MathML retains MathML namespace', () => {
+    let child!: ReturnType<typeof comp>;
+    let tag = 'mi';
+    const Token = compDef({
+      init(vNode) { child = vNode; },
+      draw() { return elem(tag, 'x'); }
+    });
+
+    bind(host, elem('math', comp(Token)));
+    expect(host.querySelector('mi')?.namespaceURI).toBe(ns.math);
+
+    tag = 'mn';
+    draw(child, true);
+    sync();
+    expect(host.querySelector('mn')?.namespaceURI).toBe(ns.math);
+  });
+
+  test('removed components ignore normal and surgical redraw requests', () => {
+    let child!: ReturnType<typeof comp>;
+    const render = vi.fn(() => elem('span', 'Child'));
+    const Child = compDef({
+      init(vNode) { child = vNode; },
+      draw: render
+    });
+
+    bind(host, elem('div', comp(Child)));
+    expect(render).toHaveBeenCalledTimes(1);
+    bind(host, elem('div'));
+    expect(host.textContent).toBe('');
+
+    draw(child);
+    draw(child, true);
+    sync();
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(host.textContent).toBe('');
+  });
+
+  test('unbound roots ignore normal redraw requests', () => {
+    const render = vi.fn(() => elem('b', 'Hello'));
+    const root = bind(host, comp(compDef({ draw: render })));
+    expect(render).toHaveBeenCalledTimes(1);
+
+    bind(host, null);
+    draw(root);
+    sync();
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(host.childNodes).toHaveLength(0);
+  });
+
+  test('component strings are one text node, including after a redraw', () => {
+    let child!: ReturnType<typeof comp>;
+    let content = 'Hello';
+    const Text = compDef({
+      init(vNode) { child = vNode; },
+      // The component API may type draw() as vnodes-only; this checks the
+      // runtime's existing support for primitive children and returns.
+      draw: () => content as any
+    });
+
+    bind(host, comp(Text));
+    expect(host.textContent).toBe('Hello');
+    expect(host.childNodes).toHaveLength(1);
+    expect(host.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+
+    content = 'World!';
+    draw(child, true);
+    sync();
+    expect(host.textContent).toBe('World!');
+    expect(host.childNodes).toHaveLength(1);
+  });
+
+  test('skipping child diff still permits a targeted update with correct sibling order', () => {
+    let child!: ReturnType<typeof comp>;
+    let visible = false;
+    const Dynamic = compDef({
+      init(vNode) { child = vNode; },
+      draw() { return visible ? [elem('i', 'A'), elem('i', 'B')] : []; }
+    });
+    const view = () => elem('div', { $diff: diff.none },
+      elem('span', 'Before'), comp(Dynamic), elem('span', 'After'));
+
+    bind(host, view());
+    bind(host, view());
+    visible = true;
+    draw(child, true);
+    sync();
+    expect(Array.from(host.firstElementChild!.children, el => el.textContent))
+      .toEqual(['Before', 'A', 'B', 'After']);
+  });
+
+  test('multiple bound hosts can be updated and unbound independently', () => {
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    try {
+      bind(host, elem('span', 'A'));
+      bind(other, elem('span', 'B'));
+      bind(host, null);
+      expect(host.textContent).toBe('');
+      expect(other.textContent).toBe('B');
+      bind(other, elem('span', 'C'));
+      expect(other.textContent).toBe('C');
+    } finally {
+      bind(other, null);
+      other.remove();
+    }
+  });
+});
+
+describe('drawn() attachment and lifecycle', () => {
+  let host: HTMLDivElement;
+
+  beforeEach(() => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+  });
+
+  afterEach(() => {
+    bind(host, null);
+    host.remove();
+  });
+
+  test('the child is connected and measurable before its initial drawn()', () => {
+    let connected = false;
+    let measured = false;
+    const Child = compDef({
+      draw: () => elem('span', { style: { display: 'block', width: '123px' } }, 'Child'),
+      drawn(vNode, first) {
+        expect(first).toBe(true);
+        connected = vNode.el!.isConnected;
+        measured = Number.isFinite((vNode.el as HTMLElement).getBoundingClientRect().width);
+      }
+    });
+
+    bind(host, elem('div', comp(Child)));
+    expect(connected).toBe(true);
+    expect(measured).toBe(true);
+  });
+
+  test('all nested descendants exist before child and parent drawn()', () => {
+    const order: string[] = [];
+    const Child = compDef({
+      draw: () => elem('b', 'Child'),
+      drawn(vNode) {
+        expect(vNode.el!.isConnected).toBe(true);
+        expect(host.querySelector('em')?.textContent).toBe('Sibling');
+        order.push('child');
+      }
+    });
+    const Parent = compDef({
+      draw: () => elem('section', comp(Child), elem('em', 'Sibling')),
+      drawn(vNode) {
+        expect(vNode.el!.isConnected).toBe(true);
+        order.push('parent');
+      }
+    });
+
+    bind(host, comp(Parent));
+    expect(order).toEqual(['child', 'parent']);
+  });
+
+  test('a multi-root component has every root attached by drawn()', () => {
+    const Multi = compDef({
+      draw: () => [elem('span', 'A'), elem('span', 'B')],
+      drawn(vNode) {
+        expect(vNode.el).toBe(host.firstChild);
+        expect(vNode.el!.isConnected).toBe(true);
+        expect([...host.children].map(node => node.textContent)).toEqual(['A', 'B']);
+      }
+    });
+    bind(host, comp(Multi));
+  });
+
+  test('empty component has null el and still receives drawn()', () => {
+    const spy = vi.fn();
+    const Empty = compDef({
+      draw: () => null,
+      drawn(vNode, first) {
+        expect(vNode.el).toBeNull();
+        spy(first);
+      }
+    });
+    bind(host, comp(Empty));
+    expect(spy).toHaveBeenCalledWith(true);
+  });
+
+  test('surgical replacement updates el before drawn() and preserves first semantics', () => {
+    let child!: ReturnType<typeof comp>;
+    let tag = 'span';
+    const seen: [string, boolean, boolean][] = [];
+    const Child = compDef({
+      init(vNode) { child = vNode; },
+      draw: () => elem(tag, 'Content'),
+      drawn(vNode, first) {
+        seen.push([(vNode.el as Element).tagName, first, vNode.el!.isConnected]);
+      }
+    });
+    bind(host, elem('div', comp(Child)));
+    tag = 'strong';
+    draw(child, true);
+    sync();
+    expect(seen).toEqual([
+      ['SPAN', true, true],
+      ['STRONG', false, true]
+    ]);
+  });
+
+  test('nested bind during init cannot flush unfinished outer hooks', () => {
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    const observed: boolean[] = [];
+    const Inner = compDef({
+      draw: () => elem('span', 'inner'),
+      drawn(vNode) {
+        observed.push(vNode.el!.isConnected && !!host.querySelector('section'));
+      }
+    });
+    const Outer = compDef({
+      init() { bind(other, comp(Inner)); },
+      draw: () => elem('section', 'outer')
+    });
+    try {
+      bind(host, elem('div', comp(Outer)));
+      expect(observed).toEqual([true]);
+    } finally {
+      bind(other, null);
+      other.remove();
+    }
+  });
+
+  test('a component removed by an earlier drawn callback is skipped', () => {
+    const later = vi.fn();
+    const First = compDef({
+      draw: () => elem('span', 'first'),
+      drawn() { bind(host, null); }
+    });
+    const Second = compDef({
+      draw: () => elem('span', 'second'),
+      drawn: later
+    });
+    bind(host, [comp(First), comp(Second)]);
+    expect(later).not.toHaveBeenCalled();
+    expect(host.textContent).toBe('');
+  });
+
+  test('a bind triggered by drawn cannot prematurely interleave queued hooks', () => {
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    const order: string[] = [];
+    const Nested = compDef({
+      draw: () => elem('span', 'Nested'),
+      drawn(vNode) {
+        expect(vNode.el!.isConnected).toBe(true);
+        order.push('nested');
+      }
+    });
+    const First = compDef({
+      draw: () => elem('span', 'First'),
+      drawn() {
+        order.push('first start');
+        bind(other, comp(Nested));
+        order.push('first end');
+      }
+    });
+    try {
+      bind(host, comp(First));
+      expect(order).toEqual(['first start', 'first end', 'nested']);
+    } finally {
+      bind(other, null);
+      other.remove();
+    }
+  });
+
+  test('detached bind roots are attached to their container, not the document', () => {
+    const detached = document.createElement('div');
+    const observed: [boolean, boolean][] = [];
+    const Child = compDef({
+      draw: () => elem('span'),
+      drawn(vNode) { observed.push([vNode.el!.parentNode === detached, vNode.el!.isConnected]); }
+    });
+    bind(detached, comp(Child));
+    expect(observed).toEqual([[true, false]]);
+    bind(detached, null);
+  });
+});
+
+test('reviving a keyed component preserves a queued surgical drawn() and cancels its pending removal', async () => {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+
+  let root!: ReturnType<typeof comp>;
+  let item!: ReturnType<typeof comp>;
+  let phase: 'active' | 'removing' | 'revived' = 'active';
+  let label = 'initial';
+  let resolveRemoval!: () => void;
+  let requestedFollowup = false;
+  const snapshots: string[] = [];
+  const initialized = vi.fn();
+  const remove = vi.fn(() => new Promise<void>(resolve => { resolveRemoval = resolve; }));
+  const removed = vi.fn();
+
+  const Item = compDef({
+    init(vNode) {
+      initialized();
+      item = vNode;
+    },
+    draw: () => elem('span', label),
+    drawn(vNode, first) {
+      // The queued hook must see the *current*, attached DOM, even if
+      // additional reconciliation happened before it was dispatched.
+      expect(vNode).toBe(item);
+      expect(vNode.el?.isConnected).toBe(true);
+      snapshots.push(`${first === true ? 'first' : 'update'}:${vNode.el?.textContent}`);
+
+      if (phase === 'revived' && !requestedFollowup) {
+        requestedFollowup = true;
+        label = 'follow-up';
+        draw(vNode, true); // Schedule another update from drawn().
+      }
+    },
+    remove,
+    removed,
+  });
+
+  const Reviver = compDef({
+    draw: () => elem('i', 'reviver'),
+    drawn() {
+      if (phase !== 'removing') return;
+      // This callback runs while the surgical drawn() hook is still queued.
+      // Reconcile the same key before that hook is dispatched.
+      phase = 'revived';
+      label = 'revived';
+      draw(root);
+      sync();
+    },
+  });
+
+  const Parent = compDef({
+    draw: () => [
+      comp(Reviver, { $key: 'reviver' }),
+      comp(Item, { $key: 'item', $remove: phase === 'removing' }),
+    ],
+  });
+
+  try {
+    root = bind(host, comp(Parent));
+    const original = item;
+    const element = item.el;
+    expect(snapshots).toEqual(['first:initial']);
+
+    // Queue parent removal BEFORE a surgical redraw of the same component.
+    // sync() processes both before dispatching any drawn() callbacks.
+    phase = 'removing';
+    draw(root);
+    draw(item, true);
+    sync();
+
+    expect(remove).toHaveBeenCalledTimes(1);
+    expect(initialized).toHaveBeenCalledTimes(1);
+    expect(removed).not.toHaveBeenCalled();
+    expect(item).toBe(original);
+    expect(item.el).toBe(element);
+    expect(host.querySelector('span')).toBe(element);
+    expect(phase).toBe('revived');
+    expect(requestedFollowup).toBe(true);
+
+    // The follow-up scheduled by drawn() should run normally.
+    sync();
+    expect(host.querySelector('span')?.textContent).toBe('follow-up');
+    expect(snapshots).toContain('update:revived');
+    expect(snapshots).toContain('update:follow-up');
+
+    // Resolving the *old* remove() promise must not destroy the revived vnode.
+    resolveRemoval();
+    await Promise.resolve();
+    sync();
+
+    expect(removed).not.toHaveBeenCalled();
+    expect(initialized).toHaveBeenCalledTimes(1);
+    expect(item).toBe(original);
+    expect(item.el).toBe(element);
+    expect(host.querySelector('span')?.textContent).toBe('follow-up');
+    expect(item.el?.isConnected).toBe(true);
+  } finally {
+    bind(host, null);
+    host.remove();
+  }
 });
