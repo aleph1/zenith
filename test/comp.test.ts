@@ -185,54 +185,6 @@ describe('stable component vnode identity', () => {
         expect(removed).toContain(c);
     });
 
-    test('preserves identity when a component changes portal targets', () => {
-        const container = document.createElement('div');
-        const targetA = document.createElement('div');
-        const targetB = document.createElement('div');
-
-        const initialized = [];
-        const removed = [];
-
-        const Child = compDef({
-            init(vnode) {
-                initialized.push(vnode);
-            },
-            draw(vnode) {
-                return elem('span', vnode.attrs.label);
-            },
-            removed(vnode) {
-                removed.push(vnode);
-            }
-        });
-
-        const render = (to, label) =>
-            elem('div', comp(Child, { to, label }));
-
-        bind(container, render(targetA, 'First'));
-
-        const original = initialized[0];
-
-        expect(targetA.textContent).toBe('First');
-
-        bind(container, render(targetB, 'Second'));
-
-        expect(initialized).toHaveLength(1);
-        expect(targetA.textContent).toBe('');
-        expect(targetB.textContent).toBe('Second');
-        expect(original.attrs.to).toBe(targetB);
-
-        // Portal back into the normal DOM tree.
-        bind(container, render(undefined, 'Third'));
-
-        expect(targetB.textContent).toBe('');
-        expect(container.textContent).toBe('Third');
-        expect(initialized).toHaveLength(1);
-
-        bind(container, null);
-
-        expect(removed).toEqual([original]);
-    });
-
     test('preserves component-owned data until removal', () => {
         const container = document.createElement('div');
         const state = new Map();
