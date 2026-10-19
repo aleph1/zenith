@@ -19,7 +19,6 @@ export interface VNodeElemAttributes {
 export interface VNodeCompAttributes {
   $key?: string | number;
   $remove?: boolean;
-  to?: string | Element;
   [property: string]: any;
 }
 
