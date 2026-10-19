@@ -183,19 +183,25 @@ export const sync = (): void => {
   }
 };
 
-// Redraw a node
-// - Reuse current to avoid an additional variable declaration
-export const draw = (vNode: VNodeContainer, surgical?: boolean) => {
-  if ((vNode.is & VNODE_COMP) && !(vNode.is & FLAG_IS_ACTIVE)) return;
+// Redraw from the root, or redraw a specific component subtree.
+export const draw: {
+  (vNode: VNodeContainer, surgical?: false): void;
+  (vNode: VNodeComp, surgical: true): void;
+} = (vNode: VNodeContainer, surgical = false): void => {
   if (surgical) {
-    if (vNode.is & VNODE_COMP) {
-      vNode.is |= FLAG_IS_STALE;
     }
+
+    if (!(vNode.is & FLAG_IS_ACTIVE)) return;
+
+    vNode.is |= FLAG_IS_STALE;
     redrawQueue.add(vNode);
   } else {
+    if ((vNode.is & VNODE_COMP) && !(vNode.is & FLAG_IS_ACTIVE)) return;
+
     let current = vNode;
-    for (current; current.$p; current = current.$p);
+    for (; current.$p; current = current.$p);
     redrawQueue.add(current);
+
     for (current = vNode; current.$p; current = current.$p) {
       if (current.is & VNODE_COMP) {
         if (current.is & FLAG_IS_STALE) break;
