@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const VNODE_ELEM = 1;
 export const VNODE_TEXT = 2;
 export const VNODE_COMP = 4;
