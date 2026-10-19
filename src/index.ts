@@ -54,7 +54,6 @@ import {
   VNodeElem,
   VNodeText,
   VNodeComp,
-  VNodeHTML,
   VNodeNode,
   VNodeAny,
   VNodeAnyOrArray,
@@ -63,7 +62,6 @@ import {
   VNodeElemAttributes,
   VNodeCompAttributes,
   VNodeCompDefinition,
-  VNodeNodeAttributes,
   VNodeContainer,
 } from './vnode.defs';
 
