@@ -459,7 +459,6 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: V
 
 const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = ALWAYS_EMPTY_OBJECT): void => {
   let attr;
-  let valueType;
   const el = newNode.el;
   const newAttrs = newNode.attrs;
 
