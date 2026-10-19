@@ -187,6 +187,9 @@ export const draw: {
   (vNode: VNodeComp, surgical: true): void;
 } = (vNode: VNodeContainer, surgical = false): void => {
   if (surgical) {
+    if (!(vNode.is & VNODE_COMP)) {
+      if (DEBUG) throw new Error('Surgical redraw requires a component vnode');
+      return;
     }
 
     if (!(vNode.is & FLAG_IS_ACTIVE)) return;
