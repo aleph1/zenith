@@ -1,4 +1,4 @@
-import { draw } from 'zenith';
+import { redraw } from 'zenith';
 import type { VNodeComp, VNodeCompDefinition, VNodeAnyOrArray } from '../vnode.defs';
 
 interface RouterOptions {
@@ -81,7 +81,7 @@ export const router = (routes: RouterRoutes, options: RouterOptions = {}): VNode
         const matched = matchRoute(getPath());
         node.route = matched.component;
         node.params = matched.params;
-        draw(node, true);
+        redraw(node, true);
       };
 
       window.addEventListener(eventType, node.onroute);
