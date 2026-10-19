@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, test, expect, vi } from 'vitest';
 import { bind, comp, compDef, draw, elem, sync } from '../src/index';
-import { redraw } from './utils';
 
 // All original active tests are preserved, except one expected value updated
 // to reflect the agreed controlled-input semantics. Additional tests are additive.
@@ -335,7 +334,8 @@ describe('DOM attributes', () => {
         const input = app.querySelector('input')!;
         input.value = 'user typed';
         title = 'b';
-        redraw(view);
+        draw(view);
+        sync();
         expect(app.querySelector('input')).toBe(input);
         expect(input.value).toBe('initial');
       })
@@ -350,7 +350,8 @@ describe('DOM attributes', () => {
       const input = app.querySelector('input')!;
       input.value = 'user typed';
       title = 'b';
-      redraw(view);
+      draw(view);
+      sync();
       expect(app.querySelector('input')).toBe(input);
       expect(input.value).toBe('user typed');
     });
@@ -469,8 +470,10 @@ describe('DOM attributes', () => {
         const view = comp(View);
         bind(app, view);
         const button = app.querySelector('button')!;
-        redraw(view);
-        redraw(view);
+        draw(view);
+        sync();
+        draw(view);
+        sync();
         button.click();
         sync();
         expect(app.querySelector('button')).toBe(button);
@@ -483,6 +486,8 @@ describe('DOM attributes', () => {
         let receivedThis: unknown;
         let receivedEvent: Event | undefined;
         function handler(this: EventTarget, event: Event) {
+          // Capture the actual `this` binding to verify event handler behavior.
+          // eslint-disable-next-line @typescript-eslint/no-this-alias
           receivedThis = this;
           receivedEvent = event;
         }

@@ -1,7 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
 import { bind, comp, compDef, draw, elem, sync } from '../src/index';
 import { VNODE_COMP } from '../src/vNode.defs';
-import { redraw } from './utils';
 
 describe('comp()', () => {
   test('Returns a vNode with the correct type', () => {
@@ -56,7 +55,8 @@ describe('Component memoization', () => {
     const Parent = compDef({ draw: () => comp(Child, attrs) });
     const parent = comp(Parent);
     bind(app, parent);
-    redraw(parent);
+    draw(parent);
+    sync();
     expect(render).toHaveBeenCalledTimes(1);
   });
 
@@ -70,7 +70,8 @@ describe('Component memoization', () => {
     const parent = comp(Parent);
     bind(app, parent);
     attrs = { label: 'b' };
-    redraw(parent);
+    draw(parent);
+    sync();
     expect(render).toHaveBeenCalledTimes(2);
     expect(app.textContent).toBe('b');
   });
@@ -86,10 +87,12 @@ describe('Component memoization', () => {
     const parent = comp(Parent);
     bind(app, parent);
     attrs = { label: 'a' };
-    redraw(parent);
+    draw(parent);
+    sync();
     expect(render).toHaveBeenCalledTimes(1);
     attrs = { label: 'b' };
-    redraw(parent);
+    draw(parent);
+    sync();
     expect(render).toHaveBeenCalledTimes(2);
     expect(memo).toHaveBeenCalled();
     expect(app.textContent).toBe('b');
