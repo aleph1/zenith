@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { VNode } from '../vnode.defs';
 import { VNODE_COMP } from '../vnode.defs';
 
