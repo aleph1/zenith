@@ -30,6 +30,14 @@ test('Element attributes are frozen in DEBUG mode', () => {
   expect(Object.isFrozen(node.attrs)).toBe(true);
 });
 
+test('comp() attributes are frozen in DEBUG mode', () => {
+  const Component = lib.compDef({
+    draw: () => lib.elem('div')
+  });
+  expect(Object.isFrozen(lib.comp(Component).attrs)).toBe(true);
+  expect(Object.isFrozen(lib.comp(Component, { id: 'test' }).attrs)).toBe(true);
+});
+
 describe('Development-only validation', () => {
   test.each([
     ['missing draw', {}, /draw function/],
@@ -94,6 +102,14 @@ describe('Development-only validation', () => {
       lib.elem('li', { $key: 'a' }, 'First'),
       lib.elem('li', { $key: 'a' }, 'Second')
     )).toThrow(/Duplicate sibling key/);
+  });
+
+  test('Surgical draw throws on non-component in DEBUG mode', () => {
+    const node = lib.elem('div', { id: 'test' });
+    expect(() => {
+      // @ts-expect-error Testing an invalid surgical draw argument
+      lib.draw(node, true);
+    }).toThrow('Surgical redraw requires a component vnode');
   });
 
 });
