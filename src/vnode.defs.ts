@@ -69,6 +69,7 @@ export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> 
   is: typeof VNODE_COMP;
   $t: number;
   $d: VNodeCompDefinition;
+  $r?: object | null;
   attrs: A;
   nodes: VNodeFlatArray;
   provide?: Record<string, any>;
