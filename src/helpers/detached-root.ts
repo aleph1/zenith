@@ -24,12 +24,13 @@ import type {
   VNodeComp,
   VNodeCompAttributes,
   VNodeCompDefinition,
-  VNodeAnyOrArray
+  VNodeAny,
+  VNodeArray
 } from '../vnode.defs';
 
 interface DetachedRootAttrs extends VNodeCompAttributes {
   to: string | Element;
-  children: VNodeAnyOrArray;
+  children: VNodeAny | VNodeArray;
 }
 
 interface DetachedRootState {
