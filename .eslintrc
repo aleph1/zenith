@@ -12,10 +12,18 @@
   "rules": {
     "@typescript-eslint/no-unused-vars": [
       "error",
-      { 
+      {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_"
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["test/**/*.ts", "vitest.setup.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 }
