@@ -710,13 +710,14 @@ export const elem: {
     (tag: string): VNodeElem
     (tag: string, attrs:VNodeElemAttributes, ...args:VNodeArray): VNodeElem
     (tag: string, ...args:VNodeArray): VNodeElem;
-} = function(tag: string, attrs?: VNodeElemAttributes | VNodeArray[number]): VNodeElem {
+} = (tag: string, ...args): VNodeElem => {
+  const attrs = args[0];
   const hasAttrs = attrs && typeof attrs === 'object' && !Array.isArray(attrs) && !('$t' in attrs);
   return _vNode<VNodeElem>(
     VNODE_ELEM, tag, null,
     hasAttrs ? DEBUG ? Object.freeze(attrs) : attrs : ALWAYS_EMPTY_OBJECT,
-    arguments.length > (hasAttrs ? 2 : 1)
-      ? _flatten(arguments, hasAttrs ? 2 : 1)
+    args.length > (hasAttrs ? 1 : 0)
+      ? _flatten(args, hasAttrs ? 1 : 0)
       : ALWAYS_EMPTY_ARRAY
   );
 };
