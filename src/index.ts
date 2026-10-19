@@ -506,7 +506,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
             e.preventDefault();
             e.stopPropagation();
           }
-          if (e.draw !== false) redraw(newNode);
+          if (e.redraw !== false) redraw(newNode);
         }
         : null;
     } else if (

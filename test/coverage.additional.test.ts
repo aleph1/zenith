@@ -68,7 +68,7 @@ describe('Focus and input events', () => {
     bind(app, view);
     const button = app.querySelector('button')!;
     const event = new MouseEvent('click', { bubbles: true }) as MouseEvent & { draw?: boolean };
-    event.draw = false;
+    event.redraw = false;
     button.dispatchEvent(event);
     sync();
     expect(count).toBe(1);
