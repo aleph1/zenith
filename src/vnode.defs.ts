@@ -1,8 +1,9 @@
 export const VNODE_ELEM = 1;
 export const VNODE_TEXT = 2;
-export const VNODE_COMP = 3;
-export const VNODE_NODE = 4;
-export const VNODE_COMPDEF = 5;
+export const VNODE_COMP = 4;
+export const VNODE_NODE = 8;
+export const VNODE_COMPDEF = 16;
+export const VNODE_TYPE_MASK = 31;
 
 export interface VNodeElemAttributes {
   class?: string | string[];
