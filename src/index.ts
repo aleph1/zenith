@@ -625,8 +625,8 @@ const _unmount = (vNode: VNodeAny): void => {
   redrawQueue.delete(vNode);
   if (vNode.is & VNODE_COMP) {
     vNode = vNode as VNodeComp;
-    vNode.$d.remove && !(vNode.is & FLAG_REMOVE_CALLED) && vNode.$d.remove(vNode);
-    vNode.$d.removed && vNode.$d.removed(vNode);
+    if(vNode.$d.remove && !(vNode.is & FLAG_REMOVE_CALLED)) vNode.$d.remove(vNode);
+    if(vNode.$d.removed) vNode.$d.removed(vNode);
     vNode.is &= TYPE_MASK;
   }
   if ((vNode.$h || redrawQueue.size) && vNode.nodes) {
