@@ -23,9 +23,6 @@ export interface VNodeCompAttributes {
 }
 
 export type VNodeAttrs = VNodeElemAttributes | VNodeCompAttributes;
-export interface VNodeNodeAttributes {
-  [property: string]: any;
-}
 
 export interface VNodeCompDefinition<
   A extends VNodeCompAttributes = VNodeCompAttributes
