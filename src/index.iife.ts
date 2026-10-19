@@ -1,12 +1,3 @@
-import { elem, comp, node, compDef, bind, draw, ns, diff } from './index';
-
-(window as any).z = {
-  elem,
-  comp,
-  node,
-  compDef,
-  bind,
-  draw,
-  ns,
-  diff
-};
+import { bind, comp, compDef, diff, draw, elem, node, ns } from './index';
+const z = { bind, comp, compDef, diff, draw, elem, node, ns };
+(window as Window & { z?: typeof z }).z = z;
