@@ -18,23 +18,19 @@ describe('comp()', () => {
     const comp1 = comp(compDef);
     expect(comp1.is).toBe(VNODE_COMP);
   });
-  test('Returns a vNode with a frozen empty attrs object', () => {
+  test('Returns a vNode with an empty attrs object', () => {
     const compDef = {
       draw: () => null
     };
     const comp1 = comp(compDef);
     expect(comp1.attrs).toEqual({});
-    expect(Object.isFrozen(comp1.attrs)).toBe(true);
   });
-  test('Returns a vNode with a frozen attrs object with the expected properties', () => {
+  test('Returns a vNode with the expected attributes', () => {
     const compDef = {
       draw: () => null
     };
-    const comp1 = comp(compDef, {
-      id: 'test'
-    });
-    expect(comp1.attrs).toEqual({id:'test'});
-    expect(Object.isFrozen(comp1.attrs)).toBe(true);
+    const comp1 = comp(compDef, { id: 'test' });
+    expect(comp1.attrs).toEqual({ id: 'test' });
   });
   test('Returns a vNode with the component definition as .tag', () => {
     const compDef = {
@@ -318,11 +314,9 @@ describe('stable component vnode identity', () => {
     const container = document.createElement('div');
     const init = vi.fn();
     const removed = vi.fn();
-    let original;
 
     const Child = compDef({
-        init(vnode) {
-            original = vnode;
+        init() {
             init();
         },
         draw(vnode) {

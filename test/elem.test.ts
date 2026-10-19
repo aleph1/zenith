@@ -28,15 +28,26 @@ describe('elem()', () => {
     expect(node).toHaveProperty('nodes', []);
   });
 
-  test('elem("div") returns vnode with empty attrs object', () => {
+  test('vnode attrs object is empty when no object passed', () => {
     const node = elem('div');
     expect(node.attrs).toEqual({});
   });
 
-  test('elem("div", {id:"test"}) returns vnode with populated attrs object', () => {
-    const node = elem('div', {id:'test'});
-    expect(node.attrs).toEqual({id:'test'});
-    expect(Object.isFrozen(node.attrs)).toBe(true);
+  test('vnode attrs object is empty when empty object passed', () => {
+    const node = elem('div', {});
+    expect(node.attrs).toEqual({});
+  });
+
+  test('vnode attrs object is populated correctly', () => {
+    const node = elem('div', { id:'test' });
+    expect(node.attrs).toEqual({ id: 'test' });
+  });
+
+  test('vnode attrs are not frozen outside DEBUG mode', () => {
+    const attrs = { id: 'test' };
+    const node = elem('div', attrs);
+    expect(node.attrs).toBe(attrs);
+    expect(Object.isFrozen(node.attrs)).toBe(false);
   });
 
   test('Handles <svg>', () => {
