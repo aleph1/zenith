@@ -1657,3 +1657,12 @@ test('reviving a keyed component preserves a queued surgical drawn() and cancels
     host.remove();
   }
 });
+
+test('Surgical draw ignores non-components outside development mode', async () => {
+  const node = elem('div', { id: 'test' });
+  expect(() => {
+    // @ts-expect-error Deliberately testing an invalid argument
+    draw(node, true);
+  }).not.toThrow();
+  sync();
+});
