@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { bind, comp, compDef, draw, elem, node, sync } from '../src/index';
+import { bind, comp, compDef, redraw, elem, node, sync } from '../src/index';
 
 let app: HTMLElement;
 
@@ -8,10 +8,6 @@ beforeEach(() => {
   app = document.querySelector('#app')!;
 });
 
-const update = (view: ReturnType<typeof comp>) => {
-  draw(view);
-  sync();
-};
 const texts = (parent: Element) => Array.from(parent.children, el => el.textContent);
 
 describe('Focus and input events', () => {
@@ -37,7 +33,8 @@ describe('Focus and input events', () => {
     kind = 'password';
     value = 'second';
     includeTitle = false;
-    update(view);
+    redraw(view);
+    sync();
     expect(app.querySelector('input')).toBe(input);
     expect(input.type).toBe('password');
     expect(input.value).toBe('second');
@@ -76,8 +73,8 @@ describe('Focus and input events', () => {
     sync();
     expect(count).toBe(1);
     expect(button.textContent).toBe('0');
-
-    update(view);
+    redraw(view);
+    sync();
     expect(button.textContent).toBe('1');
   });
 });
@@ -105,9 +102,9 @@ describe('Flattening and raw DOM nodes', () => {
     const view = comp(View);
     bind(app, view);
     expect(app.querySelector('section')!.firstElementChild).toBe(first);
-
     current = second;
-    update(view);
+    redraw(view);
+    sync();
     const section = app.querySelector('section')!;
     expect(section.childElementCount).toBe(1);
     expect(section.firstElementChild).toBe(second);
@@ -119,7 +116,8 @@ describe('Flattening and raw DOM nodes', () => {
     const View = compDef({ draw: () => elem('section', node(native)) });
     const view = comp(View);
     bind(app, view);
-    update(view);
+    redraw(view);
+    sync();
     expect(app.querySelector('section')!.firstElementChild).toBe(native);
   });
 });
@@ -138,7 +136,8 @@ describe('Additional keyed reconciliation branches', () => {
     bind(app, view);
     expect(app.querySelector('section')!.childElementCount).toBe(0);
     add = true;
-    update(view);
+    redraw(view);
+    sync();
     expect(texts(app.querySelector('section')!)).toEqual(['new']);
   });
 
@@ -150,7 +149,8 @@ describe('Additional keyed reconciliation branches', () => {
     const view = comp(View);
     bind(app, view);
     definition = B;
-    update(view);
+    redraw(view);
+    sync();
     expect(app.querySelector('section')!.textContent).toBe('B');
     expect(app.querySelector('section')!.children).toHaveLength(1);
     expect(app.querySelector('section b')).not.toBeNull();
@@ -167,7 +167,8 @@ describe('Additional keyed reconciliation branches', () => {
     const view = comp(View);
     bind(app, view);
     includeRemoval = true;
-    update(view);
+    redraw(view);
+    sync();
     expect(texts(app.querySelector('section')!)).toEqual(['keep']);
   });
 
@@ -185,7 +186,8 @@ describe('Additional keyed reconciliation branches', () => {
     const view = comp(View);
     bind(app, view);
     reverseAndRemove = true;
-    update(view);
+    redraw(view);
+    sync();
     expect(removed).toHaveBeenCalledTimes(1);
     expect(texts(app.querySelector('section')!)).toEqual(['keep']);
   });
@@ -207,13 +209,13 @@ describe('Additional keyed reconciliation branches', () => {
     const view = comp(View);
     bind(app, view);
     mode = 'pending';
-    update(view);
+    redraw(view);
+    sync();
     expect(removed).toHaveBeenCalledTimes(1);
-
     mode = 'gone';
-    update(view);
+    redraw(view);
+    sync();
     expect(removed).toHaveBeenCalledTimes(1);
-
     finish();
     await Promise.resolve();
     sync();
@@ -239,20 +241,21 @@ describe('Additional keyed reconciliation branches', () => {
     const original = app.querySelector('i')!;
 
     mode = 'removing';
-    update(view);
+    redraw(view);
+    sync();
     expect(removed).toHaveBeenCalledTimes(1);
     expect(app.querySelector('i')).toBe(original);
-
     // Reverse the order again while the removal is still pending. This
     // exercises the 'already removing' branch without calling remove() twice.
     mode = 'retry';
-    update(view);
+    redraw(view);
+    sync();
     expect(removed).toHaveBeenCalledTimes(1);
     expect(app.querySelector('i')).toBe(original);
-
     // Reintroducing the same key cancels the deferred removal.
     mode = 'restored';
-    update(view);
+    redraw(view);
+    sync();
     expect(app.querySelector('i')).toBe(original);
     finish();
     await Promise.resolve();
@@ -276,7 +279,8 @@ describe('Unmount lifecycle cleanup', () => {
     const view = comp(View);
     bind(app, view);
     replace = true;
-    update(view);
+    redraw(view);
+    sync();
     expect(remove).toHaveBeenCalledTimes(1);
     expect(removed).toHaveBeenCalledTimes(1);
   });
@@ -294,7 +298,10 @@ describe('Unmount lifecycle cleanup', () => {
     const view = comp(View);
     bind(app, view);
     show = false;
-    expect(() => update(view)).not.toThrow();
+    expect(() => {
+      redraw(view);
+      sync();
+    }).not.toThrow();
     expect(remove).toHaveBeenCalledTimes(1);
     expect(removed).toHaveBeenCalledTimes(1);
     expect(app.querySelector('section')!.childNodes).toHaveLength(0);

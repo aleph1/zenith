@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { bind, comp, compDef, diff, draw, elem, node, sync } from '../src/index';
+import { bind, comp, compDef, diff, elem, node, redraw, sync } from '../src/index';
 
 const SVG = 'http://www.w3.org/2000/svg';
 const MATH = 'http://www.w3.org/1998/Math/MathML';
@@ -35,7 +35,7 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     const a = ul.children[0];
     const b = ul.children[1];
     keys = ['x', 'a', 'b'];
-    draw(view);
+    redraw(view);
     sync();
     expect(elementText(ul)).toEqual(['x', 'a', 'b']);
     expect(ul.children[1]).toBe(a);
@@ -50,7 +50,7 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     const ul = app.querySelector('ul')!;
     const original = new Map(Array.from(ul.children, el => [el.textContent, el] as const));
     keys = ['c', 'a', 'b'];
-    draw(view);
+    redraw(view);
     sync();
     expect(elementText(ul)).toEqual(keys);
     for (const el of ul.children) {
@@ -67,7 +67,7 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     const a = ul.children[0];
     const c = ul.children[1];
     keys = ['a', 'b', 'c'];
-    draw(view);
+    redraw(view);
     sync();
     expect(elementText(ul)).toEqual(keys);
     expect(ul.children[0]).toBe(a);
@@ -85,7 +85,7 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     const view = comp(View);
     bind(app, view);
     replaceTag = true;
-    draw(view);
+    redraw(view);
     sync();
     const section = app.querySelector('section')!;
     expect(elementTags(section)).toEqual(['strong', 'b']);
@@ -107,7 +107,7 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     bind(app, view);
 
     keys = ['b', 'a'];
-    draw(view);
+    redraw(view);
     sync();
     expect(elementText(app.querySelector('section')!)).toEqual(['b1', 'b2', 'a1', 'a2']);
   });
@@ -127,7 +127,7 @@ describe('Regression: component DOM ownership', () => {
     bind(app, view);
 
     show = false;
-    draw(view);
+    redraw(view);
     sync();
     const section = app.querySelector('section')!;
     expect(elementTags(section)).toEqual(['b']);
@@ -142,7 +142,7 @@ describe('Regression: component DOM ownership', () => {
     bind(app, comp(View));
 
     show = false;
-    draw(child, true);
+    redraw(child, true);
     sync();
     const section = app.querySelector('section')!;
     expect(elementTags(section)).toEqual(['b']);
@@ -162,7 +162,7 @@ describe('Regression: component DOM ownership', () => {
 
     const inner = outer.nodes[0] as ReturnType<typeof comp>;
     addSecond = true;
-    draw(inner, true);
+    redraw(inner, true);
     sync();
     expect(elementTags(app)).toEqual(['span', 'b']);
     expect(elementText(app)).toEqual(['first', 'second']);
@@ -191,10 +191,10 @@ describe('Regression: lifecycle and redraw scheduling', () => {
     bind(app, view);
 
     const outer = view.nodes[0] as ReturnType<typeof comp>;
-    draw(outer, true); // Replaces an intermediate element vnode.
+    redraw(outer, true); // Replaces an intermediate element vnode.
     sync();
     showOuter = false;
-    draw(view);
+    redraw(view);
     sync();
     expect(removed).toHaveBeenCalledTimes(1);
   });
@@ -215,7 +215,7 @@ describe('Regression: lifecycle and redraw scheduling', () => {
     const view = comp(View);
     bind(app, view);
     showLeaving = false;
-    draw(view);
+    redraw(view);
     sync();
     expect(elementText(app)).toContain('staying');
     finishRemoval();
@@ -232,7 +232,7 @@ describe('Regression: lifecycle and redraw scheduling', () => {
       drawn: (vNode: any) => {
         if (version === 1) {
           version = 2;
-          draw(vNode, true);
+          redraw(vNode, true);
         }
       }
     });
@@ -240,7 +240,7 @@ describe('Regression: lifecycle and redraw scheduling', () => {
     bind(app, view);
 
     version = 1;
-    draw(view, true);
+    redraw(view, true);
     await Promise.resolve();
     await Promise.resolve();
     sync();
@@ -258,10 +258,10 @@ describe('Regression: lifecycle and redraw scheduling', () => {
 
     const memo = parent.nodes[0] as ReturnType<typeof comp>;
     expect(renderMemo).toHaveBeenCalledTimes(1);
-    draw(memo, true);
+    redraw(memo, true);
     sync();
     expect(renderMemo).toHaveBeenCalledTimes(2);
-    draw(parent); // Same component definition and exact same props object.
+    redraw(parent); // Same component definition and exact same props object.
     sync();
     expect(renderMemo).toHaveBeenCalledTimes(2);
   });
@@ -278,12 +278,12 @@ describe('Regression: diff flags, attributes and namespaces', () => {
     bind(app, view);
     text = 'ignored';
     mode = diff.self;
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('div')!.textContent).toBe('original');
     text = 'updated';
     mode = diff.all;
-    draw(view);
+    redraw(view);
     sync();
     const div = app.querySelector('div')!;
     expect(elementTags(div)).toEqual(['span']);
@@ -313,7 +313,7 @@ describe('Regression: diff flags, attributes and namespaces', () => {
     const view = comp(View);
     bind(app, view);
     addRect = true;
-    draw(view);
+    redraw(view);
     sync();
     const svgNS = 'http://www.w3.org/2000/svg';
     expect(app.querySelector('svg')!.namespaceURI).toBe(svgNS);
@@ -330,7 +330,7 @@ describe('Regression: diff flags, attributes and namespaces', () => {
 
     const child = parent.nodes[0];
 
-    draw(child, true);
+    redraw(child, true);
     bind(app, null);
 
     await Promise.resolve();
@@ -353,7 +353,7 @@ describe('Namespace propagation', () => {
     const view = comp(View);
     bind(app, view);
     inserted = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('g')!.namespaceURI).toBe(SVG);
     expect(app.querySelector('rect')!.namespaceURI).toBe(SVG);
@@ -369,7 +369,7 @@ describe('Namespace propagation', () => {
     const view = comp(View);
     bind(app, view);
     changed = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('rect')!.namespaceURI).toBe(SVG);
   });
@@ -385,7 +385,7 @@ describe('Namespace propagation', () => {
     bind(app, view);
 
     inserted = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('mrow')!.namespaceURI).toBe(MATH);
     expect(app.querySelector('mi')!.namespaceURI).toBe(MATH);
@@ -414,7 +414,7 @@ describe('Namespace propagation', () => {
     expect(foreignObject.querySelector('span')!.namespaceURI).toBe(HTML);
 
     inserted = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(foreignObject.querySelector('strong')!.namespaceURI).toBe(HTML);
   });
@@ -432,7 +432,7 @@ describe('Namespace propagation', () => {
     bind(app, view);
 
     inserted = true;
-    draw(view);
+    redraw(view);
     sync();
     const inner = app.querySelector('foreignObject svg')!;
     expect(inner.namespaceURI).toBe(SVG);
@@ -451,7 +451,7 @@ describe('Reconciliation and diff flags', () => {
     const ul = app.querySelector('ul')!;
     const original = new Map(Array.from(ul.children, el => [el.textContent!, el]));
     keys = ['d', 'x', 'b', 'a'];
-    draw(view);
+    redraw(view);
     sync();
     expect(elementText(ul)).toEqual(keys);
     for (const key of ['a', 'b', 'd']) {
@@ -472,7 +472,7 @@ describe('Reconciliation and diff flags', () => {
     const transitions = [['b', 'a'], ['a', 'c', 'b'], ['c', 'a'], [], ['a', 'z']];
     transitions.forEach((next, index) => {
       keys = next;
-      draw(view);
+      redraw(view);
       sync();
       expect(elementText(ul)).toEqual(next);
       if (index < 3) {
@@ -495,7 +495,7 @@ describe('Reconciliation and diff flags', () => {
     bind(app, view);
     const child = app.querySelector('b')!;
     mode = diff.self; title = 'b'; content = 'new';
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('div')!.title).toBe('b');
     expect(app.querySelector('b')).toBe(child);
@@ -512,7 +512,7 @@ describe('Reconciliation and diff flags', () => {
     const view = comp(View);
     bind(app, view);
     mode = diff.nodes; title = 'b'; content = 'new';
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('div')!.title).toBe('a');
     expect(app.querySelector('b')!.textContent).toBe('new');
@@ -528,12 +528,12 @@ describe('Reconciliation and diff flags', () => {
     const view = comp(View);
     bind(app, view);
     mode = diff.none; title = 'b'; content = 'new';
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('div')!.title).toBe('a');
     expect(app.querySelector('b')!.textContent).toBe('old');
     mode = diff.all; title = 'c'; content = 'latest';
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('div')!.title).toBe('c');
     expect(app.querySelector('b')!.textContent).toBe('latest');
@@ -550,9 +550,9 @@ describe('Scheduling and lifecycle', () => {
     const view = comp(View);
     bind(app, view);
     count = 1;
-    draw(view);
-    draw(view);
-    draw(view);
+    redraw(view);
+    redraw(view);
+    redraw(view);
     sync();
     expect(render).toHaveBeenCalledTimes(2); // initial + one update
     expect(app.textContent).toBe('1');
@@ -575,7 +575,7 @@ describe('Scheduling and lifecycle', () => {
     bind(app, view);
     expect(calls).toEqual(['init', 'draw', 'drawn:first']);
     show = false;
-    draw(view);
+    redraw(view);
     sync();
     expect(calls).toEqual(['init', 'draw', 'drawn:first', 'remove', 'removed']);
   });
@@ -590,7 +590,7 @@ describe('Scheduling and lifecycle', () => {
     });
     const view = comp(View);
     bind(app, view);
-    draw(view);
+    redraw(view);
     sync();
     expect(calls).toEqual(['draw', 'first', 'draw', 'updated']);
   });
@@ -635,14 +635,14 @@ describe('Scheduling and lifecycle', () => {
 
     // Begin deferred removal.
     showChild = false;
-    draw(parent, true);
+    redraw(parent, true);
     sync();
     expect(remove).toHaveBeenCalledTimes(1);
     expect(app.querySelector('span')).not.toBeNull();
 
     // Remove the parent before the Promise resolves.
     showParent = false;
-    draw(root);
+    redraw(root);
     sync();
     expect(app.querySelector('div')).toBeNull();
     expect(app.querySelector('p')?.textContent).toBe('replacement');
@@ -680,7 +680,7 @@ describe('Focus preservation', () => {
     input.setSelectionRange(3, 7);
 
     label = 'After';
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('input')).toBe(input);
     expect(document.activeElement).toBe(input);
@@ -706,7 +706,7 @@ describe('Focus preservation', () => {
     input.focus();
 
     reversed = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelectorAll('input')[1]).toBe(input);
     expect(document.activeElement).toBe(input);
@@ -728,7 +728,7 @@ describe('Focus preservation', () => {
     input.focus();
     input.setSelectionRange(2, 5);
 
-    draw(parent);
+    redraw(parent);
     sync();
     expect(app.querySelector('input')).toBe(input);
     expect(document.activeElement).toBe(input);
@@ -761,7 +761,7 @@ describe('Focus preservation', () => {
     expect(document.activeElement).toBe(first);
 
     moveFocus = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(document.activeElement).toBe(second);
   });
@@ -787,7 +787,7 @@ describe('Focus preservation', () => {
     expect(document.activeElement).toBe(original);
 
     moveFocus = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(document.activeElement).toBe(other);
   });
@@ -810,7 +810,7 @@ describe('Focus preservation', () => {
     input.focus();
 
     replace = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(input.isConnected).toBe(false);
     expect(document.activeElement).not.toBe(input);
@@ -830,7 +830,7 @@ describe('Focus preservation', () => {
     input.focus();
 
     value = 'Hello world!';
-    draw(view);
+    redraw(view);
     sync();
     expect(app.querySelector('input')).toBe(input);
     expect(document.activeElement).toBe(input);
@@ -859,7 +859,7 @@ describe('Focus preservation', () => {
     input.setSelectionRange(3, 7);
 
     reversed = true;
-    draw(view);
+    redraw(view);
     sync();
     expect(document.activeElement).toBe(input);
     expect(input.selectionStart).toBe(3);
@@ -950,7 +950,7 @@ describe('bound root container', () => {
 
     const update = (next: number[]) => {
       ids = next;
-      draw(root);
+      redraw(root);
       sync();
     };
 
@@ -1040,7 +1040,7 @@ describe('async removal revival', () => {
     const root = bind(container, comp(Parent));
     const update = (next: typeof phase) => {
       phase = next;
-      draw(root);
+      redraw(root);
       sync();
     };
 
@@ -1193,15 +1193,15 @@ describe('namespace and lifecycle regressions', () => {
     let child!: ReturnType<typeof comp>;
     let tag = 'circle';
     const Shape = compDef({
-      init(vNode) { child = vNode; },
-      draw() { return elem(tag); }
+      init: vNode => { child = vNode; },
+      draw: () => { return elem(tag); }
     });
 
     bind(host, elem('svg', comp(Shape)));
     expect(host.querySelector('circle')?.namespaceURI).toBe(ns.svg);
 
     tag = 'rect';
-    draw(child, true);
+    redraw(child, true);
     sync();
 
     const rect = host.querySelector('rect');
@@ -1215,15 +1215,15 @@ describe('namespace and lifecycle regressions', () => {
     let child!: ReturnType<typeof comp>;
     let tag = 'circle';
     const Shape = compDef({
-      init(vNode) { child = vNode; },
-      draw() { return elem(tag); }
+      init: vNode => { child = vNode; },
+      draw: () => { return elem(tag); }
     });
 
     bind(svg, comp(Shape));
     expect(svg.firstElementChild?.namespaceURI).toBe(ns.svg);
 
     tag = 'rect';
-    draw(child, true);
+    redraw(child, true);
     sync();
     expect(svg.firstElementChild?.localName).toBe('rect');
     expect(svg.firstElementChild?.namespaceURI).toBe(ns.svg);
@@ -1251,8 +1251,8 @@ describe('namespace and lifecycle regressions', () => {
     let child!: ReturnType<typeof comp>;
     let nested = false;
     const Content = compDef({
-      init(vNode) { child = vNode; },
-      draw() {
+      init: vNode => { child = vNode; },
+      draw: () => {
         return nested
           ? elem('div', elem('svg', elem('circle')))
           : elem('span', 'Before');
@@ -1261,7 +1261,7 @@ describe('namespace and lifecycle regressions', () => {
 
     bind(host, elem('svg', elem('foreignObject', comp(Content))));
     nested = true;
-    draw(child, true);
+    redraw(child, true);
     sync();
 
     const div = host.querySelector('foreignObject')?.firstElementChild;
@@ -1274,15 +1274,15 @@ describe('namespace and lifecycle regressions', () => {
     let child!: ReturnType<typeof comp>;
     let tag = 'mi';
     const Token = compDef({
-      init(vNode) { child = vNode; },
-      draw() { return elem(tag, 'x'); }
+      init: vNode => { child = vNode; },
+      draw: () => { return elem(tag, 'x'); }
     });
 
     bind(host, elem('math', comp(Token)));
     expect(host.querySelector('mi')?.namespaceURI).toBe(ns.math);
 
     tag = 'mn';
-    draw(child, true);
+    redraw(child, true);
     sync();
     expect(host.querySelector('mn')?.namespaceURI).toBe(ns.math);
   });
@@ -1300,8 +1300,8 @@ describe('namespace and lifecycle regressions', () => {
     bind(host, elem('div'));
     expect(host.textContent).toBe('');
 
-    draw(child);
-    draw(child, true);
+    redraw(child);
+    redraw(child, true);
     sync();
     expect(render).toHaveBeenCalledTimes(1);
     expect(host.textContent).toBe('');
@@ -1313,7 +1313,7 @@ describe('namespace and lifecycle regressions', () => {
     expect(render).toHaveBeenCalledTimes(1);
 
     bind(host, null);
-    draw(root);
+    redraw(root);
     sync();
     expect(render).toHaveBeenCalledTimes(1);
     expect(host.childNodes).toHaveLength(0);
@@ -1323,7 +1323,7 @@ describe('namespace and lifecycle regressions', () => {
     let child!: ReturnType<typeof comp>;
     let content = 'Hello';
     const Text = compDef({
-      init(vNode) { child = vNode; },
+      init: vNode => { child = vNode; },
       // The component API may type draw() as vnodes-only; this checks the
       // runtime's existing support for primitive children and returns.
       draw: () => content as any
@@ -1335,7 +1335,7 @@ describe('namespace and lifecycle regressions', () => {
     expect(host.firstChild?.nodeType).toBe(Node.TEXT_NODE);
 
     content = 'World!';
-    draw(child, true);
+    redraw(child, true);
     sync();
     expect(host.textContent).toBe('World!');
     expect(host.childNodes).toHaveLength(1);
@@ -1345,8 +1345,8 @@ describe('namespace and lifecycle regressions', () => {
     let child!: ReturnType<typeof comp>;
     let visible = false;
     const Dynamic = compDef({
-      init(vNode) { child = vNode; },
-      draw() { return visible ? [elem('i', 'A'), elem('i', 'B')] : []; }
+      init: (vNode) => { child = vNode; },
+      draw: () => { return visible ? [elem('i', 'A'), elem('i', 'B')] : []; }
     });
     const view = () => elem('div', { $diff: diff.none },
       elem('span', 'Before'), comp(Dynamic), elem('span', 'After'));
@@ -1354,7 +1354,7 @@ describe('namespace and lifecycle regressions', () => {
     bind(host, view());
     bind(host, view());
     visible = true;
-    draw(child, true);
+    redraw(child, true);
     sync();
     expect(Array.from(host.firstElementChild!.children, el => el.textContent))
       .toEqual(['Before', 'A', 'B', 'After']);
@@ -1468,7 +1468,7 @@ describe('drawn() attachment and lifecycle', () => {
     });
     bind(host, elem('div', comp(Child)));
     tag = 'strong';
-    draw(child, true);
+    redraw(child, true);
     sync();
     expect(seen).toEqual([
       ['SPAN', true, true],
@@ -1586,7 +1586,7 @@ test('reviving a keyed component preserves a queued surgical drawn() and cancels
       if (phase === 'revived' && !requestedFollowup) {
         requestedFollowup = true;
         label = 'follow-up';
-        draw(vNode, true); // Schedule another update from drawn().
+        redraw(vNode, true); // Schedule another update from drawn().
       }
     },
     remove,
@@ -1601,7 +1601,7 @@ test('reviving a keyed component preserves a queued surgical drawn() and cancels
       // Reconcile the same key before that hook is dispatched.
       phase = 'revived';
       label = 'revived';
-      draw(root);
+      redraw(root);
       sync();
     },
   });
@@ -1622,8 +1622,8 @@ test('reviving a keyed component preserves a queued surgical drawn() and cancels
     // Queue parent removal BEFORE a surgical redraw of the same component.
     // sync() processes both before dispatching any drawn() callbacks.
     phase = 'removing';
-    draw(root);
-    draw(item, true);
+    redraw(root);
+    redraw(item, true);
     sync();
 
     expect(remove).toHaveBeenCalledTimes(1);
@@ -1662,7 +1662,7 @@ test('Surgical draw ignores non-components outside development mode', async () =
   const node = elem('div', { id: 'test' });
   expect(() => {
     // @ts-expect-error Deliberately testing an invalid argument
-    draw(node, true);
+    redraw(node, true);
   }).not.toThrow();
   sync();
 });

@@ -1,8 +1,9 @@
 import { describe, test, expect, vi } from 'vitest';
-import { bind, comp, compDef, draw, elem, sync } from '../src/index';
+import { bind, comp, compDef, redraw, elem, sync } from '../src/index';
 import { VNODE_COMP } from '../src/vNode.defs';
 
 describe('comp()', () => {
+
   test('Returns a vNode with the correct type', () => {
     const compDef = {
       draw: () => null
@@ -10,6 +11,7 @@ describe('comp()', () => {
     const comp1 = comp(compDef);
     expect(comp1.is).toBe(VNODE_COMP);
   });
+
   test('Returns a vNode with the correct type when an incorrect type is passed', () => {
     const compDef = {
       draw: () => null,
@@ -18,6 +20,7 @@ describe('comp()', () => {
     const comp1 = comp(compDef);
     expect(comp1.is).toBe(VNODE_COMP);
   });
+
   test('Returns a vNode with an empty attrs object', () => {
     const compDef = {
       draw: () => null
@@ -25,6 +28,7 @@ describe('comp()', () => {
     const comp1 = comp(compDef);
     expect(comp1.attrs).toEqual({});
   });
+
   test('Returns a vNode with the expected attributes', () => {
     const compDef = {
       draw: () => null
@@ -32,6 +36,7 @@ describe('comp()', () => {
     const comp1 = comp(compDef, { id: 'test' });
     expect(comp1.attrs).toEqual({ id: 'test' });
   });
+
   test('Returns a vNode with the component definition as .tag', () => {
     const compDef = {
       draw: () => null
@@ -39,6 +44,7 @@ describe('comp()', () => {
     const comp1 = comp(compDef);
     expect(comp1.$d).toBe(compDef);
   });
+
 });
 
 describe('Component memoization', () => {
@@ -51,7 +57,7 @@ describe('Component memoization', () => {
     const Parent = compDef({ draw: () => comp(Child, attrs) });
     const parent = comp(Parent);
     bind(app, parent);
-    draw(parent);
+    redraw(parent);
     sync();
     expect(render).toHaveBeenCalledTimes(1);
   });
@@ -66,7 +72,7 @@ describe('Component memoization', () => {
     const parent = comp(Parent);
     bind(app, parent);
     attrs = { label: 'b' };
-    draw(parent);
+    redraw(parent);
     sync();
     expect(render).toHaveBeenCalledTimes(2);
     expect(app.textContent).toBe('b');
@@ -83,11 +89,11 @@ describe('Component memoization', () => {
     const parent = comp(Parent);
     bind(app, parent);
     attrs = { label: 'a' };
-    draw(parent);
+    redraw(parent);
     sync();
     expect(render).toHaveBeenCalledTimes(1);
     attrs = { label: 'b' };
-    draw(parent);
+    redraw(parent);
     sync();
     expect(render).toHaveBeenCalledTimes(2);
     expect(memo).toHaveBeenCalled();
@@ -103,15 +109,15 @@ describe('stable component vnode identity', () => {
         const removed = [];
 
         const Child = compDef({
-            init(vnode) {
-                initialized.push(vnode);
+            init: vNode => {
+                initialized.push(vNode);
             },
-            draw(vnode) {
-                rendered.push(vnode);
-                return elem('span', vnode.attrs.label);
+            draw: vNode => {
+                rendered.push(vNode);
+                return elem('span', vNode.attrs.label);
             },
-            removed(vnode) {
-                removed.push(vnode);
+            removed(vNode) {
+                removed.push(vNode);
             }
         });
 
@@ -141,14 +147,12 @@ describe('stable component vnode identity', () => {
         const removed = [];
 
         const Item = compDef({
-            init(vnode) {
-                instances.set(vnode.attrs.id, vnode);
+            init: vNode => {
+                instances.set(vNode.attrs.id, vNode);
             },
-            draw(vnode) {
-                return elem('span', vnode.attrs.id);
-            },
-            removed(vnode) {
-                removed.push(vnode);
+            draw: vNode => elem('span', vNode.attrs.id),
+            removed: vNode => {
+                removed.push(vNode);
             }
         });
 
@@ -425,7 +429,7 @@ describe('stable component vnode identity', () => {
       ));
 
       visible = true;
-      draw(child, true);
+      redraw(child, true);
       sync();
 
       expect([...container.firstElementChild.children]
@@ -433,7 +437,7 @@ describe('stable component vnode identity', () => {
       ).toEqual(['Before', 'A', 'B', 'After']);
 
       visible = false;
-      draw(child, true);
+      redraw(child, true);
       sync();
 
       expect([...container.firstElementChild.children]
@@ -475,7 +479,7 @@ test('updates ancestor el when a nested component changes its root', () => {
     expect(child!.el).toBeNull();
 
     visible = true;
-    draw(child!, true);
+    redraw(child!, true);
     sync();
 
     expect(container.textContent).toBe('Visible');
@@ -494,41 +498,31 @@ test('redraws nested components after their original root is replaced', () => {
     let extra = false;
 
     const Child = compDef({
-        init(vnode) {
-            child = vnode;
-        },
-        draw() {
-            return visible ? elem('span', 'Child') : [];
-        }
+        init: vNode => { child = vNode; },
+        draw: () => visible ? elem('span', 'Child') : [],
     });
 
     const Middle = compDef({
-        init(vnode) {
-            middle = vnode;
-        },
-        draw() {
-            return extra
+        init: vNode => { middle = vNode; },
+        draw: () => extra
                 ? [comp(Child), elem('b', 'Extra')]
-                : comp(Child);
-        }
+                : comp(Child),
     });
 
     const Outer = compDef({
-        draw() {
-            return comp(Middle);
-        }
+        draw: () => comp(Middle),
     });
 
     bind(container, elem('div', comp(Outer)));
 
     visible = true;
-    draw(child!, true);
+    redraw(child!, true);
     sync();
 
     expect(container.textContent).toBe('Child');
 
     extra = true;
-    draw(middle!, true);
+    redraw(middle!, true);
 
     expect(() => sync()).not.toThrow();
     expect(container.textContent).toBe('ChildExtra');
@@ -566,7 +560,7 @@ test('preserves component state across redraws and keyed moves', () => {
     // Mutating state does not automatically redraw.
     expect(container.textContent).toBe('00');
 
-    draw(a, true);
+    redraw(a, true);
     sync();
 
     expect(container.textContent).toBe('50');
@@ -651,7 +645,7 @@ test('removed components cannot redraw their former parent', () => {
     const root = bind(container, comp(Parent));
 
     visible = false;
-    draw(root);
+    redraw(root);
     sync();
 
     expect(container.textContent).toBe('Removed');
@@ -659,7 +653,7 @@ test('removed components cannot redraw their former parent', () => {
     const before = renders;
 
     // This component has already been destroyed.
-    draw(child!);
+    redraw(child!);
     sync();
 
     // Its former parent must not redraw.
@@ -678,14 +672,14 @@ describe('content outlet convention', () => {
     expect(container.textContent).toBe('BeforeAfter');
 
     outlet.attrs = { $nodes: [elem('span', 'First')] };
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
 
     const span = container.querySelector('span');
     expect(container.textContent).toBe('BeforeFirstAfter');
 
     outlet.attrs = { $nodes: [elem('span', 'Updated')] };
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
 
     expect(container.querySelector('span')).toBe(span);
@@ -725,7 +719,7 @@ describe('content outlet convention', () => {
     ]));
 
     ids = ['c', 'a', 'b'];
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
 
     expect([...container.querySelectorAll('button')].map(el => el.textContent)).toEqual(ids);
@@ -737,7 +731,7 @@ describe('content outlet convention', () => {
     expect(removed).not.toHaveBeenCalled();
 
     ids = ['c', 'd', 'a'];
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
 
     expect([...container.querySelectorAll('button')].map(el => el.textContent)).toEqual(ids);
@@ -777,7 +771,7 @@ describe('content outlet convention', () => {
     const Owner = compDef({
       init(vNode) {
         contributions.set(vNode.attrs.id, vNode.attrs.id);
-        draw(outlet, true);
+        redraw(outlet, true);
       },
       draw(vNode) {
         return elem('span', vNode.attrs.id);
@@ -785,7 +779,7 @@ describe('content outlet convention', () => {
       removed(vNode) {
         contributions.delete(vNode.attrs.id);
         removed(vNode);
-        draw(outlet, true);
+        redraw(outlet, true);
       }
     });
     const render = (ids: string[]) => elem('div',
@@ -841,20 +835,20 @@ describe('content outlet convention', () => {
     expect(wrapper.el).toBeNull();
 
     content = [elem('b', 'A'), elem('b', 'B')];
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
     expect(children()).toEqual(['Before', 'A', 'B', 'After']);
     expect(wrapper.el).toBe(parent.children[1]);
     expect(outlet.el).toBe(wrapper.el);
 
     content = elem('strong', 'Single');
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
     expect(children()).toEqual(['Before', 'Single', 'After']);
     expect(wrapper.el).toBe(parent.children[1]);
 
     content = null;
-    draw(outlet, true);
+    redraw(outlet, true);
     sync();
     expect(children()).toEqual(['Before', 'After']);
     expect(wrapper.el).toBeNull();

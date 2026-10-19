@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, test, expect, vi } from 'vitest';
-import { bind, comp, compDef, draw, elem, sync } from '../src/index';
+import { bind, comp, compDef, redraw, elem, sync } from '../src/index';
 
 // All original active tests are preserved, except one expected value updated
 // to reflect the agreed controlled-input semantics. Additional tests are additive.
@@ -334,7 +334,7 @@ describe('DOM attributes', () => {
         const input = app.querySelector('input')!;
         input.value = 'user typed';
         title = 'b';
-        draw(view);
+        redraw(view);
         sync();
         expect(app.querySelector('input')).toBe(input);
         expect(input.value).toBe('initial');
@@ -350,7 +350,7 @@ describe('DOM attributes', () => {
       const input = app.querySelector('input')!;
       input.value = 'user typed';
       title = 'b';
-      draw(view);
+      redraw(view);
       sync();
       expect(app.querySelector('input')).toBe(input);
       expect(input.value).toBe('user typed');
@@ -470,9 +470,9 @@ describe('DOM attributes', () => {
         const view = comp(View);
         bind(app, view);
         const button = app.querySelector('button')!;
-        draw(view);
+        redraw(view);
         sync();
-        draw(view);
+        redraw(view);
         sync();
         button.click();
         sync();

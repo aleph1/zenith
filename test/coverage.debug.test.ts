@@ -61,7 +61,7 @@ describe('Development-only validation', () => {
     const view = lib.comp(View);
     lib.bind(app, view);
     show = false;
-    expect(() => { lib.draw(view); lib.sync(); }).toThrow(/requires a key/i);
+    expect(() => { lib.redraw(view); lib.sync(); }).toThrow(/requires a key/i);
   });
 
   // This deliberately simulates a broken parent link. It is an internal guard,
@@ -84,7 +84,7 @@ describe('Development-only validation', () => {
     lib.bind(app, view);
     const leaving = (view.nodes[0] as any).nodes[0] as any;
     show = false;
-    lib.draw(view);
+    lib.redraw(view);
     lib.sync();
     // Invalid internal state to exercise the defensive console.warn branch.
     leaving.$p = null;
@@ -108,7 +108,7 @@ describe('Development-only validation', () => {
     const node = lib.elem('div', { id: 'test' });
     expect(() => {
       // @ts-expect-error Testing an invalid surgical draw argument
-      lib.draw(node, true);
+      lib.redraw(node, true);
     }).toThrow('Surgical redraw requires a component vnode');
   });
 

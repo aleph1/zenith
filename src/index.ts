@@ -83,7 +83,7 @@ let flushingDrawn = false;
 
 const ns = {
   math: 'http://www.w3.org/1998/Math/MathML',
-  svg: 'http://www.w3.org/2000/svg'
+  svg: 'http://www.w3.org/2000/svg',
 };
 
 // ----------------------------------------
@@ -182,7 +182,7 @@ export const sync = (): void => {
 };
 
 // Redraw from the root, or redraw a specific component subtree.
-export const draw: {
+export const redraw: {
   (vNode: VNodeContainer, surgical?: false): void;
   (vNode: VNodeComp, surgical: true): void;
 } = (vNode: VNodeContainer, surgical = false): void => {
@@ -210,6 +210,7 @@ export const draw: {
       }
     }
   }
+
   if (redrawQueue.size === 1) {
     Promise.resolve().then(sync);
   }
@@ -505,7 +506,7 @@ const _setElAttributes = (newNode: VNodeElem, oldAttrs: VNodeElemAttributes = AL
             e.preventDefault();
             e.stopPropagation();
           }
-          if (e.draw !== false) draw(newNode);
+          if (e.draw !== false) redraw(newNode);
         }
         : null;
     } else if (
@@ -697,7 +698,7 @@ const _remove = (vNode: VNodeAny): boolean => {
             if (i !== -1) parent.nodes.splice(i, 1);
           }
           _destroy(vNode);
-          draw(parent);
+          redraw(parent);
         }
       };
       deferred.then(deferredDestroy, deferredDestroy);
@@ -793,7 +794,7 @@ export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null)
   root.attrs = { $nodes: vNodeAnyOrArray };
   root.is |= FLAG_IS_ACTIVE;
   boundNodes.set(root.el = el, root);
-  draw(root);
+  redraw(root);
   sync();
   return root;
 };
