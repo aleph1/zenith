@@ -8,6 +8,6 @@ import { inject } from './inject';
 import { signal } from './signal';
 import { derived } from './derived';
 import { router } from './router';
-import { Portal } from './portal';
-const zh = { keep, is, cls, slot, html, closest, inject, signal, derived, router, Portal };
+import { DetachedRoot } from './detached-root';
+const zh = { keep, is, cls, slot, html, closest, inject, signal, derived, router, DetachedRoot };
 (window as Window & { zh?: typeof zh }).zh = zh;

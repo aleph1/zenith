@@ -10,4 +10,4 @@ export type { Signal } from './signal';
 export { derived } from './derived';
 export type { DerivedSignal } from './derived';
 export { router } from './router';
-export { Portal } from './portal';
+export { DetachedRoot } from './detached-root';
