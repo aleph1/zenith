@@ -1665,4 +1665,35 @@ describe('external DOM node ownership and reconciliation', () => {
     expect(canvas.isConnected).toBe(false);
   });
 });
+
+test('redraw flushes automatically in a microtask', async () => {
+  let value = 'First';
+  const View = compDef({
+    draw: () => elem('span', value),
+  });
+  const view = comp(View);
+  bind(app, view);
+  value = 'Second';
+  redraw(view);
+  expect(app.textContent).toBe('First');
+  await Promise.resolve();
+  expect(app.textContent).toBe('Second');
+});
+
+test('preserves a redraw requested during draw()', async () => {
+  let count = 0;
+  const View = compDef({
+    draw: vNode => {
+      count++;
+      if (count === 2) redraw(vNode, true);
+      return elem('span', String(count));
+    },
+  });
+  const view = comp(View);
+  bind(app, view);
+  redraw(view, true);
+  sync();
+  expect(app.textContent).toBe('2');
+  await Promise.resolve();
+  expect(app.textContent).toBe('3');
 });
