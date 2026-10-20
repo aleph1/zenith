@@ -16,6 +16,10 @@ beforeEach(() => {
   app = document.querySelector('#app')!;
 });
 
+afterEach(() => {
+  bind(app, null);
+})
+
 const elementText = (parent: Element) =>
   Array.from(parent.children, el => el.textContent);
 
@@ -867,59 +871,6 @@ describe('Focus preservation', () => {
   });
 });
 
-test('preserves position when replacing a native DOM node', () => {
-    const container = document.createElement('div');
-    const first = document.createElement('span');
-    const second = document.createElement('span');
-
-    first.textContent = 'First';
-    second.textContent = 'Second';
-
-    bind(container, elem('div',
-        elem('span', 'Before'),
-        node(first),
-        elem('span', 'After')
-    ));
-
-    bind(container, elem('div',
-        elem('span', 'Before'),
-        node(second),
-        elem('span', 'After')
-    ));
-
-    const children = container.firstElementChild!.childNodes;
-
-    expect(children.length).toBe(3);
-    expect(children[0].textContent).toBe('Before');
-    expect(children[1]).toBe(second);
-    expect(children[2].textContent).toBe('After');
-    expect(first.isConnected).toBe(false);
-});
-
-test('preserves a native DOM node when replacing its parent', () => {
-    const container = document.createElement('div');
-    const canvas = document.createElement('canvas');
-
-    bind(container,
-        elem('section', node(canvas))
-    );
-
-    expect(canvas.parentElement?.tagName).toBe('SECTION');
-
-    bind(container,
-        elem('article', node(canvas))
-    );
-
-    expect(container.querySelector('article canvas')).toBe(canvas);
-    expect(canvas.parentElement?.tagName).toBe('ARTICLE');
-
-    bind(container, null);
-    expect(container.contains(canvas)).toBe(false);
-    expect(container.firstChild).toBeNull();
-    expect(canvas.isConnected).toBe(false);
-});
-
-
 describe('bound root container', () => {
   let tbody: HTMLTableSectionElement;
 
@@ -1177,17 +1128,6 @@ describe('async removal revival', () => {
 // Regression tests for namespace transitions, stale redraws, and child normalization.
 // Uses only public APIs; no special vnode or namespace bookkeeping is required.
 describe('namespace and lifecycle regressions', () => {
-  let host: HTMLDivElement;
-
-  beforeEach(() => {
-    host = document.createElement('div');
-    document.body.appendChild(host);
-  });
-
-  afterEach(() => {
-    bind(host, null);
-    host.remove();
-  });
 
   test('surgical replacement retains SVG namespace under an SVG vnode', () => {
     let child!: ReturnType<typeof comp>;
@@ -1197,21 +1137,21 @@ describe('namespace and lifecycle regressions', () => {
       draw: () => { return elem(tag); }
     });
 
-    bind(host, elem('svg', comp(Shape)));
-    expect(host.querySelector('circle')?.namespaceURI).toBe(ns.svg);
+    bind(app, elem('svg', comp(Shape)));
+    expect(app.querySelector('circle')?.namespaceURI).toBe(ns.svg);
 
     tag = 'rect';
     redraw(child, true);
     sync();
 
-    const rect = host.querySelector('rect');
+    const rect = app.querySelector('rect');
     expect(rect).not.toBeNull();
     expect(rect?.namespaceURI).toBe(ns.svg);
   });
 
   test('binding directly to an existing SVG container uses its namespace', () => {
     const svg = document.createElementNS(ns.svg, 'svg');
-    host.appendChild(svg);
+    app.appendChild(svg);
     let child!: ReturnType<typeof comp>;
     let tag = 'circle';
     const Shape = compDef({
@@ -1236,14 +1176,14 @@ describe('namespace and lifecycle regressions', () => {
       elem('foreignObject', elem(tag, 'Content'))
     );
 
-    bind(host, view('div'));
-    expect(host.querySelector('foreignObject')?.namespaceURI).toBe(ns.svg);
-    expect(host.querySelector('foreignObject')?.firstElementChild?.namespaceURI)
+    bind(app, view('div'));
+    expect(app.querySelector('foreignObject')?.namespaceURI).toBe(ns.svg);
+    expect(app.querySelector('foreignObject')?.firstElementChild?.namespaceURI)
       .toBe('http://www.w3.org/1999/xhtml');
 
-    bind(host, view('section'));
-    expect(host.querySelector('foreignObject')?.firstElementChild?.localName).toBe('section');
-    expect(host.querySelector('foreignObject')?.firstElementChild?.namespaceURI)
+    bind(app, view('section'));
+    expect(app.querySelector('foreignObject')?.firstElementChild?.localName).toBe('section');
+    expect(app.querySelector('foreignObject')?.firstElementChild?.namespaceURI)
       .toBe('http://www.w3.org/1999/xhtml');
   });
 
@@ -1259,12 +1199,12 @@ describe('namespace and lifecycle regressions', () => {
       }
     });
 
-    bind(host, elem('svg', elem('foreignObject', comp(Content))));
+    bind(app, elem('svg', elem('foreignObject', comp(Content))));
     nested = true;
     redraw(child, true);
     sync();
 
-    const div = host.querySelector('foreignObject')?.firstElementChild;
+    const div = app.querySelector('foreignObject')?.firstElementChild;
     expect(div?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
     expect(div?.querySelector('svg')?.namespaceURI).toBe(ns.svg);
     expect(div?.querySelector('circle')?.namespaceURI).toBe(ns.svg);
@@ -1278,13 +1218,13 @@ describe('namespace and lifecycle regressions', () => {
       draw: () => { return elem(tag, 'x'); }
     });
 
-    bind(host, elem('math', comp(Token)));
-    expect(host.querySelector('mi')?.namespaceURI).toBe(ns.math);
+    bind(app, elem('math', comp(Token)));
+    expect(app.querySelector('mi')?.namespaceURI).toBe(ns.math);
 
     tag = 'mn';
     redraw(child, true);
     sync();
-    expect(host.querySelector('mn')?.namespaceURI).toBe(ns.math);
+    expect(app.querySelector('mn')?.namespaceURI).toBe(ns.math);
   });
 
   test('removed components ignore normal and surgical redraw requests', () => {
@@ -1295,28 +1235,28 @@ describe('namespace and lifecycle regressions', () => {
       draw: render
     });
 
-    bind(host, elem('div', comp(Child)));
+    bind(app, elem('div', comp(Child)));
     expect(render).toHaveBeenCalledTimes(1);
-    bind(host, elem('div'));
-    expect(host.textContent).toBe('');
+    bind(app, elem('div'));
+    expect(app.textContent).toBe('');
 
     redraw(child);
     redraw(child, true);
     sync();
     expect(render).toHaveBeenCalledTimes(1);
-    expect(host.textContent).toBe('');
+    expect(app.textContent).toBe('');
   });
 
   test('unbound roots ignore normal redraw requests', () => {
     const render = vi.fn(() => elem('b', 'Hello'));
-    const root = bind(host, comp(compDef({ draw: render })));
+    const root = bind(app, comp(compDef({ draw: render })));
     expect(render).toHaveBeenCalledTimes(1);
 
-    bind(host, null);
+    bind(app, null);
     redraw(root);
     sync();
     expect(render).toHaveBeenCalledTimes(1);
-    expect(host.childNodes).toHaveLength(0);
+    expect(app.childNodes).toHaveLength(0);
   });
 
   test('component strings are one text node, including after a redraw', () => {
@@ -1329,16 +1269,16 @@ describe('namespace and lifecycle regressions', () => {
       draw: () => content as any
     });
 
-    bind(host, comp(Text));
-    expect(host.textContent).toBe('Hello');
-    expect(host.childNodes).toHaveLength(1);
-    expect(host.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+    bind(app, comp(Text));
+    expect(app.textContent).toBe('Hello');
+    expect(app.childNodes).toHaveLength(1);
+    expect(app.firstChild?.nodeType).toBe(Node.TEXT_NODE);
 
     content = 'World!';
     redraw(child, true);
     sync();
-    expect(host.textContent).toBe('World!');
-    expect(host.childNodes).toHaveLength(1);
+    expect(app.textContent).toBe('World!');
+    expect(app.childNodes).toHaveLength(1);
   });
 
   test('skipping child diff still permits a targeted update with correct sibling order', () => {
@@ -1351,23 +1291,23 @@ describe('namespace and lifecycle regressions', () => {
     const view = () => elem('div', { $diff: diff.none },
       elem('span', 'Before'), comp(Dynamic), elem('span', 'After'));
 
-    bind(host, view());
-    bind(host, view());
+    bind(app, view());
+    bind(app, view());
     visible = true;
     redraw(child, true);
     sync();
-    expect(Array.from(host.firstElementChild!.children, el => el.textContent))
+    expect(Array.from(app.firstElementChild!.children, el => el.textContent))
       .toEqual(['Before', 'A', 'B', 'After']);
   });
 
-  test('multiple bound hosts can be updated and unbound independently', () => {
+  test('multiple bound apps can be updated and unbound independently', () => {
     const other = document.createElement('div');
     document.body.appendChild(other);
     try {
-      bind(host, elem('span', 'A'));
+      bind(app, elem('span', 'A'));
       bind(other, elem('span', 'B'));
-      bind(host, null);
-      expect(host.textContent).toBe('');
+      bind(app, null);
+      expect(app.textContent).toBe('');
       expect(other.textContent).toBe('B');
       bind(other, elem('span', 'C'));
       expect(other.textContent).toBe('C');
@@ -1379,17 +1319,6 @@ describe('namespace and lifecycle regressions', () => {
 });
 
 describe('drawn() attachment and lifecycle', () => {
-  let host: HTMLDivElement;
-
-  beforeEach(() => {
-    host = document.createElement('div');
-    document.body.appendChild(host);
-  });
-
-  afterEach(() => {
-    bind(host, null);
-    host.remove();
-  });
 
   test('the child is connected and measurable before its initial drawn()', () => {
     let connected = false;
@@ -1403,7 +1332,7 @@ describe('drawn() attachment and lifecycle', () => {
       }
     });
 
-    bind(host, elem('div', comp(Child)));
+    bind(app, elem('div', comp(Child)));
     expect(connected).toBe(true);
     expect(measured).toBe(true);
   });
@@ -1414,7 +1343,7 @@ describe('drawn() attachment and lifecycle', () => {
       draw: () => elem('b', 'Child'),
       drawn(vNode) {
         expect(vNode.el!.isConnected).toBe(true);
-        expect(host.querySelector('em')?.textContent).toBe('Sibling');
+        expect(app.querySelector('em')?.textContent).toBe('Sibling');
         order.push('child');
       }
     });
@@ -1426,7 +1355,7 @@ describe('drawn() attachment and lifecycle', () => {
       }
     });
 
-    bind(host, comp(Parent));
+    bind(app, comp(Parent));
     expect(order).toEqual(['child', 'parent']);
   });
 
@@ -1434,12 +1363,12 @@ describe('drawn() attachment and lifecycle', () => {
     const Multi = compDef({
       draw: () => [elem('span', 'A'), elem('span', 'B')],
       drawn(vNode) {
-        expect(vNode.el).toBe(host.firstChild);
+        expect(vNode.el).toBe(app.firstChild);
         expect(vNode.el!.isConnected).toBe(true);
-        expect([...host.children].map(node => node.textContent)).toEqual(['A', 'B']);
+        expect([...app.children].map(node => node.textContent)).toEqual(['A', 'B']);
       }
     });
-    bind(host, comp(Multi));
+    bind(app, comp(Multi));
   });
 
   test('empty component has null el and still receives drawn()', () => {
@@ -1451,7 +1380,7 @@ describe('drawn() attachment and lifecycle', () => {
         spy(first);
       }
     });
-    bind(host, comp(Empty));
+    bind(app, comp(Empty));
     expect(spy).toHaveBeenCalledWith(true);
   });
 
@@ -1466,7 +1395,7 @@ describe('drawn() attachment and lifecycle', () => {
         seen.push([(vNode.el as Element).tagName, first, vNode.el!.isConnected]);
       }
     });
-    bind(host, elem('div', comp(Child)));
+    bind(app, elem('div', comp(Child)));
     tag = 'strong';
     redraw(child, true);
     sync();
@@ -1483,7 +1412,7 @@ describe('drawn() attachment and lifecycle', () => {
     const Inner = compDef({
       draw: () => elem('span', 'inner'),
       drawn(vNode) {
-        observed.push(vNode.el!.isConnected && !!host.querySelector('section'));
+        observed.push(vNode.el!.isConnected && !!app.querySelector('section'));
       }
     });
     const Outer = compDef({
@@ -1491,7 +1420,7 @@ describe('drawn() attachment and lifecycle', () => {
       draw: () => elem('section', 'outer')
     });
     try {
-      bind(host, elem('div', comp(Outer)));
+      bind(app, elem('div', comp(Outer)));
       expect(observed).toEqual([true]);
     } finally {
       bind(other, null);
@@ -1503,15 +1432,15 @@ describe('drawn() attachment and lifecycle', () => {
     const later = vi.fn();
     const First = compDef({
       draw: () => elem('span', 'first'),
-      drawn() { bind(host, null); }
+      drawn() { bind(app, null); }
     });
     const Second = compDef({
       draw: () => elem('span', 'second'),
       drawn: later
     });
-    bind(host, [comp(First), comp(Second)]);
+    bind(app, [comp(First), comp(Second)]);
     expect(later).not.toHaveBeenCalled();
-    expect(host.textContent).toBe('');
+    expect(app.textContent).toBe('');
   });
 
   test('a bind triggered by drawn cannot prematurely interleave queued hooks', () => {
@@ -1534,7 +1463,7 @@ describe('drawn() attachment and lifecycle', () => {
       }
     });
     try {
-      bind(host, comp(First));
+      bind(app, comp(First));
       expect(order).toEqual(['first start', 'first end', 'nested']);
     } finally {
       bind(other, null);
@@ -1556,8 +1485,6 @@ describe('drawn() attachment and lifecycle', () => {
 });
 
 test('reviving a keyed component preserves a queued surgical drawn() and cancels its pending removal', async () => {
-  const host = document.createElement('div');
-  document.body.appendChild(host);
 
   let root!: ReturnType<typeof comp>;
   let item!: ReturnType<typeof comp>;
@@ -1614,103 +1541,111 @@ test('reviving a keyed component preserves a queued surgical drawn() and cancels
   });
 
   try {
-    root = bind(host, comp(Parent));
+    root = bind(app, comp(Parent));
     const original = item;
     const element = item.el;
     expect(snapshots).toEqual(['first:initial']);
-
     // Queue parent removal BEFORE a surgical redraw of the same component.
     // sync() processes both before dispatching any drawn() callbacks.
     phase = 'removing';
     redraw(root);
     redraw(item, true);
     sync();
-
     expect(remove).toHaveBeenCalledTimes(1);
     expect(initialized).toHaveBeenCalledTimes(1);
     expect(removed).not.toHaveBeenCalled();
     expect(item).toBe(original);
     expect(item.el).toBe(element);
-    expect(host.querySelector('span')).toBe(element);
+    expect(app.querySelector('span')).toBe(element);
     expect(phase).toBe('revived');
     expect(requestedFollowup).toBe(true);
-
     // The follow-up scheduled by drawn() should run normally.
     sync();
-    expect(host.querySelector('span')?.textContent).toBe('follow-up');
+    expect(app.querySelector('span')?.textContent).toBe('follow-up');
     expect(snapshots).toContain('update:revived');
     expect(snapshots).toContain('update:follow-up');
-
     // Resolving the *old* remove() promise must not destroy the revived vnode.
     resolveRemoval();
     await Promise.resolve();
     sync();
-
     expect(removed).not.toHaveBeenCalled();
     expect(initialized).toHaveBeenCalledTimes(1);
     expect(item).toBe(original);
     expect(item.el).toBe(element);
-    expect(host.querySelector('span')?.textContent).toBe('follow-up');
+    expect(app.querySelector('span')?.textContent).toBe('follow-up');
     expect(item.el?.isConnected).toBe(true);
   } finally {
-    bind(host, null);
-    host.remove();
+    bind(app, null);
+    app.remove();
   }
 });
 
 describe('external DOM node ownership and reconciliation', () => {
-  test('preserves an external node when a preceding sibling is removed', () => {
-    const root = document.createElement('div');
+  test('removes external DOM nodes on unmount', () => {
     const content = document.createElement('div');
-    content.textContent = 'Content';
-    bind(root, [elem('div', 'Loading'), node(content)]);
-    bind(root, [node(content)]);
-    expect([...root.childNodes]).toEqual([content]);
-    expect(content.textContent).toBe('Content');
-    bind(root, null);
-    expect(root.childNodes).toHaveLength(0);
-  });
-
-  test('reorders external nodes by DOM identity', () => {
-    const root = document.createElement('div');
-    const a = document.createElement('a');
-    const b = document.createElement('b');
-    const c = document.createElement('i');
-    bind(root, [node(a), node(b), node(c)]);
-    bind(root, [node(c), node(a), node(b)]);
-    expect([...root.childNodes]).toEqual([c, a, b]);
-    bind(root, [node(b), node(c)]);
-    expect([...root.childNodes]).toEqual([b, c]);
-    expect(a.parentNode).toBeNull();
-    bind(root, null);
-    expect(root.childNodes).toHaveLength(0);
-  });
-
-  test('retains external DOM when it moves out of a removed component', () => {
-    const root = document.createElement('div');
-    const content = document.createElement('div');
-    const Inner = compDef({ draw: () => node(content) });
-    bind(root, comp(Inner));
-    bind(root, node(content));
-    expect([...root.childNodes]).toEqual([content]);
-    bind(root, null);
-    expect(root.childNodes).toHaveLength(0);
-  });
-
-  test('can reuse a cached node vnode without losing unmount ownership', () => {
-    const root = document.createElement('div');
-    const content = document.createElement('div');
-    const reused = node(content);
-    bind(root, [elem('div', 'Loading'), reused]);
-    bind(root, [reused]);
-    expect([...root.childNodes]).toEqual([content]);
-    bind(root, null);
-    expect(root.childNodes).toHaveLength(0);
+    bind(app, node(content));
+    expect(app.firstChild).toBe(content);
+    bind(app, null);
+    expect(app.childNodes).toHaveLength(0);
     expect(content.parentNode).toBeNull();
   });
 
-  test('preserves the real component redraw transition', () => {
-    const root = document.createElement('div');
+  test('replaces an external node with another external node', () => {
+    const a = document.createElement('a');
+    const b = document.createElement('b');
+    bind(app, node(a));
+    bind(app, node(b));
+    expect([...app.childNodes]).toEqual([b]);
+    expect(a.parentNode).toBeNull();
+  });
+
+  test('preserves an external node when a preceding sibling is removed', () => {
+    const content = document.createElement('div');
+    bind(app, [elem('div', 'Loading'), node(content)]);
+    bind(app, [node(content)]);
+    expect([...app.childNodes]).toEqual([content]);
+  });
+
+  test('reorders external nodes by DOM identity', () => {
+    const a = document.createElement('a');
+    const b = document.createElement('b');
+    const c = document.createElement('i');
+    bind(app, [node(a), node(b), node(c)]);
+    bind(app, [node(c), node(a), node(b)]);
+    expect([...app.childNodes]).toEqual([c, a, b]);
+    bind(app, [node(b), node(c)]);
+    expect([...app.childNodes]).toEqual([b, c]);
+    expect(a.parentNode).toBeNull();
+  });
+
+  test('retains external DOM when it moves out of a removed component', () => {
+    const content = document.createElement('div');
+    const Inner = compDef({ draw: () => node(content) });
+    bind(app, comp(Inner));
+    bind(app, node(content));
+    expect([...app.childNodes]).toEqual([content]);
+  });
+
+  test('retains external DOM when it moves out of a removed element', () => {
+    const content = document.createElement('div');
+    bind(app, elem('section', node(content)));
+    bind(app, elem('aside', node(content)));
+    expect(app.firstElementChild?.tagName).toBe('ASIDE');
+    expect(app.firstElementChild?.firstChild).toBe(content);
+    expect(app.childNodes).toHaveLength(1);
+  });
+
+  test('can reuse a cached node vnode without losing unmount ownership', () => {
+    const content = document.createElement('div');
+    const reused = node(content);
+    bind(app, [elem('div', 'Loading'), reused]);
+    bind(app, [reused]);
+    expect([...app.childNodes]).toEqual([content]);
+    bind(app, null);
+    expect(content.parentNode).toBeNull();
+  });
+
+  test('preserves an external node during a component redraw', () => {
     const content = document.createElement('div');
     let loading = true;
     const Content = compDef({
@@ -1720,13 +1655,72 @@ describe('external DOM node ownership and reconciliation', () => {
       ),
     });
     const vNode = comp(Content);
-    bind(root, vNode);
+    bind(app, vNode);
     loading = false;
     redraw(vNode, true);
     sync();
-    expect(root.querySelector('main')?.childNodes.length).toBe(1);
-    expect(root.querySelector('main')?.firstChild).toBe(content);
-    bind(root, null);
-    expect(root.childNodes).toHaveLength(0);
+    expect([...app.querySelector('main')!.childNodes]).toEqual([content]);
+  });
+
+  test('moves an external node between parent elements', () => {
+    const content = document.createElement('div');
+    bind(app, [
+      elem('section', node(content)),
+      elem('aside'),
+    ]);
+    bind(app, [
+      elem('section'),
+      elem('aside', node(content)),
+    ]);
+    expect(app.querySelector('section')?.childNodes).toHaveLength(0);
+    expect(app.querySelector('aside')?.firstChild).toBe(content);
+    bind(app, [
+      elem('section', node(content)),
+      elem('aside'),
+    ]);
+    expect(app.querySelector('section')?.firstChild).toBe(content);
+    expect(app.querySelector('aside')?.childNodes).toHaveLength(0);
+  });
+
+  test('preserves position when replacing a native DOM node', () => {
+    const container = document.createElement('div');
+    const first = document.createElement('span');
+    const second = document.createElement('span');
+    first.textContent = 'First';
+    second.textContent = 'Second';
+    bind(container, elem('div',
+      elem('span', 'Before'),
+      node(first),
+      elem('span', 'After')
+    ));
+    bind(container, elem('div',
+      elem('span', 'Before'),
+      node(second),
+      elem('span', 'After')
+    ));
+    const children = container.firstElementChild!.childNodes;
+    expect(children.length).toBe(3);
+    expect(children[0].textContent).toBe('Before');
+    expect(children[1]).toBe(second);
+    expect(children[2].textContent).toBe('After');
+    expect(first.isConnected).toBe(false);
+  });
+
+  test('preserves a native DOM node when replacing its parent', () => {
+    const container = document.createElement('div');
+    const canvas = document.createElement('canvas');
+    bind(container,
+        elem('section', node(canvas))
+    );
+    expect(canvas.parentElement?.tagName).toBe('SECTION');
+    bind(container,
+        elem('article', node(canvas))
+    );
+    expect(container.querySelector('article canvas')).toBe(canvas);
+    expect(canvas.parentElement?.tagName).toBe('ARTICLE');
+    bind(container, null);
+    expect(container.contains(canvas)).toBe(false);
+    expect(container.firstChild).toBeNull();
+    expect(canvas.isConnected).toBe(false);
   });
 });
