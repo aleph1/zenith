@@ -15,7 +15,10 @@ export declare const diff: {
     all: number;
 };
 export declare const sync: () => void;
-export declare const draw: (vNode: VNodeContainer, surgical?: boolean) => void;
+export declare const redraw: {
+    (vNode: VNodeContainer, surgical?: false): void;
+    (vNode: VNodeComp, surgical: true): void;
+};
 export declare const elem: {
     (tag: string): VNodeElem;
     (tag: string, attrs: VNodeElemAttributes, ...args: VNodeArray): VNodeElem;

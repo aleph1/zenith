@@ -16,4 +16,6 @@ export interface DerivedSignal<T> extends Signal<T> {
  * // In component cleanup:
  * removed: () => fullName.destroy()
  */
-export declare const derived: <T>(fn: () => T, deps: Signal<any>[]) => DerivedSignal<T>;
+export declare const derived: <T>(fn: () => T, deps: {
+    sub(fn: () => void): () => void;
+}[]) => DerivedSignal<T>;

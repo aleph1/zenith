@@ -1,8 +1,9 @@
 export declare const VNODE_ELEM = 1;
 export declare const VNODE_TEXT = 2;
-export declare const VNODE_COMP = 3;
-export declare const VNODE_NODE = 4;
-export declare const VNODE_COMPDEF = 5;
+export declare const VNODE_COMP = 4;
+export declare const VNODE_NODE = 8;
+export declare const VNODE_COMPDEF = 16;
+export declare const VNODE_TYPE_MASK = 31;
 export interface VNodeElemAttributes {
     class?: string | string[];
     style?: string | Record<string, string | number | null | undefined>;
@@ -16,13 +17,9 @@ export interface VNodeElemAttributes {
 export interface VNodeCompAttributes {
     $key?: string | number;
     $remove?: boolean;
-    to?: string | Element;
     [property: string]: any;
 }
 export type VNodeAttrs = VNodeElemAttributes | VNodeCompAttributes;
-export interface VNodeNodeAttributes {
-    [property: string]: any;
-}
 export interface VNodeCompDefinition<A extends VNodeCompAttributes = VNodeCompAttributes> {
     $t?: number;
     init?: (vNode: VNodeComp<A>) => void;
@@ -56,6 +53,7 @@ export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> 
     is: typeof VNODE_COMP;
     $t: number;
     $d: VNodeCompDefinition;
+    $r?: object | null;
     attrs: A;
     nodes: VNodeFlatArray;
     provide?: Record<string, any>;
