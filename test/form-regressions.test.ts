@@ -49,7 +49,6 @@ describe('select value and selectedIndex', () => {
     bind(container, view({ value: 'c', selectedIndex: 1 }));
     expect(select().selectedIndex).toBe(1);
     expect(select().value).toBe('b');
-
     bind(container, view({ value: 'a', selectedIndex: 2 }));
     expect(select().selectedIndex).toBe(2);
     expect(select().value).toBe('c');
@@ -65,7 +64,6 @@ describe('select value and selectedIndex', () => {
     bind(container, view({ selectedIndex: -1 }));
     expect(select().selectedIndex).toBe(-1);
     expect(select().value).toBe('');
-
     select().selectedIndex = 1;
     bind(container, view({ selectedIndex: -1 }));
     expect(select().selectedIndex).toBe(-1);
@@ -83,7 +81,6 @@ describe('select value and selectedIndex', () => {
     bind(container, view({ value: '' }, ['a', '', 'b']));
     expect(select().selectedIndex).toBe(1);
     expect(select().value).toBe('');
-
     select().selectedIndex = -1;
     bind(container, view({ value: '' }, ['a', '', 'b']));
     expect(select().selectedIndex).toBe(1);
@@ -98,7 +95,6 @@ describe('select value and selectedIndex', () => {
   test('a value becomes selectable when a matching option is added', () => {
     bind(container, view({ value: 'b' }, []));
     expect(select().selectedIndex).toBe(-1);
-
     bind(container, view({ value: 'b' }, ['a', 'b']));
     expect(select().value).toBe('b');
     expect(select().selectedIndex).toBe(1);
@@ -108,7 +104,6 @@ describe('select value and selectedIndex', () => {
     bind(container, view({ value: 'b' }));
     const original = select();
     original.value = 'a';
-
     bind(container, view({ value: 'b' }));
     expect(select()).toBe(original);
     expect(original.value).toBe('b');
@@ -118,7 +113,6 @@ describe('select value and selectedIndex', () => {
   test('an unchanged selectedIndex restores a user-modified selection', () => {
     bind(container, view({ selectedIndex: 2 }));
     select().selectedIndex = 0;
-
     bind(container, view({ selectedIndex: 2 }));
     expect(select().selectedIndex).toBe(2);
     expect(select().value).toBe('c');
@@ -127,12 +121,10 @@ describe('select value and selectedIndex', () => {
   test('controlled value survives option insertion and reordering', () => {
     bind(container, view({ value: 'b' }, ['a', 'b']));
     const original = select();
-
     bind(container, view({ value: 'b' }, ['c', 'a', 'b']));
     expect(select()).toBe(original);
     expect(select().value).toBe('b');
     expect(select().selectedIndex).toBe(2);
-
     bind(container, view({ value: 'b' }, ['b', 'c', 'a']));
     expect(select().value).toBe('b');
     expect(select().selectedIndex).toBe(0);
@@ -141,7 +133,6 @@ describe('select value and selectedIndex', () => {
   test('controlled selectedIndex follows option positions after changes', () => {
     bind(container, view({ selectedIndex: 1 }, ['a', 'b']));
     expect(select().value).toBe('b');
-
     bind(container, view({ selectedIndex: 1 }, ['c', 'a', 'b']));
     expect(select().selectedIndex).toBe(1);
     expect(select().value).toBe('a');
@@ -151,7 +142,6 @@ describe('select value and selectedIndex', () => {
     bind(container, view());
     const original = select();
     original.value = 'c';
-
     bind(container, view());
     expect(select()).toBe(original);
     expect(original.value).toBe('c');
@@ -160,7 +150,6 @@ describe('select value and selectedIndex', () => {
   test('omitting a previously controlled value leaves selection to the browser', () => {
     bind(container, view({ value: 'b' }));
     select().value = 'c';
-
     bind(container, view());
     expect(select().value).toBe('c');
   });
@@ -168,16 +157,12 @@ describe('select value and selectedIndex', () => {
   test('$diff respects attribute updates on a controlled select', () => {
     bind(container, view({ value: 'b' }));
     expect(select().value).toBe('b');
-
     bind(container, view({ value: 'c', $diff: diff.nodes }));
     expect(select().value).toBe('b');
-
     bind(container, view({ value: 'c', $diff: diff.self }));
     expect(select().value).toBe('c');
-
     bind(container, view({ value: 'a', $diff: diff.none }));
     expect(select().value).toBe('c');
-
     bind(container, view({ value: 'a', $diff: diff.all }));
     expect(select().value).toBe('a');
   });
@@ -241,57 +226,41 @@ describe('select value and selectedIndex', () => {
     select.value = 'a';
     bind(container, render(['b', 'c', 'a']));
     expect(select.value).toBe('b');
-    bind(container, null);
   });
 
   test('treats an explicitly undefined select value as uncontrolled', () => {
     const container = document.createElement('div');
-
     const render = (value?: string) =>
         elem('select', { value },
             elem('option', { value: 'a' }, 'A'),
             elem('option', { value: 'b' }, 'B')
         );
-
     bind(container, render(undefined));
-
     const select = container.querySelector('select')!;
     expect(select.value).toBe('a');
-
     select.value = 'b';
     bind(container, render(undefined));
-
     expect(select.value).toBe('b');
-
-    bind(container, null);
   });
 
   test('relinquishes control when select value becomes undefined', () => {
     const container = document.createElement('div');
-
     const render = (value?: string) =>
       elem('select', { value },
         elem('option', { value: 'a' }, 'A'),
         elem('option', { value: 'b' }, 'B')
     );
-
     bind(container, render('b'));
-
     const select = container.querySelector('select')!;
     expect(select.value).toBe('b');
-
     bind(container, render(undefined));
     expect(select.value).toBe('b');
-
     select.value = 'a';
     bind(container, render(undefined));
     expect(select.value).toBe('a');
-
     // Explicitly controlling it again restores the requested value.
     bind(container, render('b'));
     expect(select.value).toBe('b');
-
-    bind(container, null);
   });
 });
 
@@ -310,12 +279,10 @@ describe('controlled and uncontrolled form properties', () => {
 
   for (const tag of ['input', 'textarea']) {
     const field = () => container.querySelector(tag) as HTMLInputElement | HTMLTextAreaElement;
-
     test(`${tag}: unchanged controlled value restores a user edit`, () => {
       bind(container, elem(tag, { value: 'initial' }));
       const original = field();
       original.value = 'user typed';
-
       bind(container, elem(tag, { value: 'initial' }));
       expect(field()).toBe(original);
       expect(original.value).toBe('initial');
@@ -325,7 +292,6 @@ describe('controlled and uncontrolled form properties', () => {
       bind(container, elem(tag, { value: 'first' }));
       const original = field();
       original.value = 'user typed';
-
       bind(container, elem(tag, { value: 'second' }));
       expect(field()).toBe(original);
       expect(original.value).toBe('second');
@@ -335,7 +301,6 @@ describe('controlled and uncontrolled form properties', () => {
       bind(container, elem(tag));
       const original = field();
       original.value = 'user typed';
-
       bind(container, elem(tag));
       expect(field()).toBe(original);
       expect(original.value).toBe('user typed');
@@ -345,7 +310,6 @@ describe('controlled and uncontrolled form properties', () => {
       bind(container, elem(tag, { value: undefined }));
       const original = field();
       original.value = 'user typed';
-
       bind(container, elem(tag, { value: undefined }));
       expect(field()).toBe(original);
       expect(original.value).toBe('user typed');
@@ -355,12 +319,10 @@ describe('controlled and uncontrolled form properties', () => {
       bind(container, elem(tag, { value: 'initial' }));
       const original = field();
       original.value = 'user typed';
-
       bind(container, elem(tag, { value: undefined }));
       expect(original.value).toBe('user typed');
       bind(container, elem(tag, { value: undefined }));
       expect(original.value).toBe('user typed');
-
       bind(container, elem(tag, { value: 'restored' }));
       expect(original.value).toBe('restored');
     });
@@ -370,7 +332,6 @@ describe('controlled and uncontrolled form properties', () => {
       const original = field();
       expect(original.value).toBe('42');
       original.value = '4';
-
       bind(container, elem(tag, { value: 42 }));
       expect(original.value).toBe('42');
     });
@@ -380,7 +341,6 @@ describe('controlled and uncontrolled form properties', () => {
     bind(container, elem('input', { value: '12345' }));
     const input = container.querySelector('input')!;
     input.setSelectionRange(2, 2);
-
     bind(container, elem('input', { value: 12345 }));
     expect(input.value).toBe('12345');
     expect(input.selectionStart).toBe(2);
@@ -392,7 +352,6 @@ describe('controlled and uncontrolled form properties', () => {
       type: 'file', value: 'not-a-file'
     }))).not.toThrow();
     expect((container.querySelector('input') as HTMLInputElement).value).toBe('');
-
     bind(container, elem('input', { type: 'file', value: '' }));
     expect((container.querySelector('input') as HTMLInputElement).value).toBe('');
   });
@@ -461,7 +420,6 @@ describe('controlled and uncontrolled form properties', () => {
     expect(option.getAttribute('value')).toBe('');
     expect(option.value).toBe('');
     expect(select.selectedIndex).toBe(0);
-
     bind(container, view('Renamed'));
     expect(option.value).toBe('');
     expect(select.selectedIndex).toBe(0);
@@ -472,11 +430,9 @@ describe('controlled and uncontrolled form properties', () => {
       bind(container, elem('input', { type, checked: true }));
       const input = container.querySelector('input')!;
       expect(input.checked).toBe(true);
-
       input.checked = false;
       bind(container, elem('input', { type, checked: true }));
       expect(input.checked).toBe(true);
-
       bind(container, elem('input', { type, checked: false }));
       expect(input.checked).toBe(false);
       bind(container, null);
@@ -493,7 +449,6 @@ describe('controlled and uncontrolled form properties', () => {
     option.selected = false;
     bind(container, view(true));
     expect(option.selected).toBe(true);
-
     bind(container, view(false));
     expect(option.selected).toBe(false);
   });
