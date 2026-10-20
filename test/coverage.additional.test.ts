@@ -59,7 +59,7 @@ describe('Focus and input events', () => {
     expect(button.textContent).toBe('1');
   });
 
-  test('e.draw = false suppresses the automatic event redraw', () => {
+  test('e.redraw = false suppresses the automatic event redraw', () => {
     let count = 0;
     const View = compDef({
       draw: () => elem('button', { onclick: () => { count++; } }, String(count)),
