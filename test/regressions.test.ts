@@ -447,7 +447,6 @@ describe('Namespace propagation', () => {
 describe('Reconciliation and diff flags', () => {
   test('keyed insert, remove and reorder in one update preserves surviving DOM nodes', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     let keys = ['a', 'b', 'c', 'd'];
     const View = compDef({ draw: () => elem('ul', keys.map(k => elem('li', { $key: k }, k))) });
     const view = comp(View);
@@ -466,7 +465,6 @@ describe('Reconciliation and diff flags', () => {
 
   test('repeated keyed transitions preserve order and surviving identity', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     let keys = ['a', 'b'];
     const View = compDef({ draw: () => elem('ul', keys.map(k => elem('li', { $key: k }, k))) });
     const view = comp(View);
@@ -490,7 +488,6 @@ describe('Reconciliation and diff flags', () => {
 
   test('$diff: self updates attrs but preserves existing children', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     let mode = diff.all;
     let title = 'a';
     let content = 'old';
@@ -508,7 +505,6 @@ describe('Reconciliation and diff flags', () => {
 
   test('$diff: nodes updates children but preserves attributes', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     let mode = diff.all;
     let title = 'a';
     let content = 'old';
@@ -524,7 +520,6 @@ describe('Reconciliation and diff flags', () => {
 
   test('$diff: none preserves attrs and children, then all resumes updates', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     let mode = diff.all;
     let title = 'a';
     let content = 'old';
@@ -547,7 +542,6 @@ describe('Reconciliation and diff flags', () => {
 describe('Scheduling and lifecycle', () => {
   test('multiple queued draw calls coalesce into a single render', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     let count = 0;
     const render = vi.fn(() => elem('span', String(count)));
     const View = compDef({ draw: render });
@@ -564,7 +558,6 @@ describe('Scheduling and lifecycle', () => {
 
   test('mount and synchronous removal invoke lifecycle hooks in order', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     const calls: string[] = [];
     const Child = compDef({
       init: () => { calls.push('init'); },
@@ -586,7 +579,6 @@ describe('Scheduling and lifecycle', () => {
 
   test('redrawing an existing component invokes draw before drawn(false)', () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
     const calls: string[] = [];
     const View = compDef({
       draw: () => { calls.push('draw'); return elem('span', 'value'); },
@@ -601,23 +593,18 @@ describe('Scheduling and lifecycle', () => {
 
   test('Deferred removal resolves after parent is removed', async () => {
     document.body.innerHTML = '<div id="app"></div>';
-    const app = document.querySelector('#app');
-
     let resolveRemoval!: () => void;
     let showChild = true;
     let showParent = true;
-
     const remove = vi.fn(() => new Promise<void>(resolve => {
       resolveRemoval = resolve;
     }));
     const removed = vi.fn();
-
     const Child = compDef({
       draw: () => elem('span', 'child'),
       remove,
       removed,
     });
-
     const Parent = compDef({
       draw: () => elem('div',
         ...(showChild
@@ -625,38 +612,31 @@ describe('Scheduling and lifecycle', () => {
           : [elem('b', { $key: 'keep' }, 'keep')])
       ),
     });
-
     const Root = compDef({
       draw: () => showParent
         ? comp(Parent)
         : elem('p', 'replacement'),
     });
-
     const root = comp(Root);
     bind(app, root);
-
     const parent = root.nodes[0] as ReturnType<typeof comp>;
-
-    // Begin deferred removal.
+    // Begin deferred removal
     showChild = false;
     redraw(parent, true);
     sync();
     expect(remove).toHaveBeenCalledTimes(1);
     expect(app.querySelector('span')).not.toBeNull();
-
-    // Remove the parent before the Promise resolves.
+    // Remove the parent before the Promise resolves
     showParent = false;
     redraw(root);
     sync();
     expect(app.querySelector('div')).toBeNull();
     expect(app.querySelector('p')?.textContent).toBe('replacement');
-
-    // Complete the deferred removal.
+    // Complete the deferred removal
     resolveRemoval();
     await Promise.resolve();
     sync();
-
-    // The replacement must remain unaffected.
+    // The replacement must remain unaffected
     expect(app.querySelector('p')?.textContent).toBe('replacement');
     expect(app.querySelector('span')).toBeNull();
     expect(remove).toHaveBeenCalledTimes(1);
@@ -664,25 +644,20 @@ describe('Scheduling and lifecycle', () => {
   });
 });
 
-
 describe('Focus preservation', () => {
   test('redrawing an input preserves focus and selection', () => {
     let label = 'Before';
-
     const View = compDef({
       draw: () => elem('div',
         elem('input', { value: 'Hello world' }),
         elem('span', label)
       )
     });
-
     const view = comp(View);
     bind(app, view);
-
     const input = app.querySelector('input')!;
     input.focus();
     input.setSelectionRange(3, 7);
-
     label = 'After';
     redraw(view);
     sync();
@@ -694,7 +669,6 @@ describe('Focus preservation', () => {
 
   test('reordering keyed siblings preserves input focus', () => {
     let reversed = false;
-
     const View = compDef({
       draw: () => elem('div',
         (reversed ? ['b', 'a'] : ['a', 'b']).map(key =>
@@ -702,13 +676,10 @@ describe('Focus preservation', () => {
         )
       )
     });
-
     const view = comp(View);
     bind(app, view);
-
     const input = app.querySelectorAll('input')[0];
     input.focus();
-
     reversed = true;
     redraw(view);
     sync();
@@ -720,18 +691,14 @@ describe('Focus preservation', () => {
     const Child = compDef({
       draw: () => elem('input', { value: 'Hello world' })
     });
-
     const Parent = compDef({
       draw: () => elem('section', comp(Child))
     });
-
     const parent = comp(Parent);
     bind(app, parent);
-
     const input = app.querySelector('input')!;
     input.focus();
     input.setSelectionRange(2, 5);
-
     redraw(parent);
     sync();
     expect(app.querySelector('input')).toBe(input);
@@ -742,7 +709,6 @@ describe('Focus preservation', () => {
 
   test('drawn hook can intentionally move focus', () => {
     let moveFocus = false;
-
     const View = compDef({
       draw: () => elem('div',
         elem('input', { id: 'first' }),
@@ -754,16 +720,12 @@ describe('Focus preservation', () => {
         }
       }
     });
-
     const view = comp(View);
     bind(app, view);
-
     const first = app.querySelector<HTMLInputElement>('#first')!;
     const second = app.querySelector<HTMLInputElement>('#second')!;
-
     first.focus();
     expect(document.activeElement).toBe(first);
-
     moveFocus = true;
     redraw(view);
     sync();
@@ -774,22 +736,17 @@ describe('Focus preservation', () => {
     const original = document.createElement('input');
     const other = document.createElement('button');
     document.body.append(original, other);
-
     let moveFocus = false;
-
     const View = compDef({
       draw: () => elem('span', 'content'),
       drawn: () => {
         if (moveFocus) other.focus();
       }
     });
-
     const view = comp(View);
     bind(app, view);
-
     original.focus();
     expect(document.activeElement).toBe(original);
-
     moveFocus = true;
     redraw(view);
     sync();
@@ -798,7 +755,6 @@ describe('Focus preservation', () => {
 
   test('replacing a focused input does not restore focus to the removed element', () => {
     let replace = false;
-
     const View = compDef({
       draw: () => elem('div',
         replace
@@ -806,13 +762,10 @@ describe('Focus preservation', () => {
           : elem('input')
       )
     });
-
     const view = comp(View);
     bind(app, view);
-
     const input = app.querySelector('input')!;
     input.focus();
-
     replace = true;
     redraw(view);
     sync();
@@ -884,50 +837,40 @@ describe('bound root container', () => {
 
   test('preserves the binding container across nested keyed redraws', () => {
     let ids: number[] = [];
-
     const Row = compDef({
       draw: vnode => elem('tr',
         elem('td', vnode.attrs.id)
       )
     });
-
     const Rows = compDef({
       draw: () => ids.map(id =>
         comp(Row, { $key: id, id })
       )
     });
-
     const root = bind(tbody, comp(Rows));
-
     const update = (next: number[]) => {
       ids = next;
       redraw(root);
       sync();
     };
-
     const rendered = () =>
       Array.from(tbody.querySelectorAll('td'),
         td => td.textContent
       );
-
     expect(root.el).toBe(tbody);
-
     // Empty component gains multiple roots.
     update([1, 2, 3]);
     expect(rendered()).toEqual(['1', '2', '3']);
     expect(root.el).toBe(tbody);
-
-    // Keyed reordering.
+    // Keyed reordering
     update([1, 3, 2]);
     expect(rendered()).toEqual(['1', '3', '2']);
     expect(root.el).toBe(tbody);
-
-    // All roots disappear.
+    // All roots disappear
     update([]);
     expect(rendered()).toEqual([]);
     expect(root.el).toBe(tbody);
-
-    // New roots appear again.
+    // New roots appear again
     update([4, 5, 6]);
     expect(rendered()).toEqual(['4', '5', '6']);
     expect(root.el).toBe(tbody);
@@ -1683,22 +1626,21 @@ describe('external DOM node ownership and reconciliation', () => {
   });
 
   test('preserves position when replacing a native DOM node', () => {
-    const container = document.createElement('div');
     const first = document.createElement('span');
     const second = document.createElement('span');
     first.textContent = 'First';
     second.textContent = 'Second';
-    bind(container, elem('div',
+    bind(app, elem('div',
       elem('span', 'Before'),
       node(first),
       elem('span', 'After')
     ));
-    bind(container, elem('div',
+    bind(app, elem('div',
       elem('span', 'Before'),
       node(second),
       elem('span', 'After')
     ));
-    const children = container.firstElementChild!.childNodes;
+    const children = app.firstElementChild!.childNodes;
     expect(children.length).toBe(3);
     expect(children[0].textContent).toBe('Before');
     expect(children[1]).toBe(second);
@@ -1707,20 +1649,20 @@ describe('external DOM node ownership and reconciliation', () => {
   });
 
   test('preserves a native DOM node when replacing its parent', () => {
-    const container = document.createElement('div');
     const canvas = document.createElement('canvas');
-    bind(container,
+    bind(app,
         elem('section', node(canvas))
     );
     expect(canvas.parentElement?.tagName).toBe('SECTION');
-    bind(container,
+    bind(app,
         elem('article', node(canvas))
     );
-    expect(container.querySelector('article canvas')).toBe(canvas);
+    expect(app.querySelector('article canvas')).toBe(canvas);
     expect(canvas.parentElement?.tagName).toBe('ARTICLE');
-    bind(container, null);
-    expect(container.contains(canvas)).toBe(false);
-    expect(container.firstChild).toBeNull();
+    bind(app, null);
+    expect(app.contains(canvas)).toBe(false);
+    expect(app.firstChild).toBeNull();
     expect(canvas.isConnected).toBe(false);
   });
+});
 });
