@@ -72,6 +72,7 @@ const DEBUG = window.DEBUG ?? false;
 // ----------------------------------------
 
 const boundNodes = new WeakMap();
+const externalOwners = new WeakMap<Element, VNodeNode>();
 const redrawQueue = new Set<VNodeAny>();
 const drawnQueue: (VNodeComp | boolean)[] = [];
 let renderDepth = 0;
@@ -254,6 +255,10 @@ const _flatten = (
         node = _vNode<VNodeText>(
           VNODE_TEXT, '' + node, null, null, null
         );
+      } else if (node.is & VNODE_NODE) {
+        // An externally managed DOM node can be reused via the same vnode
+        // object on future renders. Each mount needs its own ownership token.
+        node = _vNode<VNodeNode>(VNODE_NODE, null, null, null, null, node.el);
       }
       const keyed = !!(node.attrs && '$key' in node.attrs);
       if (arr.length && keyed !== !!arr.$keys) {
@@ -371,7 +376,11 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
   } else if (newNodeType === VNODE_NODE) {
     if (newNode.el !== oldNode.el) {
       parentEl.insertBefore(newNode.el, oldNode.el);
-      oldNode.el.remove();
+      const oldExternal = oldNode as VNodeNode;
+      if (externalOwners.get(oldExternal.el) === oldExternal) {
+        oldExternal.el.remove();
+        externalOwners.delete(oldExternal.el);
+      }
     }
     return newNode;
   }
@@ -384,6 +393,16 @@ const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNo
 const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: VNodeFlatArray, oldNodes: VNodeFlatArray, xmlns?: string, anchor: Node | null = null): void => {
   const newNodesLength = newNodes.length;
   const oldNodesLength = oldNodes.length;
+  // Transfer external-node ownership before disposing of any previous vnodes.
+  let hasExternal = false;
+  for (let i = 0; i < newNodesLength; i++) {
+    const vNode = newNodes[i];
+    if (vNode.is & VNODE_NODE) {
+      const external = vNode as VNodeNode;
+      externalOwners.set(external.el, external);
+      hasExternal = true;
+    }
+  }
   if (newNodesLength) {
     let oldNode;
     let newNode;
@@ -446,6 +465,13 @@ const _updateNodes = (parentNode: VNodeContainer, parentEl: Element, newNodes: V
           }
         }
         for (let i = newNodesLength; i < oldNodesLength; i++) _remove(oldNodes[i]);
+        // An external node has stable identity even if unkeyed siblings move.
+        if (hasExternal) {
+          let next: Node | null = anchor;
+          for (let i = newNodesLength - 1; i >= 0; i--) {
+            next = _place(newNodes[i], parentEl, next);
+          }
+        }
       }
     } else {
       for (; i < newNodesLength; i++) _create(parentNode, parentEl, newNodes[i], xmlns, anchor);
@@ -608,7 +634,9 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     vNode.el = _nextRoot(vNode.nodes, 0, null);
     if (vNode.$d.drawn) drawnQueue.push(vNode, true);
   } else if (vNode.is & VNODE_NODE) {
-    parentEl.insertBefore(vNode.el, anchor);
+    const external = vNode as VNodeNode;
+    externalOwners.set(external.el, external);
+    parentEl.insertBefore(external.el, anchor);
   }
 };
 
@@ -649,7 +677,13 @@ const _detach = (vNode: VNodeAny, skipRemove?: boolean): void => {
       _detach(vNode.nodes[i], skipRemove || (vNode.is & VNODE_ELEM));
     }
   }
-  if (!skipRemove && vNode.el && !(vNode.is & VNODE_COMP)) {
+  if (vNode.is & VNODE_NODE) {
+    const external = vNode as VNodeNode;
+    if (externalOwners.get(external.el) === external) {
+      externalOwners.delete(external.el);
+      if (!skipRemove) external.el.remove();
+    }
+  } else if (!skipRemove && vNode.el && !(vNode.is & VNODE_COMP)) {
     vNode.el.remove();
   }
   if (vNode.is & VNODE_COMP) {

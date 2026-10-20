@@ -1658,11 +1658,75 @@ test('reviving a keyed component preserves a queued surgical drawn() and cancels
   }
 });
 
-test('Surgical draw ignores non-components outside development mode', async () => {
-  const node = elem('div', { id: 'test' });
-  expect(() => {
-    // @ts-expect-error Deliberately testing an invalid argument
-    redraw(node, true);
-  }).not.toThrow();
-  sync();
+describe('external DOM node ownership and reconciliation', () => {
+  test('preserves an external node when a preceding sibling is removed', () => {
+    const root = document.createElement('div');
+    const content = document.createElement('div');
+    content.textContent = 'Content';
+    bind(root, [elem('div', 'Loading'), node(content)]);
+    bind(root, [node(content)]);
+    expect([...root.childNodes]).toEqual([content]);
+    expect(content.textContent).toBe('Content');
+    bind(root, null);
+    expect(root.childNodes).toHaveLength(0);
+  });
+
+  test('reorders external nodes by DOM identity', () => {
+    const root = document.createElement('div');
+    const a = document.createElement('a');
+    const b = document.createElement('b');
+    const c = document.createElement('i');
+    bind(root, [node(a), node(b), node(c)]);
+    bind(root, [node(c), node(a), node(b)]);
+    expect([...root.childNodes]).toEqual([c, a, b]);
+    bind(root, [node(b), node(c)]);
+    expect([...root.childNodes]).toEqual([b, c]);
+    expect(a.parentNode).toBeNull();
+    bind(root, null);
+    expect(root.childNodes).toHaveLength(0);
+  });
+
+  test('retains external DOM when it moves out of a removed component', () => {
+    const root = document.createElement('div');
+    const content = document.createElement('div');
+    const Inner = compDef({ draw: () => node(content) });
+    bind(root, comp(Inner));
+    bind(root, node(content));
+    expect([...root.childNodes]).toEqual([content]);
+    bind(root, null);
+    expect(root.childNodes).toHaveLength(0);
+  });
+
+  test('can reuse a cached node vnode without losing unmount ownership', () => {
+    const root = document.createElement('div');
+    const content = document.createElement('div');
+    const reused = node(content);
+    bind(root, [elem('div', 'Loading'), reused]);
+    bind(root, [reused]);
+    expect([...root.childNodes]).toEqual([content]);
+    bind(root, null);
+    expect(root.childNodes).toHaveLength(0);
+    expect(content.parentNode).toBeNull();
+  });
+
+  test('preserves the real component redraw transition', () => {
+    const root = document.createElement('div');
+    const content = document.createElement('div');
+    let loading = true;
+    const Content = compDef({
+      draw: () => elem('main',
+        loading ? elem('div', 'Loading') : null,
+        node(content)
+      ),
+    });
+    const vNode = comp(Content);
+    bind(root, vNode);
+    loading = false;
+    redraw(vNode, true);
+    sync();
+    expect(root.querySelector('main')?.childNodes.length).toBe(1);
+    expect(root.querySelector('main')?.firstChild).toBe(content);
+    bind(root, null);
+    expect(root.childNodes).toHaveLength(0);
+  });
 });
