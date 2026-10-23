@@ -187,6 +187,7 @@ export const redraw: {
   (vNode: VNodeContainer, surgical?: false): void;
   (vNode: VNodeComp, surgical: true): void;
 } = (vNode: VNodeContainer, surgical = false): void => {
+  const wasEmpty = redrawQueue.size === 0;
   if (surgical) {
     if (!(vNode.is & VNODE_COMP)) {
       if (DEBUG) throw new Error('Surgical redraw requires a component vnode');
@@ -211,10 +212,7 @@ export const redraw: {
       }
     }
   }
-
-  if (redrawQueue.size === 1) {
-    Promise.resolve().then(sync);
-  }
+  if (wasEmpty) Promise.resolve().then(sync);
 };
 
 const _vNode = <T extends VNodeAny>(
@@ -674,7 +672,7 @@ const _unmount = (vNode: VNodeAny): void => {
 const _detach = (vNode: VNodeAny, skipRemove?: boolean): void => {
   if (vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
-      _detach(vNode.nodes[i], skipRemove || (vNode.is & VNODE_ELEM));
+      _detach(vNode.nodes[i], skipRemove || !!(vNode.is & VNODE_ELEM));
     }
   }
   if (vNode.is & VNODE_NODE) {
@@ -717,8 +715,8 @@ const _remove = (vNode: VNodeAny): boolean => {
       }
       const token = vNode.$r = {};
       const deferredDestroy = () => {
-        if (vNode.$r === token && vNode.is & FLAG_IS_REMOVING) {
-          vNode.$r = null;
+        if ((vNode as VNodeComp).$r === token && vNode.is & FLAG_IS_REMOVING) {
+          (vNode as VNodeComp).$r = null;
           const parent = vNode.$p;
           if (DEBUG && !parent) {
             console.warn(
@@ -828,7 +826,7 @@ export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null)
   root.attrs = { $nodes: vNodeAnyOrArray };
   root.is |= FLAG_IS_ACTIVE;
   boundNodes.set(root.el = el, root);
-  redraw(root);
+  redrawQueue.add(root);
   sync();
   return root;
 };
