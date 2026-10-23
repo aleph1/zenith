@@ -1,4 +1,4 @@
-/*! Zenith Helpers 1.0.0-rc.1 | MIT License | ©2022-2025 Daniel Barber */
+/*! Zenith Helpers 1.0.0-rc.2 | MIT License | ©2022-2025 Daniel Barber */
 import { node, redraw as redraw$1 } from './zenith.js';
 
 const keep = () => true;

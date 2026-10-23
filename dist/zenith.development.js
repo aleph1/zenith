@@ -1,4 +1,4 @@
-/*! Zenith 1.0.0-rc.1 | MIT License | ©2022-2025 Daniel Barber */
+/*! Zenith 1.0.0-rc.2 | MIT License | ©2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 4;
