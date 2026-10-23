@@ -1,17 +1,17 @@
 # Zenith
 
-Zenith is a tiny reactive JavaScript framework with a virtual DOM, keyed reconciliation, and targeted component redraws. Its rendering model can update an entire application or a specific component, which is useful when parts of a page manage their own content, such as canvas, WebGL, and SVG interfaces.
+Zenith is a tiny JavaScript virtual DOM framework with keyed reconciliation and targeted component redraws. Its rendering model can update an entire application or a specific component, making it easy to integrate independently managed content such as canvas, WebGL, and SVG interfaces.
 
 Zenith supports component lifecycle hooks, memoization, DOM events, SVG and MathML, and optional helpers. It is inspired by [Mithril.js](https://github.com/MithrilJS/mithril.js).
 
-**Status:** Zenith is currently in beta. We aim to keep the API stable through 1.0.0, but breaking changes may still occur during the beta period.
+**Status:** Zenith 1.0.0 is currently in release candidate. The API is expected to remain stable through the final 1.0 release, with changes focused primarily on bug fixes.
 
 ## Installation
 
-Install the beta package:
+Install the release candidate:
 
 ```sh
-npm install zenith@beta
+npm install zenith@rc
 ```
 
 Import the functions you need:
@@ -20,7 +20,7 @@ Import the functions you need:
 import { bind, comp, compDef, elem } from 'zenith';
 ```
 
-Prebuilt browser files are also included in `dist/`. The `zenith.global.js` build is intended for direct browser use; the `zenith.js` build is an ES module.
+Prebuilt browser files are also included in `dist/`. The `zenith.js` build is an ES module, while `zenith.global.js` exposes the Zenith API through window.z for direct browser use.
 
 ## Example: counter
 
@@ -50,14 +50,14 @@ Prebuilt browser files are also included in `dist/`. The `zenith.global.js` buil
 </html>
 ```
 
-The example assumes an environment that resolves npm package imports, such as a bundler or development server. Event handlers automatically schedule a redraw unless the event's `draw` property is set to `false`.
+The example assumes an environment that resolves npm package imports, such as a bundler or development server. Event handlers automatically schedule a redraw unless the event's `redraw` property is set to `false`.
 
 ## Components and redraws
 
-Create components with `compDef()` and `comp()`, then mount them using `bind()`. Call `draw()` when external state changes outside an event handler:
+Create components with `compDef()` and `comp()`, then mount them using `bind()`. Call `redraw()` when application state changes outside an event handler:
 
 ```js
-import { bind, comp, compDef, draw, elem } from 'zenith';
+import { bind, comp, compDef, redraw, elem } from 'zenith';
 
 let message = 'Hello';
 
@@ -69,19 +69,21 @@ const view = comp(Message);
 bind(document.querySelector('#app'), view);
 
 message = 'Updated';
-draw(view);
+redraw(view);
 ```
 
-Redraws are scheduled in a microtask. Call `sync()` if you need to apply queued redraws immediately. `draw(view, true)` requests a targeted redraw of a component.
+Redraws are batched and scheduled in a microtask. Call `sync()` to apply queued redraws immediately. Use `redraw(view, true)` to redraw only the specified component subtree.
 
-Component definitions can use `init`, `draw`, `drawn`, `remove`, and `removed` lifecycle hooks. `remove` may return a Promise to defer removal. Components also support optional memoization through `$memo`.
+Component definitions support `init`, `draw`, `drawn`, `remove`, and `removed` lifecycle hooks. The `remove` hook may return a Promise to defer removal; deferred removal requires keyed components. Components also support optional memoization through `$memo`.
+
+Zenith does not manage application state or automatically track dependencies. State can be stored and updated using ordinary JavaScript, external state managers, or optional helpers.
 
 ## Package builds
 
 The npm package includes prebuilt files under `dist/`, including:
 
 - `zenith.js` — ES module
-- `zenith.global.js` — global browser build
+- `zenith.global.js` — browser build exposing window.z
 - `zenith.development.js` — development build
 - `zenith-helpers.js` — optional helpers (import from `zenith/helpers`)
 
@@ -89,7 +91,7 @@ The library is designed for a very small compressed footprint; actual size depen
 
 ## Documentation
 
-Additional information: [Zenith website](https://aleph-1.com/zenith) (work in progress).
+Additional information: [Zenith website](https://aleph-1.com/zenith).
 
 Report bugs and request features through [GitHub Issues](https://github.com/aleph1/Zenith/issues).
 
