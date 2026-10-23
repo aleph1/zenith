@@ -602,6 +602,7 @@ const _setSelectAttributes = (vNode: VNodeElem): void => {
 
 const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny, xmlns?: string, anchor: Node | null = null): void => {
   if (vNode.is & VNODE_ELEM) {
+    vNode = vNode as VNodeElem;
     vNode.$p = parentNode;
     xmlns = vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
     vNode.el = xmlns
