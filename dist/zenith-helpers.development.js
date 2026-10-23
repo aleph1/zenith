@@ -1,4 +1,4 @@
-/*! Zenith Helpers 1.0.0-beta.18 | MIT License | ©2022-2025 Daniel Barber */
+/*! Zenith Helpers 1.0.0-rc.1 | MIT License | ©2022-2025 Daniel Barber */
 import { node, redraw as redraw$1 } from './zenith.js';
 
 const keep = () => true;
@@ -219,6 +219,7 @@ const sync = () => {
   }
 };
 const redraw = (vNode, surgical = false) => {
+  const wasEmpty = redrawQueue.size === 0;
   if (surgical) {
     if (!(vNode.is & VNODE_COMP)) {
       throw new Error("Surgical redraw requires a component vnode");
@@ -238,9 +239,7 @@ const redraw = (vNode, surgical = false) => {
       }
     }
   }
-  if (redrawQueue.size === 1) {
-    Promise.resolve().then(sync);
-  }
+  if (wasEmpty) Promise.resolve().then(sync);
 };
 const _vNode = (is, $t, $d, attrs, nodes, el = null) => ({
   is,
@@ -565,6 +564,7 @@ const _setSelectAttributes = (vNode) => {
 };
 const _create = (parentNode, parentEl, vNode, xmlns, anchor = null) => {
   if (vNode.is & VNODE_ELEM) {
+    vNode = vNode;
     vNode.$p = parentNode;
     xmlns = vNode.attrs.xmlns || ns[vNode.$t] || xmlns;
     vNode.el = xmlns ? vNode.attrs.is ? document.createElementNS(xmlns, vNode.$t, { is: vNode.attrs.is }) : document.createElementNS(xmlns, vNode.$t) : vNode.attrs.is ? document.createElement(vNode.$t, { is: vNode.attrs.is }) : document.createElement(vNode.$t);
@@ -631,7 +631,7 @@ const _unmount = (vNode) => {
 const _detach = (vNode, skipRemove) => {
   if (vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
-      _detach(vNode.nodes[i], skipRemove || vNode.is & VNODE_ELEM);
+      _detach(vNode.nodes[i], skipRemove || !!(vNode.is & VNODE_ELEM));
     }
   }
   if (vNode.is & VNODE_NODE) {
@@ -748,7 +748,7 @@ const bind = (el, vNodeAnyOrArray) => {
   root.attrs = { $nodes: vNodeAnyOrArray };
   root.is |= FLAG_IS_ACTIVE;
   boundNodes.set(root.el = el, root);
-  redraw(root);
+  redrawQueue.add(root);
   sync();
   return root;
 };
