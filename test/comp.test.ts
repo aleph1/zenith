@@ -857,3 +857,123 @@ describe('content outlet convention', () => {
     bind(container, null);
   });
 });
+
+
+describe('Component state initialization', () => {
+  test('uses state returned by init before the first draw', () => {
+    const container = document.createElement('div');
+    const init = vi.fn(() => ({ count: 5 }));
+    const draw = vi.fn(vNode => elem('span', vNode.state.count));
+    const Counter = compDef({ init, draw });
+
+    bind(container, comp(Counter));
+
+    expect(init).toHaveBeenCalledTimes(1);
+    expect(draw).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toBe('5');
+
+    bind(container, null);
+  });
+
+  test('preserves state assigned directly during init', () => {
+    const container = document.createElement('div');
+    const Counter = compDef({
+      init(vNode) {
+        vNode.state = { count: 3 };
+      },
+      draw: vNode => elem('span', vNode.state!.count)
+    });
+
+    bind(container, comp(Counter));
+
+    expect(container.textContent).toBe('3');
+
+    bind(container, null);
+  });
+
+  test('accepts matching assigned and returned state', () => {
+    const container = document.createElement('div');
+    const state = { count: 7 };
+
+    const Counter = compDef({
+      init(vNode) {
+        vNode.state = state;
+        return state;
+      },
+      draw: vNode => elem('span', vNode.state.count)
+    });
+
+    expect(() => bind(container, comp(Counter))).not.toThrow();
+    expect(container.textContent).toBe('7');
+
+    bind(container, null);
+  });
+
+  test('preserves explicitly assigned state when init returns a different value', () => {
+    const container = document.createElement('div');
+
+    const Counter = compDef({
+      init(vNode) {
+        vNode.state = { count: 3 };
+        return { count: 9 };
+      },
+      draw: vNode => elem('span', vNode.state.count)
+    });
+
+    // In non-DEBUG mode, the explicit assignment takes precedence.
+    bind(container, comp(Counter));
+
+    expect(container.textContent).toBe('3');
+
+    bind(container, null);
+  });
+
+  test.each([
+    [false, 'false'],
+    [0, '0'],
+    ['', ''],
+    [null, 'null']
+  ])('accepts primitive or null state %s', (value, expected) => {
+    const container = document.createElement('div');
+
+    const Component = compDef({
+      init: () => value,
+      draw: vNode => elem('span', String(vNode.state))
+    });
+
+    bind(container, comp(Component));
+
+    expect(container.textContent).toBe(expected);
+
+    bind(container, null);
+  });
+
+  test('preserves returned state across redraws and resets it on remount', () => {
+    const container = document.createElement('div');
+    let initCount = 0;
+
+    const Counter = compDef({
+      init: () => ({ count: ++initCount }),
+      draw: vNode => elem('span', vNode.state.count)
+    });
+
+    const instance = comp(Counter);
+    bind(container, instance);
+
+    expect(container.textContent).toBe('1');
+
+    redraw(instance, true);
+    sync();
+
+    expect(container.textContent).toBe('1');
+    expect(initCount).toBe(1);
+
+    bind(container, null);
+    bind(container, comp(Counter));
+
+    expect(container.textContent).toBe('2');
+    expect(initCount).toBe(2);
+
+    bind(container, null);
+  });
+});
