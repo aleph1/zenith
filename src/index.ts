@@ -661,7 +661,15 @@ const _create = (parentNode: VNodeContainer, parentEl: Element, vNode: VNodeAny,
     vNode = vNode as VNodeComp;
     vNode.$p = parentNode;
     vNode.is |= FLAG_IS_ACTIVE;
-    if (vNode.$d.init) vNode.$d.init(vNode);
+    if(vNode.$d.init) {
+      const state = vNode.$d.init(vNode);
+      if(state !== undefined && vNode.state === undefined) {
+        vNode.state = state;
+      }
+      if(DEBUG && state !== undefined && vNode.state !== state) {
+        throw new Error('Component init assigned and returned different state values');
+      }
+    }
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
       for (let current: VNodeContainer | null = vNode; current && !current.$h; current = current.$p) current.$h = true;
@@ -799,7 +807,12 @@ export const elem: {
   );
 };
 
-export const compDef = (componentDefinition: VNodeCompDefinition): VNodeCompDefinition => {
+export const compDef = <
+  A extends VNodeCompAttributes = VNodeCompAttributes,
+  S = Record<string, any>
+>(
+  componentDefinition: VNodeCompDefinition<A, S>
+): VNodeCompDefinition<A, S> => {
   if (DEBUG) {
     if (!componentDefinition.draw) {
       throw new Error('Component definition must have a draw function');
@@ -819,21 +832,26 @@ export const compDef = (componentDefinition: VNodeCompDefinition): VNodeCompDefi
     if (componentDefinition.removed && typeof componentDefinition.removed !== 'function') {
       throw new Error('removed must be a function');
     }
-    if (componentDefinition.$memo !== undefined && 
-       typeof componentDefinition.$memo !== 'boolean' && 
+    if (componentDefinition.$memo !== undefined &&
+       typeof componentDefinition.$memo !== 'boolean' &&
        typeof componentDefinition.$memo !== 'function') {
       throw new Error('$memo must be a boolean or function');
     }
   }
-  // Only copy known component properties
   return Object.freeze({
     ...componentDefinition,
     is: VNODE_COMPDEF,
   });
-}
+};
 
-export const comp = (componentDefinition: VNodeCompDefinition, attrs: VNodeCompAttributes = ALWAYS_EMPTY_OBJECT): VNodeComp => {
-  return _vNode<VNodeComp>(
+export const comp = <
+  A extends VNodeCompAttributes,
+  S
+>(
+  componentDefinition: VNodeCompDefinition<A, S>,
+  attrs: A = ALWAYS_EMPTY_OBJECT as A
+): VNodeComp<A, S> => {
+  return _vNode<VNodeComp<A, S>>(
     VNODE_COMP,
     null,
     componentDefinition,

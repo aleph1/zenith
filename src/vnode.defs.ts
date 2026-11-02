@@ -26,14 +26,15 @@ export interface VNodeCompAttributes {
 export type VNodeAttrs = VNodeElemAttributes | VNodeCompAttributes;
 
 export interface VNodeCompDefinition<
-  A extends VNodeCompAttributes = VNodeCompAttributes
+  A extends VNodeCompAttributes = VNodeCompAttributes,
+  S = unknown
 > {
   $t?: number;
-  init?: (vNode: VNodeComp<A>) => void;
-  draw: (vNode: VNodeComp<A>, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
-  drawn?: (vNode: VNodeComp<A>, isFirstDraw?: boolean) => void;
-  remove?: (vNode: VNodeComp<A>) => Promise<void> | void;
-  removed?: (vNode: VNodeComp<A>) => void;
+  init?: (vNode: VNodeComp<A>) => S | void;
+  draw: (vNode: VNodeComp<A, S>, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
+  drawn?: (vNode: VNodeComp<A, S>, isFirstDraw?: boolean) => void;
+  remove?: (vNode: VNodeComp<A, S>) => Promise<void> | void;
+  removed?: (vNode: VNodeComp<A, S>) => void;
   $memo?: boolean | ((newAttrs: A, oldAttrs: A) => boolean);
 }
 
@@ -62,7 +63,10 @@ export interface VNodeText extends VNodeBase {
   nodes: null;
 }
 
-export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> extends VNodeBase {
+export interface VNodeComp<
+  A extends VNodeCompAttributes = VNodeCompAttributes,
+  S = Record<string, any> | undefined
+> extends VNodeBase {
   is: typeof VNODE_COMP;
   $t: number;
   $d: VNodeCompDefinition;
@@ -70,8 +74,7 @@ export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> 
   attrs: A;
   nodes: VNodeFlatArray;
   provide?: Record<string, any>;
-  /** Optional, application-managed instance state. */
-  state?: Record<string, any>;
+  state: S; // application managed state
 }
 
 export interface VNodeNode extends VNodeBase {
@@ -82,10 +85,12 @@ export interface VNodeNode extends VNodeBase {
   nodes: null;
 }
 
-export type VNode = VNodeElem | VNodeText | VNodeComp | VNodeNode;
+export type VNodeCompAny = VNodeComp<any, any>;
+
+export type VNode = VNodeElem | VNodeText | VNodeCompAny | VNodeNode;
 export type VNodeAny = VNode;
-export type VNodeContainer = VNodeComp | VNodeElem;
-export type VNodeDrawable = VNodeComp;
+export type VNodeContainer = VNodeCompAny | VNodeElem;
+export type VNodeDrawable = VNodeCompAny;
 export type VNodeHTML = VNodeElem;
 export type VNodeDom = Node | Node[];
 
