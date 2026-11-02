@@ -1,5 +1,5 @@
 import { keep } from './keep';
-import { is } from './is';
+import { vNodeType, vNodeIs } from './is';
 import { cls } from './cls';
 import { slot } from './slot';
 import { html } from './html';
@@ -9,5 +9,5 @@ import { signal } from './signal';
 import { derived } from './derived';
 import { router } from './router';
 import { DetachedRoot } from './detached-root';
-const zh = { keep, is, cls, slot, html, closest, inject, signal, derived, router, DetachedRoot };
+const zh = { keep, vNodeType, vNodeIs, cls, slot, html, closest, inject, signal, derived, router, DetachedRoot };
 (window as Window & { zh?: typeof zh }).zh = zh;
