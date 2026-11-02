@@ -8,8 +8,7 @@ interface RouterOptions {
 type RouteComponent = (params: Record<string, string>) => VNodeAnyOrArray;
 
 interface RouterRoutes {
-  [pattern: string]: RouteComponent;
-  '*'?: RouteComponent;
+  [pattern: string]: RouteComponent | undefined;
 }
 
 interface RouterVNode extends VNodeComp {
@@ -30,43 +29,59 @@ interface RouterVNode extends VNodeComp {
  * });
  *
  * // Hash mode (default)
- * draw(comp(App), document.body);
+ * bind(document.body, comp(App));
  *
  * // History mode
- * draw(comp(router(routes, { mode: 'history' })), document.body);
+ * bind(document.body, comp(router(routes, { mode: 'history' })));
  */
-export const router = (routes: RouterRoutes, options: RouterOptions = {}): VNodeCompDefinition => {
+export const router = (
+  routes: RouterRoutes,
+  options: RouterOptions = {}
+): VNodeCompDefinition => {
   const isHistory = options.mode === 'history';
   const eventType = isHistory ? 'popstate' : 'hashchange';
   const getPath = () => isHistory ? location.pathname : (location.hash.slice(1) || '/');
-  const compiled: { regex: RegExp; keys: string[]; component: RouteComponent }[] = [];
+
+  const compiled: {
+    regex: RegExp;
+    keys: string[];
+    component: RouteComponent;
+  }[] = [];
+
+  const fallback = routes['*'];
 
   const matchRoute = (path: string) => {
-    for (const route of compiled) {
-      const match = path.match(route.regex);
-      if (match) {
+    for(const route of compiled) {
+      const match = route.regex.exec(path);
+      if(match) {
         const params: Record<string, string> = {};
-        for (let i = 0; i < route.keys.length; i++) {
+        for(let i = 0; i < route.keys.length; i++) {
           params[route.keys[i]] = match[i + 1];
         }
         return { component: route.component, params };
       }
     }
-    return { component: routes['*'] || null, params: {} };
+    return { component: fallback, params: {} };
   };
 
-  for (const pattern in routes) {
+  for(const pattern in routes) {
+    if(pattern === '*') continue;
+
+    const component = routes[pattern];
+    if(!component) continue;
+
     const keys: string[] = [];
     const regexPattern = pattern
-      .replace(/:[^/]+/g, (match) => {
+      .replace(/:[^/]+/g, match => {
         keys.push(match.slice(1));
         return '([^/]+)';
       })
       .replace(/\*/g, '(.*)');
+
     compiled.push({
       regex: new RegExp(`^${regexPattern}$`),
       keys,
-      component: routes[pattern]
+      component
     });
   }
 
@@ -89,12 +104,13 @@ export const router = (routes: RouterRoutes, options: RouterOptions = {}): VNode
 
     draw: (vNode: VNodeComp) => {
       const node = vNode as RouterVNode;
-      return node.route?.(node.params);
+      console.log('Router draw:', node.route, node.params);
+      return node.route ? node.route(node.params || {}) : null;
     },
 
     removed: (vNode: VNodeComp) => {
       const node = vNode as RouterVNode;
-      if (node.onroute) {
+      if(node.onroute) {
         window.removeEventListener(eventType, node.onroute);
       }
     }
