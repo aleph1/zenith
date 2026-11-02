@@ -38,17 +38,6 @@ test('comp() attributes are frozen in DEBUG mode', () => {
   expect(Object.isFrozen(lib.comp(Component, { id: 'test' }).attrs)).toBe(true);
 });
 
-describe('Development-only validation', () => {
-  test.each([
-    ['missing draw', {}, /draw function/],
-    ['invalid draw', { draw: 1 }, /draw must be a function/],
-    ['invalid init', { draw: () => null, init: 1 }, /init must be a function/],
-    ['invalid drawn', { draw: () => null, drawn: 1 }, /drawn must be a function/],
-    ['invalid remove', { draw: () => null, remove: 1 }, /remove must be a function/],
-    ['invalid removed', { draw: () => null, removed: 1 }, /removed must be a function/],
-    ['invalid $memo', { draw: () => null, $memo: 'yes' }, /\$memo must be a boolean or function/],
-  ])('%s', (_description, definition, message) => {
-    expect(() => lib.compDef(definition as any)).toThrow(message as RegExp);
 test('rejects conflicting assigned and returned state', () => {
   const Component = lib.compDef({
     init(vNode) {
@@ -58,65 +47,154 @@ test('rejects conflicting assigned and returned state', () => {
     draw: () => null
   });
 
-  test('rejects an unkeyed component returning a removal Promise', () => {
-    let show = true;
-    const Leaving = lib.compDef({
-      draw: () => lib.elem('i', 'leaving'),
-      remove: () => new Promise<void>(() => {}),
-    });
-    const View = lib.compDef({ draw: () => show ? lib.comp(Leaving) : [] });
-    const view = lib.comp(View);
-    lib.bind(app, view);
-    show = false;
-    expect(() => { lib.redraw(view); lib.sync(); }).toThrow(/requires a key/i);
+  expect(() => lib.bind(document.createElement('div'), lib.comp(Component)))
+    .toThrow('Component init assigned and returned different state values');
+});
+
+test.each([
+  ['missing draw', {}, /draw function/],
+  ['invalid draw', { draw: 1 }, /draw must be a function/],
+  ['invalid init', { draw: () => null, init: 1 }, /init must be a function/],
+  ['invalid drawn', { draw: () => null, drawn: 1 }, /drawn must be a function/],
+  ['invalid remove', { draw: () => null, remove: 1 }, /remove must be a function/],
+  ['invalid removed', { draw: () => null, removed: 1 }, /removed must be a function/],
+  ['invalid $memo', { draw: () => null, $memo: 'yes' }, /\$memo must be a boolean or function/],
+])('%s', (_description, definition, message) => {
+  expect(() => lib.compDef(definition as any)).toThrow(message as RegExp);
+});
+
+test('rejects an unkeyed component returning a removal Promise', () => {
+  let show = true;
+  const Leaving = lib.compDef({
+    draw: () => lib.elem('i', 'leaving'),
+    remove: () => new Promise<void>(() => {}),
+  });
+  const View = lib.compDef({ draw: () => show ? lib.comp(Leaving) : [] });
+  const view = lib.comp(View);
+  lib.bind(app, view);
+  show = false;
+  expect(() => { lib.redraw(view); lib.sync(); }).toThrow(/requires a key/i);
+});
+
+// This deliberately simulates a broken parent link. It is an internal guard,
+// rather than a normal supported state transition.
+test('warns when deferred removal resolves with no parent link', async () => {
+  let finish!: () => void;
+  const Leaving = lib.compDef({
+    draw: () => lib.elem('i', 'leaving'),
+    remove: () => new Promise<void>(resolve => { finish = resolve; }),
+  });
+  let show = true;
+  const View = lib.compDef({
+    draw: () => lib.elem('section',
+      ...(show
+        ? [lib.comp(Leaving, { $key: 'leave' }), lib.elem('b', { $key: 'keep' }, 'keep')]
+        : [lib.elem('b', { $key: 'keep' }, 'keep')]),
+    ),
+  });
+  const view = lib.comp(View);
+  lib.bind(app, view);
+  const leaving = (view.nodes[0] as any).nodes[0] as any;
+  show = false;
+  lib.redraw(view);
+  lib.sync();
+  // Invalid internal state to exercise the defensive console.warn branch.
+  leaving.$p = null;
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  finish();
+  await Promise.resolve();
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining('Promise resolved'),
+    expect.any(String),
+  );
+});
+
+test('rejects duplicate sibling keys in debug mode', () => {
+  expect(() => lib.elem('ul',
+    lib.elem('li', { $key: 'a' }, 'First'),
+    lib.elem('li', { $key: 'a' }, 'Second')
+  )).toThrow(/Duplicate sibling key/);
+});
+
+test('Surgical draw throws on non-component in DEBUG mode', () => {
+  const node = lib.elem('div', { id: 'test' });
+  expect(() => {
+    // @ts-expect-error Testing an invalid surgical draw argument
+    lib.redraw(node, true);
+  }).toThrow('Surgical redraw requires a component vnode');
+});
+
+test('warns when an external node appears multiple times in a tree', () => {
+  const content = document.createElement('div');
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+  lib.bind(app, [
+    lib.elem('section', lib.node(content)),
+    lib.elem('aside', lib.node(content))
+  ]);
+
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining('Duplicate external DOM node'),
+    content
+  );
+});
+
+test('warns when separate components reference the same external node', () => {
+  const content = document.createElement('div');
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+  const First = lib.compDef({
+    draw: () => lib.node(content)
+  });
+  const Second = lib.compDef({
+    draw: () => lib.node(content)
   });
 
-  // This deliberately simulates a broken parent link. It is an internal guard,
-  // rather than a normal supported state transition.
-  test('warns when deferred removal resolves with no parent link', async () => {
-    let finish!: () => void;
-    const Leaving = lib.compDef({
-      draw: () => lib.elem('i', 'leaving'),
-      remove: () => new Promise<void>(resolve => { finish = resolve; }),
-    });
-    let show = true;
-    const View = lib.compDef({
-      draw: () => lib.elem('section',
-        ...(show
-          ? [lib.comp(Leaving, { $key: 'leave' }), lib.elem('b', { $key: 'keep' }, 'keep')]
-          : [lib.elem('b', { $key: 'keep' }, 'keep')]),
-      ),
-    });
-    const view = lib.comp(View);
-    lib.bind(app, view);
-    const leaving = (view.nodes[0] as any).nodes[0] as any;
-    show = false;
-    lib.redraw(view);
-    lib.sync();
-    // Invalid internal state to exercise the defensive console.warn branch.
-    leaving.$p = null;
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    finish();
-    await Promise.resolve();
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('Promise resolved'),
-      expect.any(String),
-    );
-  });
+  lib.bind(app, [
+    lib.comp(First),
+    lib.comp(Second)
+  ]);
 
-  test('rejects duplicate sibling keys in debug mode', () => {
-    expect(() => lib.elem('ul',
-      lib.elem('li', { $key: 'a' }, 'First'),
-      lib.elem('li', { $key: 'a' }, 'Second')
-    )).toThrow(/Duplicate sibling key/);
-  });
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining('Duplicate external DOM node'),
+    content
+  );
+});
 
-  test('Surgical draw throws on non-component in DEBUG mode', () => {
-    const node = lib.elem('div', { id: 'test' });
-    expect(() => {
-      // @ts-expect-error Testing an invalid surgical draw argument
-      lib.redraw(node, true);
-    }).toThrow('Surgical redraw requires a component vnode');
-  });
+test('does not warn when external node ownership moves between parents', () => {
+  const content = document.createElement('div');
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
+  lib.bind(app, [
+    lib.elem('section', lib.node(content)),
+    lib.elem('aside')
+  ]);
+
+  lib.bind(app, [
+    lib.elem('section'),
+    lib.elem('aside', lib.node(content))
+  ]);
+
+  expect(warn).not.toHaveBeenCalled();
+});
+
+test('does not warn when reusing a cached external node across redraws', () => {
+  const content = document.createElement('div');
+  const cached = lib.node(content);
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+  lib.bind(app, [
+    lib.elem('div', 'Loading'),
+    cached
+  ]);
+
+  expect(app.lastChild).toBe(content);
+
+  lib.bind(app, [cached]);
+
+  expect([...app.childNodes]).toEqual([content]);
+  expect(warn).not.toHaveBeenCalled();
+
+  lib.bind(app, null);
+  expect(content.parentNode).toBeNull();
 });
