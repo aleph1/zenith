@@ -1,7 +1,7 @@
 {
   "name": "zenith",
   "version": "1.0.0-rc.2",
-  "description": "Another front-end framework.",
+  "description": "A tiny, fast, dependency-free virtual DOM library with components and targeted redraws.",
   "type": "module",
   "main": "./dist/zenith.js",
   "module": "./dist/zenith.js",

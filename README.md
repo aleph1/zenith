@@ -1,8 +1,8 @@
 # Zenith
 
-Zenith is a tiny JavaScript virtual DOM framework with keyed reconciliation and targeted component redraws. Its rendering model can update an entire application or a specific component, making it easy to integrate independently managed content such as canvas, WebGL, and SVG interfaces.
+Zenith is a tiny, dependency-free JavaScript virtual DOM library with keyed reconciliation and targeted component redraws. Its rendering model can update an entire application or a specific component, making it easy to integrate independently managed content such as canvas, WebGL, and SVG interfaces.
 
-Zenith supports component lifecycle hooks, memoization, DOM events, SVG and MathML, and optional helpers. It is inspired by [Mithril.js](https://github.com/MithrilJS/mithril.js).
+Zenith supports component lifecycle hooks, memoization, DOM events, SVG and MathML, and optional helpers.
 
 **Status:** Zenith 1.0.0 is currently in release candidate. The API is expected to remain stable through the final 1.0 release, with changes focused primarily on bug fixes.
 
@@ -36,12 +36,11 @@ Prebuilt browser files are also included in `dist/`. The `zenith.js` build is an
     <script type="module">
       import { bind, comp, compDef, elem } from 'zenith';
 
-      let count = 0;
-
       const Counter = compDef({
-        draw: () => elem('button', {
-          onclick: () => { count++; }
-        }, `Count: ${count}`)
+        init: () => ({ count: 0 }),
+        draw: vNode => elem('button', {
+          onclick: () => { vNode.state.count++; }
+        }, `Count: ${vNode.state.count}`)
       });
 
       bind(document.querySelector('#app'), comp(Counter));
@@ -76,7 +75,7 @@ Redraws are batched and scheduled in a microtask. Call `sync()` to apply queued 
 
 Component definitions support `init`, `draw`, `drawn`, `remove`, and `removed` lifecycle hooks. The `remove` hook may return a Promise to defer removal; deferred removal requires keyed components. Components also support optional memoization through `$memo`.
 
-Zenith does not manage application state or automatically track dependencies. State can be stored and updated using ordinary JavaScript, external state managers, or optional helpers.
+Zenith does not manage application state or automatically track dependencies. State can be stored and updated using ordinary JavaScript, external state managers, or optional helpers. Components may also initialize local state by returning a value from init() or assigning directly to vNode.state.
 
 ## Package builds
 
