@@ -1,4 +1,4 @@
-import { redraw } from 'zenith';
+import { redraw } from '../index';
 import type { VNodeComp, VNodeCompDefinition, VNodeAnyOrArray } from '../vnode.defs';
 
 interface RouterOptions {

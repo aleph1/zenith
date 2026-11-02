@@ -1,4 +1,4 @@
-import { node } from 'zenith';
+import { node } from '../index';
 import type { VNodeNode } from '../vnode.defs';
 
 /**
