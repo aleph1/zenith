@@ -31,8 +31,7 @@ export const slot = (
   content: VNode | VNode[] | string | ((attrs: VNodeAttrs) => VNode | VNode[] | string) | null | undefined,
   attrs: VNodeAttrs
 ): VNode | VNode[] | string | undefined => {
-  if (content) {
-    if (typeof content === 'function') return content(attrs);
-    return content;
+  if(content != null) {
+    return typeof content === 'function' ? content(attrs) : content;
   }
 };
