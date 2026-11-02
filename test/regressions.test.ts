@@ -1666,6 +1666,63 @@ describe('external DOM node ownership and reconciliation', () => {
   });
 });
 
+test('keeps external node with its latest owner after redraw', () => {
+  const el = document.createElement('div');
+
+  bind(app, [
+    elem('section', node(el)),
+    elem('aside', node(el))
+  ]);
+
+  expect(app.querySelector('aside')?.firstChild).toBe(el);
+
+  bind(app, [
+    elem('section', node(el)),
+    elem('aside', node(el))
+  ]);
+
+  expect(app.querySelector('aside')?.firstChild).toBe(el);
+});
+
+test('does not revive a previous external node owner', () => {
+  const el = document.createElement('div');
+
+  bind(app, [
+    elem('section', node(el)),
+    elem('aside', node(el))
+  ]);
+
+  bind(app, [
+    elem('section', node(el)),
+    elem('aside')
+  ]);
+
+  expect(app.querySelector('section')?.firstChild).toBe(el);
+  expect(app.querySelector('aside')?.childNodes).toHaveLength(0);
+});
+
+test('transfers external DOM ownership between roots', () => {
+  const other = document.createElement('div');
+  const content = document.createElement('div');
+
+  bind(app, node(content));
+  expect(app.firstChild).toBe(content);
+
+  // Adopting the same element in another root transfers ownership.
+  bind(other, node(content));
+  expect(app.childNodes).toHaveLength(0);
+  expect(other.firstChild).toBe(content);
+
+  // Unmounting the original root must not remove the transferred node.
+  bind(app, null);
+  expect(other.firstChild).toBe(content);
+
+  // The new owner is responsible for removing it.
+  bind(other, null);
+  expect(other.childNodes).toHaveLength(0);
+  expect(content.parentNode).toBeNull();
+});
+
 test('redraw flushes automatically in a microtask', async () => {
   let value = 'First';
   const View = compDef({
