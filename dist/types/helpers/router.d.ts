@@ -4,8 +4,7 @@ interface RouterOptions {
 }
 type RouteComponent = (params: Record<string, string>) => VNodeAnyOrArray;
 interface RouterRoutes {
-    [pattern: string]: RouteComponent;
-    '*'?: RouteComponent;
+    [pattern: string]: RouteComponent | undefined;
 }
 /**
  * Creates a hash or history-based router as a component definition.
@@ -19,10 +18,10 @@ interface RouterRoutes {
  * });
  *
  * // Hash mode (default)
- * draw(comp(App), document.body);
+ * bind(document.body, comp(App));
  *
  * // History mode
- * draw(comp(router(routes, { mode: 'history' })), document.body);
+ * bind(document.body, comp(router(routes, { mode: 'history' })));
  */
 export declare const router: (routes: RouterRoutes, options?: RouterOptions) => VNodeCompDefinition;
 export {};
