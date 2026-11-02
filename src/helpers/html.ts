@@ -22,6 +22,6 @@ import type { VNodeNode } from '../vnode.defs';
 export const html = (value: string | number | bigint): VNodeNode | VNodeNode[] => {
   const container = document.createElement('div');
   container.innerHTML = value + '';
-  const nodes = [...container.childNodes].map(child => node(child as Element));
+  const nodes = [...container.childNodes].map(node);
   return nodes.length === 1 ? nodes[0] : nodes;
 };
