@@ -49,6 +49,13 @@ describe('Development-only validation', () => {
     ['invalid $memo', { draw: () => null, $memo: 'yes' }, /\$memo must be a boolean or function/],
   ])('%s', (_description, definition, message) => {
     expect(() => lib.compDef(definition as any)).toThrow(message as RegExp);
+test('rejects conflicting assigned and returned state', () => {
+  const Component = lib.compDef({
+    init(vNode) {
+      vNode.state = { count: 1 };
+      return { count: 2 };
+    },
+    draw: () => null
   });
 
   test('rejects an unkeyed component returning a removal Promise', () => {
