@@ -1,4 +1,5 @@
-import { signal, Signal } from './signal';
+import { signal } from './signal';
+import type { Signal } from './signal';
 
 export interface DerivedSignal<T> extends Signal<T> {
   destroy(): void;
