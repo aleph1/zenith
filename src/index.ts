@@ -72,7 +72,7 @@ const DEBUG = window.DEBUG ?? false;
 // ----------------------------------------
 
 const boundNodes = new WeakMap();
-const externalOwners = new WeakMap<Element, VNodeNode>();
+const externalOwners = new WeakMap<ChildNode, VNodeNode>();
 const redrawQueue = new Set<VNodeAny>();
 const drawnQueue: (VNodeComp | boolean)[] = [];
 let renderDepth = 0;
@@ -128,6 +128,7 @@ const ALWAYS_EMPTY_OBJECT = DEBUG ? Object.freeze({}) : {};
 // ----------------------------------------
 
 export const sync = (): void => {
+  const roots = DEBUG ? new Set<VNodeContainer>() : null;
   renderDepth++;
 
   try {
@@ -140,8 +141,17 @@ export const sync = (): void => {
         // Resolve the real DOM container from the logical tree.
         let current = redrawNode as VNodeContainer;
         for (; current.$p && (current.is & VNODE_COMP); current = current.$p);
+
+        // Track the root for duplicate external node validation.
+        if (DEBUG) {
+          let root = redrawNode as VNodeContainer;
+          while (root.$p) root = root.$p;
+          roots!.add(root);
+        }
+
         targetEl = current.el;
         redrawQueue.delete(redrawNode);
+
         if (targetEl) {
           const namespace = targetEl.namespaceURI;
           _redrawComponent(
@@ -152,9 +162,19 @@ export const sync = (): void => {
               ? undefined : namespace || undefined
           );
         }
+
         if (!--remaining) break;
       }
+
+      // Check the completed trees for duplicate external nodes.
+      if (DEBUG) {
+        for (const root of roots!) {
+          _checkDuplicateExternalNodes(root);
+        }
+      }
+
       if (redrawQueue.size) Promise.resolve().then(sync);
+
       if (active && active !== document.body &&
           document.activeElement === document.body) {
         active.focus();
@@ -221,7 +241,7 @@ const _vNode = <T extends VNodeAny>(
   $d: T['$d'],
   attrs: T['attrs'],
   nodes: T['nodes'],
-  el: Element | null = null,
+  el: Node | null = null,
 ): T => ({
   is,
   $t,
@@ -331,6 +351,23 @@ const _nextRoot = (nodes: VNodeFlatArray, i: number, anchor: Node | null): Node 
     if (root) return root;
   }
   return anchor;
+};
+
+const _checkDuplicateExternalNodes = (root: VNodeContainer): void => {
+  const seen = new Set<ChildNode>();
+  const nodes: VNodeAny[] = [...root.nodes];
+  for (let i = 0; i < nodes.length; i++) {
+    const vNode = nodes[i];
+    if (vNode.is & VNODE_NODE) {
+      const el = (vNode as VNodeNode).el;
+      if (seen.has(el)) {
+        console.warn('Zenith: Duplicate external DOM node.', el);
+        return;
+      }
+      seen.add(el);
+    }
+    if (vNode.nodes) nodes.push(...vNode.nodes);
+  }
 };
 
 const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns?: string, anchor: Node | null = null): VNodeAny => {
@@ -805,7 +842,7 @@ export const comp = (componentDefinition: VNodeCompDefinition, attrs: VNodeCompA
   );
 };
 
-export const node = (el: Element): VNodeNode => {
+export const node = (el: ChildNode): VNodeNode => {
   return _vNode<VNodeNode>(VNODE_NODE, null, null, null, null, el);
 };
 
