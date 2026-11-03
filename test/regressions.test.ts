@@ -173,6 +173,13 @@ describe('Regression: component DOM ownership', () => {
     expect(app.querySelector('span b')).toBeNull();
   });
 
+  test('ignores surgical redraws of non-component vnodes', () => {
+    const vNode = elem('div');
+
+    // @ts-expect-error Surgical redraw requires a component vnode.
+    expect(() => redraw(vNode, true)).not.toThrow();
+  });
+
   test('calling bind twice replaces the previous bound tree', () => {
     bind(app, elem('p', 'old'));
     bind(app, elem('p', 'new'));
