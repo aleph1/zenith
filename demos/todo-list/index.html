@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zenith — Todo List</title>
+  <link rel="stylesheet" href="../css/demos.css">
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 0; padding: 48px 20px; color: #192538; background: #f6f8fb; }
+    .demo { max-width: 620px; margin: auto; }
+    h1 { margin: 0 0 8px; font-size: 2rem; }
+    .intro { margin: 0 0 26px; color: #586477; }
+    .panel { background: white; border: 1px solid #dce3ed; border-radius: 14px; padding: 22px; box-shadow: 0 12px 35px #16253c0c; }
+    .add-form { display: flex; gap: 8px; }
+    input, button { font: inherit; }
+    .add-form input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #bbc8d9; border-radius: 8px; }
+    button { padding: 9px 13px; border: 1px solid #bdc9d8; border-radius: 8px; background: white; cursor: pointer; }
+    button:hover:not(:disabled) { background: #edf3fa; }
+    button:disabled { cursor: default; opacity: .45; }
+    button.primary { background: #2458aa; border-color: #2458aa; color: white; }
+    button.primary:hover:not(:disabled) { background: #174789; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #90b9ff; outline-offset: 2px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 22px 0 10px; }
+    .filters { display: flex; gap: 5px; }
+    .filters button { padding: 6px 11px; font-size: 14px; }
+    .filters button[aria-pressed="true"] { background: #e8f0ff; border-color: #7fa5e3; color: #174789; font-weight: 600; }
+    .count { color: #586477; font-size: 14px; }
+    .todos { list-style: none; padding: 0; margin: 0; border-top: 1px solid #e2e8f0; }
+    .todo { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #e2e8f0; }
+    .todo label { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; overflow-wrap: anywhere; }
+    .todo input { width: 18px; height: 18px; margin: 0; accent-color: #2458aa; flex: none; }
+    .todo.done label span { text-decoration: line-through; color: #8290a3; }
+    .todo .delete { padding: 5px 9px; font-size: 13px; }
+    .empty { padding: 25px 0; color: #738095; text-align: center; }
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+    .footer button { font-size: 13px; }
+    .note { font-size: 13px; color: #647389; margin-top: 18px; }
+    code { font-size: .95em; }
+    @media (max-width: 480px) { body { padding: 24px 12px; } .panel { padding: 15px; } .add-form button { padding-inline: 10px; } }
+  </style>
+</head>
+<body>
+  <main class="demo">
+    <h1>Todo List</h1>
+    <p class="intro">A small Zenith app demonstrating component-local state, events, and keyed list reconciliation.</p>
+    <div id="app"></div>
+    <p class="note">The component owns its state through <code>init()</code>. Zenith automatically schedules a redraw after its event handlers. Each todo uses <code>$key</code> to preserve identity when items are filtered or removed.</p>
+  </main>
+
+  <script type="module">
+    import { bind, comp, compDef, elem } from '../../dist/zenith.js';
+
+    const TodoApp = compDef({
+      init: () => ({
+        nextId: 4,
+        draft: '',
+        filter: 'all',
+        items: [
+          { id: 1, text: 'Explore Zenith components', done: true },
+          { id: 2, text: 'Try keyed reconciliation', done: false },
+          { id: 3, text: 'Build something small', done: false }
+        ]
+      }),
+
+      draw(vNode) {
+        const state = vNode.state;
+        const remaining = state.items.filter(item => !item.done).length;
+        const completed = state.items.length - remaining;
+        const visible = state.items.filter(item =>
+          state.filter === 'all' ||
+          (state.filter === 'active' ? !item.done : item.done)
+        );
+
+        const add = event => {
+          event.preventDefault();
+          const text = state.draft.trim();
+          if (!text) return;
+          state.items.push({ id: state.nextId++, text, done: false });
+          state.draft = '';
+        };
+
+        const filterButton = (name, label) => elem('button', {
+          type: 'button',
+          'aria-pressed': state.filter === name ? 'true' : false,
+          onclick: () => { state.filter = name; }
+        }, label);
+
+        return elem('section', { class: 'panel', 'aria-label': 'Todo list' },
+          elem('form', { class: 'add-form', onsubmit: add },
+            elem('input', {
+              type: 'text',
+              placeholder: 'What needs to be done?',
+              'aria-label': 'New todo',
+              maxlength: 120,
+              required: true,
+              value: state.draft,
+              oninput: event => { state.draft = event.currentTarget.value; }
+            }),
+            elem('button', { type: 'submit', class: 'primary' }, 'Add')
+          ),
+
+          elem('div', { class: 'toolbar' },
+            elem('div', { class: 'filters', role: 'group', 'aria-label': 'Filter todos' },
+              filterButton('all', 'All'),
+              filterButton('active', 'Active'),
+              filterButton('completed', 'Completed')
+            ),
+            elem('span', { class: 'count' }, `${remaining} remaining`)
+          ),
+
+          elem('ul', { class: 'todos' },
+            visible.map(item => elem('li', {
+              $key: item.id,
+              class: 'todo' + (item.done ? ' done' : '')
+            },
+              elem('label',
+                elem('input', {
+                  type: 'checkbox',
+                  checked: item.done,
+                  onchange: event => { item.done = event.currentTarget.checked; }
+                }),
+                elem('span', item.text)
+              ),
+              elem('button', {
+                type: 'button',
+                class: 'delete',
+                'aria-label': `Delete ${item.text}`,
+                onclick: () => {
+                  state.items = state.items.filter(todo => todo.id !== item.id);
+                }
+              }, 'Delete')
+            ))
+          ),
+
+          visible.length ? null : elem('p', { class: 'empty' }, 'No todos to show.'),
+
+          elem('div', { class: 'footer' },
+            elem('span', { class: 'count' }, `${state.items.length} total`),
+            elem('button', {
+              type: 'button',
+              disabled: completed === 0,
+              onclick: () => { state.items = state.items.filter(item => !item.done); }
+            }, `Clear completed (${completed})`)
+          )
+        );
+      }
+    });
+
+    bind(document.getElementById('app'), comp(TodoApp));
+  </script>
+</body>
+</html>
