@@ -262,6 +262,23 @@ describe('select value and selectedIndex', () => {
     bind(container, render('b'));
     expect(select.value).toBe('b');
   });
+
+  test('preserves select state when control attributes are removed', () => {
+    const container = document.createElement('div');
+    const options = () => [
+      elem('option', { value: 'a' }, 'A'),
+      elem('option', { value: 'b' }, 'B')
+    ];
+    bind(container, elem('select', { value: 'b' }, options()));
+    const select = container.querySelector('select')!;
+    expect(select.value).toBe('b');
+    bind(container, elem('select', {}, options()));
+    expect(select.value).toBe('b');
+    select.value = 'a';
+    bind(container, elem('select', {}, options()));
+    expect(select.value).toBe('a');
+    bind(container, null);
+  });
 });
 
 // Explicitly supplied values are controlled; omitted or undefined values
