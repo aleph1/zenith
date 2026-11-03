@@ -13,8 +13,8 @@ interface RouterRoutes {
 
 interface RouterVNode extends VNodeComp {
   route?: RouteComponent;
-  params?: Record<string, string>;
-  onroute?: () => void;
+  params: Record<string, string>;
+  onroute: () => void;
 }
 
 /**
@@ -104,14 +104,12 @@ export const router = (
 
     draw: (vNode: VNodeComp) => {
       const node = vNode as RouterVNode;
-      return node.route ? node.route(node.params || {}) : null;
+      return node.route ? node.route(node.params) : null;
     },
 
     removed: (vNode: VNodeComp) => {
       const node = vNode as RouterVNode;
-      if(node.onroute) {
-        window.removeEventListener(eventType, node.onroute);
-      }
+      window.removeEventListener(eventType, node.onroute);
     }
   };
 };
