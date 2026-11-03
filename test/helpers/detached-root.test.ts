@@ -130,3 +130,26 @@ test('removes the host when the target disappears', async () => {
   expect(host.parentNode).toBeNull();
   expect(target.contains(host)).toBe(false);
 });
+
+test('coalesces updates while a render is pending', async () => {
+  const instance = comp(DetachedRoot, {
+    to: target,
+    children: elem('span', 'First')
+  });
+
+  bind(app, instance);
+
+  // A detached render is already pending from the initial mount.
+  instance.attrs.children = elem('span', 'Second');
+  redraw(instance, true);
+  sync();
+
+  instance.attrs.children = elem('span', 'Third');
+  redraw(instance, true);
+  sync();
+
+  await Promise.resolve();
+
+  expect(target.textContent).toBe('Third');
+  expect(target.querySelectorAll('span')).toHaveLength(1);
+});
