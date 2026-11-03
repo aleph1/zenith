@@ -101,6 +101,40 @@ describe('Component memoization', () => {
   });
 });
 
+describe('redraw optimization', () => {
+  test('skips reconciliation when draw returns its previous children', () => {
+    const container = document.createElement('div');
+    let draws = 0;
+    let drawn = 0;
+
+    const View = compDef({
+      draw: (_vNode, oldChildren) => {
+        draws++;
+        return oldChildren || elem('span', 'Hello');
+      },
+      drawn: () => {
+        drawn++;
+      }
+    });
+
+    const instance = comp(View);
+    bind(container, instance);
+
+    const span = container.querySelector('span');
+    const children = instance.nodes;
+
+    redraw(instance, true);
+    sync();
+
+    expect(draws).toBe(2);
+    expect(drawn).toBe(2);
+    expect(instance.nodes).toBe(children);
+    expect(container.querySelector('span')).toBe(span);
+
+    bind(container, null);
+  });
+});
+
 describe('stable component vnode identity', () => {
     test('preserves identity across parent redraws and attribute updates', () => {
         const container = document.createElement('div');
@@ -977,3 +1011,4 @@ describe('Component state initialization', () => {
     bind(container, null);
   });
 });
+
