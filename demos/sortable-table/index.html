@@ -30,7 +30,7 @@
 <body>
 	<div id="app"></div>
 	<script type="module">
-		import { elem, comp, compDef, bind, draw } from '../../dist/zenith.js';
+		import { elem, comp, compDef, bind, redraw } from '../../dist/zenith.js';
 		
 		let peopleCount = 0;
 		let personId = 0;
@@ -232,7 +232,7 @@
 		});
 
 		let appRoot;
-		const redrawApp = () => draw(appRoot);
+		const redrawApp = () => redraw(appRoot);
 		appRoot = bind(appEl, [comp(DemoControls), comp(SortableTable)]);
 	</script>
 </body>
