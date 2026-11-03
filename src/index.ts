@@ -763,17 +763,17 @@ const _remove = (vNode: VNodeAny): boolean => {
         if ((vNode as VNodeComp).$r === token && vNode.is & FLAG_IS_REMOVING) {
           (vNode as VNodeComp).$r = null;
           const parent = vNode.$p;
-          if (DEBUG && !parent) {
-            console.warn(
-              'Promise resolved but component was already removed.',
-              'This usually means the component was removed without using $remove attribute.'
-            );
+          if(!parent) {
+            if (DEBUG) {
+              console.warn(
+                'Promise resolved but component was already removed.',
+                'This usually means the component was removed without using $remove attribute.'
+              );
+            }
             return;
           }
-          if (parent) {
-            const i = parent.nodes.indexOf(vNode);
-            if (i !== -1) parent.nodes.splice(i, 1);
-          }
+          const i = parent.nodes.indexOf(vNode);
+          if (i !== -1) parent.nodes.splice(i, 1);
           _destroy(vNode);
           redraw(parent);
         }
