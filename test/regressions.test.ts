@@ -379,6 +379,28 @@ describe('Regression: diff flags, attributes and namespaces', () => {
     expect(vNode.attrs).toMatchObject({ is: 'custom-button', id: 'target' });
   });
 
+  test('creates customized built-in HTML elements', () => {
+    const create = vi.spyOn(document, 'createElement');
+    bind(app, elem('button', { is: 'custom-button' }, 'Click'));
+    expect(create).toHaveBeenCalledWith('button', {
+      is: 'custom-button'
+    });
+    expect(app.querySelector('button')?.textContent).toBe('Click');
+    create.mockRestore();
+  });
+
+  test('creates customized built-in namespaced elements', () => {
+    const create = vi.spyOn(document, 'createElementNS');
+    bind(app, elem('svg',
+      elem('rect', { is: 'custom-rect', width: 10 })
+    ));
+    expect(create).toHaveBeenCalledWith(SVG, 'rect', {
+      is: 'custom-rect'
+    });
+    expect(app.querySelector('rect')?.namespaceURI).toBe(SVG);
+    create.mockRestore();
+  });
+
   test('new SVG children inherit the SVG namespace during an update', () => {
     let addRect = false;
     const View = compDef({
