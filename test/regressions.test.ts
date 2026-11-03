@@ -115,7 +115,7 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     sync();
     expect(elementText(app.querySelector('section')!)).toEqual(['b1', 'b2', 'a1', 'a2']);
   });
-  
+
   test('preserves keyed DOM order and identity across randomized updates', () => {
     const container = document.createElement('div');
     const keys = Array.from({ length: 12 }, (_, i) => `k${i}`);
