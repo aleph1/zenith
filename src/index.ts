@@ -371,7 +371,7 @@ const _checkDuplicateExternalNodes = (root: VNodeContainer): void => {
 };
 
 const _updateNode = (parentNode: VNodeContainer, parentEl: Element, newNode: VNodeAny, oldNode: VNodeAny, xmlns?: string, anchor: Node | null = null): VNodeAny => {
-  const newNodeType = newNode.is & oldNode.is & TYPE_MASK;
+  const newNodeType = newNode.is & oldNode.is & VNODE_TYPE_MASK;
   if (newNodeType === VNODE_ELEM && newNode.$t === oldNode.$t) {
     newNode = newNode as VNodeElem;
     newNode.$p = parentNode;
@@ -706,7 +706,7 @@ const _unmount = (vNode: VNodeAny): void => {
     vNode = vNode as VNodeComp;
     if(vNode.$d.remove && !(vNode.is & FLAG_REMOVE_CALLED)) vNode.$d.remove(vNode);
     if(vNode.$d.removed) vNode.$d.removed(vNode);
-    vNode.is &= TYPE_MASK;
+    vNode.is &= VNODE_TYPE_MASK;
   }
   if ((vNode.$h || redrawQueue.size) && vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
@@ -891,4 +891,4 @@ export const bind = (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null)
 // Additional exports
 // ----------------------------------------
 
-export { ns };
+export { ns, VNODE_COMP, VNODE_COMPDEF, VNODE_ELEM, VNODE_NODE, VNODE_TEXT };

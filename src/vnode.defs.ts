@@ -1,10 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const VNODE_ELEM = 1;
-export const VNODE_TEXT = 2;
-export const VNODE_COMP = 4;
-export const VNODE_NODE = 8;
-export const VNODE_COMPDEF = 16;
-export const VNODE_TYPE_MASK = 31;
+
+// VNODE_* and FLAG_* constants are bit flags stored in `is` to
+// identify the vnode type and track lifecycle and redraw state.
+export const VNODE_ELEM = 1;            // elem()
+export const VNODE_TEXT = 2;            // string or number wrapped in internal text()
+export const VNODE_COMP = 4;            // comp()
+export const VNODE_NODE = 8;            // node()
+export const VNODE_COMPDEF = 16;        // compDef()
+export const VNODE_TYPE_MASK = 31;      // mask covering all vnode type bits
+export const FLAG_IS_STALE = 32;        // needs redraw
+export const FLAG_IS_REMOVING = 64;     // being removed
+export const FLAG_IS_ACTIVE = 128;      // eligible for redraw
+export const FLAG_REMOVE_CALLED = 256;  // remove() called
 
 export interface VNodeElemAttributes {
   class?: string | string[];
