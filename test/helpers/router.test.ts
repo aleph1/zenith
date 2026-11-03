@@ -95,3 +95,45 @@ test('removes its navigation listener when unmounted', () => {
   sync();
   expect(renders).toBe(1);
 });
+
+test('supports history mode and popstate navigation', () => {
+  history.replaceState(null, '', '/');
+  const Router = router({
+    '/': () => elem('p', 'Home'),
+    '/about': () => elem('p', 'About')
+  }, { mode: 'history' });
+  bind(app, comp(Router));
+  expect(app.textContent).toBe('Home');
+  history.pushState(null, '', '/about');
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  sync();
+  expect(app.textContent).toBe('About');
+});
+
+test('skips undefined route entries', () => {
+  const Router = router({
+    '/missing': undefined,
+    '/': () => elem('p', 'Home')
+  });
+  bind(app, comp(Router));
+  expect(app.textContent).toBe('Home');
+});
+
+test('matches wildcard route segments', () => {
+  history.replaceState(null, '', '#/files/docs/guide');
+  const Router = router({
+    '/files/*': () => elem('p', 'Files'),
+    '*': () => elem('p', 'Not found')
+  });
+  bind(app, comp(Router));
+  expect(app.textContent).toBe('Files');
+});
+
+test('defaults to the root route when the hash is empty', () => {
+  history.replaceState(null, '', '/');
+  const Router = router({
+    '/': () => elem('p', 'Home')
+  });
+  bind(app, comp(Router));
+  expect(app.textContent).toBe('Home');
+});
