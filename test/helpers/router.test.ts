@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, expect, test } from 'vitest';
+import { beforeEach, afterEach, expect, test } from 'vitest';
 import { bind, comp, elem, sync } from '../../src/index';
 import { router } from '../../src/helpers/router';
 

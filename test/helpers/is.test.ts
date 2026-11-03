@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { comp, elem, node } from '../../src/index';
 import { vNodeIs, vNodeType } from '../../src/helpers/is';
 import { VNODE_TYPE_MASK } from '../../src/vnode.defs';

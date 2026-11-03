@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test } from 'vitest';
 import { bind, comp, elem, redraw, sync } from '../../src/index';
 import { DetachedRoot } from '../../src/helpers/detached-root';
 

@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { signal } from '../../src/helpers/signal';
 import { derived } from '../../src/helpers/derived';
 

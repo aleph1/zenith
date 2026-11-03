@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
-import { bind, comp, compDef, elem } from '../../src/index';
+import { expect, test } from 'vitest';
+import { bind, comp, compDef } from '../../src/index';
 import { inject } from '../../src/helpers/inject';
 
 test('retrieves values from an ancestor provider', () => {

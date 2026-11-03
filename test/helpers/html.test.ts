@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { bind } from '../../src/index';
 import { html } from '../../src/helpers/html';
 

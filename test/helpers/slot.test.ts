@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { elem } from '../../src/index';
 import { slot } from '../../src/helpers/slot';
 

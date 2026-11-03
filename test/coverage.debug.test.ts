@@ -5,7 +5,7 @@
  *
  * These tests must run in Vitest's DOM environment (jsdom or happy-dom).
  */
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 type Framework = typeof import('../src/index');
 let lib: Framework;
