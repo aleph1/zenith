@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'vitest';
 import { bind, comp, compDef } from '../../src/index';
 import { closest } from '../../src/helpers/closest';
