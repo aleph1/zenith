@@ -91,12 +91,11 @@ const ns = {
 // Bitwise flags
 // ----------------------------------------
 
-// VNODE_* values must be distinct bits: 1, 2, 4, 8, 16.
-const TYPE_MASK = VNODE_TYPE_MASK;
-const FLAG_IS_STALE = 32;       // needs redraw
-const FLAG_IS_REMOVING = 64;    // being removed
-const FLAG_IS_ACTIVE = 128;     // to avoid stale redraws
-const FLAG_REMOVE_CALLED = 256; // remove() called
+const flag_start = VNODE_TYPE_MASK + 1;
+const FLAG_IS_STALE = flag_start;           // needs redraw
+const FLAG_IS_REMOVING = flag_start << 1;   // being removed
+const FLAG_IS_ACTIVE = flag_start << 2;     // eligible for redraw
+const FLAG_REMOVE_CALLED = flag_start << 3; // remove() called
 
 const DIFF_NONE = 1;  // Skip everything
 const DIFF_SELF = 2;  // Only diff attributes
