@@ -1011,4 +1011,3 @@ describe('Component state initialization', () => {
     bind(container, null);
   });
 });
-
