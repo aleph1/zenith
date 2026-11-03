@@ -1,6 +1,6 @@
 {
   "name": "zenith",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-rc.3",
   "description": "A tiny, fast, dependency-free virtual DOM library with components and targeted redraws.",
   "type": "module",
   "main": "./dist/zenith.js",

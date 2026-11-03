@@ -4,6 +4,10 @@ export declare const VNODE_COMP = 4;
 export declare const VNODE_NODE = 8;
 export declare const VNODE_COMPDEF = 16;
 export declare const VNODE_TYPE_MASK = 31;
+export declare const FLAG_IS_STALE = 32;
+export declare const FLAG_IS_REMOVING = 64;
+export declare const FLAG_IS_ACTIVE = 128;
+export declare const FLAG_REMOVE_CALLED = 256;
 export interface VNodeElemAttributes {
     class?: string | string[];
     style?: string | Record<string, string | number | null | undefined>;
@@ -20,13 +24,13 @@ export interface VNodeCompAttributes {
     [property: string]: any;
 }
 export type VNodeAttrs = VNodeElemAttributes | VNodeCompAttributes;
-export interface VNodeCompDefinition<A extends VNodeCompAttributes = VNodeCompAttributes> {
+export interface VNodeCompDefinition<A extends VNodeCompAttributes = VNodeCompAttributes, S = unknown> {
     $t?: number;
-    init?: (vNode: VNodeComp<A>) => void;
-    draw: (vNode: VNodeComp<A>, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
-    drawn?: (vNode: VNodeComp<A>, isFirstDraw?: boolean) => void;
-    remove?: (vNode: VNodeComp<A>) => Promise<void> | void;
-    removed?: (vNode: VNodeComp<A>) => void;
+    init?: (vNode: VNodeComp<A>) => S | void;
+    draw: (vNode: VNodeComp<A, S>, oldChildren?: VNodeFlatArray) => VNodeAnyOrArray;
+    drawn?: (vNode: VNodeComp<A, S>, isFirstDraw?: boolean) => void;
+    remove?: (vNode: VNodeComp<A, S>) => Promise<void> | void;
+    removed?: (vNode: VNodeComp<A, S>) => void;
     $memo?: boolean | ((newAttrs: A, oldAttrs: A) => boolean);
 }
 interface VNodeBase {
@@ -49,7 +53,7 @@ export interface VNodeText extends VNodeBase {
     attrs: null;
     nodes: null;
 }
-export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> extends VNodeBase {
+export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes, S = Record<string, any> | undefined> extends VNodeBase {
     is: typeof VNODE_COMP;
     $t: number;
     $d: VNodeCompDefinition;
@@ -57,8 +61,7 @@ export interface VNodeComp<A extends VNodeCompAttributes = VNodeCompAttributes> 
     attrs: A;
     nodes: VNodeFlatArray;
     provide?: Record<string, any>;
-    /** Optional, application-managed instance state. */
-    state?: Record<string, any>;
+    state: S;
 }
 export interface VNodeNode extends VNodeBase {
     is: typeof VNODE_NODE;
@@ -67,10 +70,11 @@ export interface VNodeNode extends VNodeBase {
     attrs: null;
     nodes: null;
 }
-export type VNode = VNodeElem | VNodeText | VNodeComp | VNodeNode;
+export type VNodeCompAny = VNodeComp<any, any>;
+export type VNode = VNodeElem | VNodeText | VNodeCompAny | VNodeNode;
 export type VNodeAny = VNode;
-export type VNodeContainer = VNodeComp | VNodeElem;
-export type VNodeDrawable = VNodeComp;
+export type VNodeContainer = VNodeCompAny | VNodeElem;
+export type VNodeDrawable = VNodeCompAny;
 export type VNodeHTML = VNodeElem;
 export type VNodeDom = Node | Node[];
 export type VNodeChild = VNodeAny | string | number | boolean | null | undefined;

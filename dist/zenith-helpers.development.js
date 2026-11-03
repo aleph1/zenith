@@ -1,6 +1,4 @@
-/*! Zenith Helpers 1.0.0-rc.2 | MIT License | ©2022-2025 Daniel Barber */
-import { node, redraw as redraw$1 } from './zenith.js';
-
+/*! Zenith Helpers 1.0.0-rc.3 | MIT License | ©2022-2025 Daniel Barber */
 const keep = () => true;
 
 const VNODE_ELEM = 1;
@@ -10,145 +8,20 @@ const VNODE_NODE = 8;
 const VNODE_COMPDEF = 16;
 const VNODE_TYPE_MASK = 31;
 
-const is = {
+const vNodeType = {
   elem: VNODE_ELEM,
   text: VNODE_TEXT,
   comp: VNODE_COMP,
-  node: VNODE_NODE,
-  compDef: VNODE_COMPDEF
+  node: VNODE_NODE
 };
+const vNodeIs = (vNode, type) => !!(vNode.is & type);
 
 const cls = (...args) => args.filter(Boolean).join(" ");
 
 const slot = (content, attrs) => {
-  if (content) {
-    if (typeof content === "function") return content(attrs);
-    return content;
+  if (content != null) {
+    return typeof content === "function" ? content(attrs) : content;
   }
-};
-
-const html = (value) => {
-  const container = document.createElement("div");
-  container.innerHTML = value + "";
-  const nodes = [...container.childNodes].map((child) => node(child));
-  return nodes.length === 1 ? nodes[0] : nodes;
-};
-
-const closest = (vNode, predicate) => {
-  for (let current = vNode.$p; current; current = current.$p) {
-    if (predicate(current)) return current;
-  }
-};
-
-const inject = (vNode, ...keys) => {
-  const result = {};
-  const needed = new Set(keys);
-  for (let current = vNode.$p; current && needed.size > 0; current = current.$p) {
-    if (current.is & VNODE_COMP && current.provide) {
-      current = current;
-      for (const key of needed) {
-        if (current.provide[key] !== void 0) {
-          result[key] = current.provide[key];
-          needed.delete(key);
-        }
-      }
-    }
-  }
-  return result;
-};
-
-const signal = (val) => {
-  let _val = val;
-  const _fns = /* @__PURE__ */ new Set();
-  const notify = () => {
-    for (const fn of _fns) fn(_val);
-  };
-  return {
-    get val() {
-      return _val;
-    },
-    set val(newVal) {
-      if (_val !== newVal) {
-        _val = newVal;
-        notify();
-      }
-    },
-    sub(fn) {
-      _fns.add(fn);
-      return () => _fns.delete(fn);
-    },
-    notify
-  };
-};
-
-const derived = (fn, deps) => {
-  const computed = signal(fn());
-  const cleanups = deps.map((dep) => dep.sub(() => {
-    computed.val = fn();
-  }));
-  computed.destroy = () => {
-    for (const cleanup of cleanups) cleanup();
-    cleanups.length = 0;
-  };
-  return computed;
-};
-
-const router = (routes, options = {}) => {
-  const isHistory = options.mode === "history";
-  const eventType = isHistory ? "popstate" : "hashchange";
-  const getPath = () => isHistory ? location.pathname : location.hash.slice(1) || "/";
-  const compiled = [];
-  const matchRoute = (path) => {
-    for (const route of compiled) {
-      const match = path.match(route.regex);
-      if (match) {
-        const params = {};
-        for (let i = 0; i < route.keys.length; i++) {
-          params[route.keys[i]] = match[i + 1];
-        }
-        return { component: route.component, params };
-      }
-    }
-    return { component: routes["*"] || null, params: {} };
-  };
-  for (const pattern in routes) {
-    const keys = [];
-    const regexPattern = pattern.replace(/:[^/]+/g, (match) => {
-      keys.push(match.slice(1));
-      return "([^/]+)";
-    }).replace(/\*/g, "(.*)");
-    compiled.push({
-      regex: new RegExp(`^${regexPattern}$`),
-      keys,
-      component: routes[pattern]
-    });
-  }
-  return {
-    init: (vNode) => {
-      const node = vNode;
-      const matched = matchRoute(getPath());
-      node.route = matched.component;
-      node.params = matched.params;
-      node.onroute = () => {
-        const matched2 = matchRoute(getPath());
-        node.route = matched2.component;
-        node.params = matched2.params;
-        redraw$1(node, true);
-      };
-      window.addEventListener(eventType, node.onroute);
-    },
-    draw: (vNode) => {
-      var _a;
-      const node = vNode;
-      return (_a = node.route) == null ? void 0 : _a.call(node, node.params);
-    },
-    removed: (vNode) => {
-      const node = vNode;
-      if (node.onroute) {
-        window.removeEventListener(eventType, node.onroute);
-      }
-    }
-  };
 };
 
 const boundNodes = /* @__PURE__ */ new WeakMap();
@@ -161,17 +34,18 @@ const ns = {
   math: "http://www.w3.org/1998/Math/MathML",
   svg: "http://www.w3.org/2000/svg"
 };
-const TYPE_MASK = VNODE_TYPE_MASK;
-const FLAG_IS_STALE = 32;
-const FLAG_IS_REMOVING = 64;
-const FLAG_IS_ACTIVE = 128;
-const FLAG_REMOVE_CALLED = 256;
+const flag_start = VNODE_TYPE_MASK + 1;
+const FLAG_IS_STALE = flag_start;
+const FLAG_IS_REMOVING = flag_start << 1;
+const FLAG_IS_ACTIVE = flag_start << 2;
+const FLAG_REMOVE_CALLED = flag_start << 3;
 const DIFF_SELF = 2;
 const DIFF_NODES = 4;
 const DIFF_ALL = DIFF_SELF | DIFF_NODES;
 const ALWAYS_EMPTY_ARRAY = Object.freeze([]) ;
 const ALWAYS_EMPTY_OBJECT = Object.freeze({}) ;
 const sync = () => {
+  const roots = /* @__PURE__ */ new Set() ;
   renderDepth++;
   try {
     let remaining = redrawQueue.size;
@@ -181,6 +55,11 @@ const sync = () => {
       for (const redrawNode of redrawQueue) {
         let current = redrawNode;
         for (; current.$p && current.is & VNODE_COMP; current = current.$p) ;
+        if (true) {
+          let root = redrawNode;
+          while (root.$p) root = root.$p;
+          roots.add(root);
+        }
         targetEl = current.el;
         redrawQueue.delete(redrawNode);
         if (targetEl) {
@@ -192,6 +71,11 @@ const sync = () => {
           );
         }
         if (!--remaining) break;
+      }
+      if (true) {
+        for (const root of roots) {
+          _checkDuplicateExternalNodes(root);
+        }
       }
       if (redrawQueue.size) Promise.resolve().then(sync);
       if (active && active !== document.body && document.activeElement === document.body) {
@@ -338,8 +222,24 @@ const _nextRoot = (nodes, i, anchor) => {
   }
   return anchor;
 };
+const _checkDuplicateExternalNodes = (root) => {
+  const seen = /* @__PURE__ */ new Set();
+  const nodes = [...root.nodes];
+  for (let i = 0; i < nodes.length; i++) {
+    const vNode = nodes[i];
+    if (vNode.is & VNODE_NODE) {
+      const el = vNode.el;
+      if (seen.has(el)) {
+        console.warn("Zenith: Duplicate external DOM node.", el);
+        return;
+      }
+      seen.add(el);
+    }
+    if (vNode.nodes) nodes.push(...vNode.nodes);
+  }
+};
 const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, anchor = null) => {
-  const newNodeType = newNode.is & oldNode.is & TYPE_MASK;
+  const newNodeType = newNode.is & oldNode.is & VNODE_TYPE_MASK;
   if (newNodeType === VNODE_ELEM && newNode.$t === oldNode.$t) {
     newNode = newNode;
     newNode.$p = parentNode;
@@ -580,7 +480,15 @@ const _create = (parentNode, parentEl, vNode, xmlns, anchor = null) => {
     vNode = vNode;
     vNode.$p = parentNode;
     vNode.is |= FLAG_IS_ACTIVE;
-    if (vNode.$d.init) vNode.$d.init(vNode);
+    if (vNode.$d.init) {
+      const state = vNode.$d.init(vNode);
+      if (state !== void 0 && vNode.state === void 0) {
+        vNode.state = state;
+      }
+      if (state !== void 0 && vNode.state !== state) {
+        throw new Error("Component init assigned and returned different state values");
+      }
+    }
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
       for (let current = vNode; current && !current.$h; current = current.$p) current.$h = true;
@@ -620,7 +528,7 @@ const _unmount = (vNode) => {
     vNode = vNode;
     if (vNode.$d.remove && !(vNode.is & FLAG_REMOVE_CALLED)) vNode.$d.remove(vNode);
     if (vNode.$d.removed) vNode.$d.removed(vNode);
-    vNode.is &= TYPE_MASK;
+    vNode.is &= VNODE_TYPE_MASK;
   }
   if ((vNode.$h || redrawQueue.size) && vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
@@ -672,16 +580,16 @@ const _remove = (vNode) => {
           vNode.$r = null;
           const parent = vNode.$p;
           if (!parent) {
-            console.warn(
-              "Promise resolved but component was already removed.",
-              "This usually means the component was removed without using $remove attribute."
-            );
+            {
+              console.warn(
+                "Promise resolved but component was already removed.",
+                "This usually means the component was removed without using $remove attribute."
+              );
+            }
             return;
           }
-          if (parent) {
-            const i = parent.nodes.indexOf(vNode);
-            if (i !== -1) parent.nodes.splice(i, 1);
-          }
+          const i = parent.nodes.indexOf(vNode);
+          if (i !== -1) parent.nodes.splice(i, 1);
           _destroy(vNode);
           redraw(parent);
         }
@@ -731,6 +639,9 @@ const comp = (componentDefinition, attrs = ALWAYS_EMPTY_OBJECT) => {
     ALWAYS_EMPTY_ARRAY
   );
 };
+const node = (el) => {
+  return _vNode(VNODE_NODE, null, null, null, null, el);
+};
 const RootWrapper = compDef({
   draw: (vNode) => vNode.attrs.$nodes
 });
@@ -751,6 +662,131 @@ const bind = (el, vNodeAnyOrArray) => {
   redrawQueue.add(root);
   sync();
   return root;
+};
+
+const html = (value) => {
+  const container = document.createElement("div");
+  container.innerHTML = value + "";
+  const nodes = [...container.childNodes].map(node);
+  return nodes.length === 1 ? nodes[0] : nodes;
+};
+
+const closest = (vNode, predicate) => {
+  for (let current = vNode.$p; current; current = current.$p) {
+    if (predicate(current)) return current;
+  }
+};
+
+const inject = (vNode, ...keys) => {
+  const result = {};
+  const needed = new Set(keys);
+  for (let current = vNode.$p; current && needed.size > 0; current = current.$p) {
+    if (current.is & VNODE_COMP && current.provide) {
+      current = current;
+      for (const key of needed) {
+        if (current.provide[key] !== void 0) {
+          result[key] = current.provide[key];
+          needed.delete(key);
+        }
+      }
+    }
+  }
+  return result;
+};
+
+const signal = (val) => {
+  let _val = val;
+  const _fns = /* @__PURE__ */ new Set();
+  const notify = () => {
+    for (const fn of _fns) fn(_val);
+  };
+  return {
+    get val() {
+      return _val;
+    },
+    set val(newVal) {
+      if (_val !== newVal) {
+        _val = newVal;
+        notify();
+      }
+    },
+    sub(fn) {
+      _fns.add(fn);
+      return () => _fns.delete(fn);
+    },
+    notify
+  };
+};
+
+const derived = (fn, deps) => {
+  const computed = signal(fn());
+  const cleanups = deps.map((dep) => dep.sub(() => {
+    computed.val = fn();
+  }));
+  computed.destroy = () => {
+    for (const cleanup of cleanups) cleanup();
+    cleanups.length = 0;
+  };
+  return computed;
+};
+
+const router = (routes, options = {}) => {
+  const isHistory = options.mode === "history";
+  const eventType = isHistory ? "popstate" : "hashchange";
+  const getPath = () => isHistory ? location.pathname : location.hash.slice(1) || "/";
+  const compiled = [];
+  const fallback = routes["*"];
+  const matchRoute = (path) => {
+    for (const route of compiled) {
+      const match = route.regex.exec(path);
+      if (match) {
+        const params = {};
+        for (let i = 0; i < route.keys.length; i++) {
+          params[route.keys[i]] = match[i + 1];
+        }
+        return { component: route.component, params };
+      }
+    }
+    return { component: fallback, params: {} };
+  };
+  for (const pattern in routes) {
+    if (pattern === "*") continue;
+    const component = routes[pattern];
+    if (!component) continue;
+    const keys = [];
+    const regexPattern = pattern.replace(/:[^/]+/g, (match) => {
+      keys.push(match.slice(1));
+      return "([^/]+)";
+    }).replace(/\*/g, "(.*)");
+    compiled.push({
+      regex: new RegExp(`^${regexPattern}$`),
+      keys,
+      component
+    });
+  }
+  return {
+    init: (vNode) => {
+      const node = vNode;
+      const matched = matchRoute(getPath());
+      node.route = matched.component;
+      node.params = matched.params;
+      node.onroute = () => {
+        const matched2 = matchRoute(getPath());
+        node.route = matched2.component;
+        node.params = matched2.params;
+        redraw(node, true);
+      };
+      window.addEventListener(eventType, node.onroute);
+    },
+    draw: (vNode) => {
+      const node = vNode;
+      return node.route ? node.route(node.params) : null;
+    },
+    removed: (vNode) => {
+      const node = vNode;
+      window.removeEventListener(eventType, node.onroute);
+    }
+  };
 };
 
 const states = /* @__PURE__ */ new WeakMap();
@@ -795,4 +831,4 @@ const definition = {
 };
 const DetachedRoot = compDef(definition);
 
-export { DetachedRoot, closest, cls, derived, html, inject, is, keep, router, signal, slot };
+export { DetachedRoot, closest, cls, derived, html, inject, keep, router, signal, slot, vNodeIs, vNodeType };

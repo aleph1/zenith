@@ -6,9 +6,11 @@ import type { VNode } from '../vnode.defs';
  *
  * @example
  * // Find the closest list component ancestor
- * const list = closest(vNode, n => n.is === is.comp && n.$def === List);
+ * const list = closest(vNode, n =>
+ *   vNodeIs(n, vNodeType.comp) && n.$d === List
+ * );
  *
  * // Find the closest ancestor with a specific attribute
- * const themed = closest(vNode, n => n.attrs?.theme);
+ * const themed = closest(vNode, n => n.attrs && n.attrs.theme);
  */
 export declare const closest: (vNode: VNode, predicate: (vNode: VNode) => boolean) => VNode | undefined;

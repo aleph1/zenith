@@ -1,5 +1,5 @@
 export { keep } from './keep';
-export { is } from './is';
+export { vNodeType, vNodeIs } from './is';
 export { cls } from './cls';
 export { slot } from './slot';
 export { html } from './html';

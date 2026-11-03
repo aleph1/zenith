@@ -3,7 +3,7 @@ declare global {
         DEBUG?: boolean;
     }
 }
-import { VNodeElem, VNodeComp, VNodeNode, VNodeAny, VNodeArray, VNodeElemAttributes, VNodeCompAttributes, VNodeCompDefinition, VNodeContainer } from './vnode.defs';
+import { VNODE_ELEM, VNODE_TEXT, VNODE_COMP, VNODE_NODE, VNODE_COMPDEF, VNodeElem, VNodeComp, VNodeNode, VNodeAny, VNodeArray, VNodeElemAttributes, VNodeCompAttributes, VNodeCompDefinition, VNodeContainer } from './vnode.defs';
 declare const ns: {
     math: string;
     svg: string;
@@ -24,8 +24,8 @@ export declare const elem: {
     (tag: string, attrs: VNodeElemAttributes, ...args: VNodeArray): VNodeElem;
     (tag: string, ...args: VNodeArray): VNodeElem;
 };
-export declare const compDef: (componentDefinition: VNodeCompDefinition) => VNodeCompDefinition;
-export declare const comp: (componentDefinition: VNodeCompDefinition, attrs?: VNodeCompAttributes) => VNodeComp;
-export declare const node: (el: Element) => VNodeNode;
+export declare const compDef: <A extends VNodeCompAttributes = VNodeCompAttributes, S = Record<string, unknown>>(componentDefinition: VNodeCompDefinition<A, S>) => VNodeCompDefinition<A, S>;
+export declare const comp: <A extends VNodeCompAttributes, S>(componentDefinition: VNodeCompDefinition<A, S>, attrs?: A) => VNodeComp<A, S>;
+export declare const node: (el: ChildNode) => VNodeNode;
 export declare const bind: (el: Element, vNodeAnyOrArray: VNodeAny | VNodeArray | null) => VNodeComp;
-export { ns };
+export { ns, VNODE_COMP, VNODE_COMPDEF, VNODE_ELEM, VNODE_NODE, VNODE_TEXT };

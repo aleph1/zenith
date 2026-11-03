@@ -1,4 +1,4 @@
-/*! Zenith 1.0.0-rc.2 | MIT License | ©2022-2025 Daniel Barber */
+/*! Zenith 1.0.0-rc.3 | MIT License | ©2022-2025 Daniel Barber */
 const VNODE_ELEM = 1;
 const VNODE_TEXT = 2;
 const VNODE_COMP = 4;
@@ -16,11 +16,11 @@ const ns = {
   math: "http://www.w3.org/1998/Math/MathML",
   svg: "http://www.w3.org/2000/svg"
 };
-const TYPE_MASK = VNODE_TYPE_MASK;
-const FLAG_IS_STALE = 32;
-const FLAG_IS_REMOVING = 64;
-const FLAG_IS_ACTIVE = 128;
-const FLAG_REMOVE_CALLED = 256;
+const flag_start = VNODE_TYPE_MASK + 1;
+const FLAG_IS_STALE = flag_start;
+const FLAG_IS_REMOVING = flag_start << 1;
+const FLAG_IS_ACTIVE = flag_start << 2;
+const FLAG_REMOVE_CALLED = flag_start << 3;
 const DIFF_NONE = 1;
 const DIFF_SELF = 2;
 const DIFF_NODES = 4;
@@ -34,6 +34,7 @@ const diff = {
 const ALWAYS_EMPTY_ARRAY = Object.freeze([]) ;
 const ALWAYS_EMPTY_OBJECT = Object.freeze({}) ;
 const sync = () => {
+  const roots = /* @__PURE__ */ new Set() ;
   renderDepth++;
   try {
     let remaining = redrawQueue.size;
@@ -43,6 +44,11 @@ const sync = () => {
       for (const redrawNode of redrawQueue) {
         let current = redrawNode;
         for (; current.$p && current.is & VNODE_COMP; current = current.$p) ;
+        if (true) {
+          let root = redrawNode;
+          while (root.$p) root = root.$p;
+          roots.add(root);
+        }
         targetEl = current.el;
         redrawQueue.delete(redrawNode);
         if (targetEl) {
@@ -54,6 +60,11 @@ const sync = () => {
           );
         }
         if (!--remaining) break;
+      }
+      if (true) {
+        for (const root of roots) {
+          _checkDuplicateExternalNodes(root);
+        }
       }
       if (redrawQueue.size) Promise.resolve().then(sync);
       if (active && active !== document.body && document.activeElement === document.body) {
@@ -200,8 +211,24 @@ const _nextRoot = (nodes, i, anchor) => {
   }
   return anchor;
 };
+const _checkDuplicateExternalNodes = (root) => {
+  const seen = /* @__PURE__ */ new Set();
+  const nodes = [...root.nodes];
+  for (let i = 0; i < nodes.length; i++) {
+    const vNode = nodes[i];
+    if (vNode.is & VNODE_NODE) {
+      const el = vNode.el;
+      if (seen.has(el)) {
+        console.warn("Zenith: Duplicate external DOM node.", el);
+        return;
+      }
+      seen.add(el);
+    }
+    if (vNode.nodes) nodes.push(...vNode.nodes);
+  }
+};
 const _updateNode = (parentNode, parentEl, newNode, oldNode, xmlns, anchor = null) => {
-  const newNodeType = newNode.is & oldNode.is & TYPE_MASK;
+  const newNodeType = newNode.is & oldNode.is & VNODE_TYPE_MASK;
   if (newNodeType === VNODE_ELEM && newNode.$t === oldNode.$t) {
     newNode = newNode;
     newNode.$p = parentNode;
@@ -442,7 +469,15 @@ const _create = (parentNode, parentEl, vNode, xmlns, anchor = null) => {
     vNode = vNode;
     vNode.$p = parentNode;
     vNode.is |= FLAG_IS_ACTIVE;
-    if (vNode.$d.init) vNode.$d.init(vNode);
+    if (vNode.$d.init) {
+      const state = vNode.$d.init(vNode);
+      if (state !== void 0 && vNode.state === void 0) {
+        vNode.state = state;
+      }
+      if (state !== void 0 && vNode.state !== state) {
+        throw new Error("Component init assigned and returned different state values");
+      }
+    }
     vNode.nodes = _flatten(vNode.$d.draw(vNode));
     if (vNode.$d.remove || vNode.$d.removed) {
       for (let current = vNode; current && !current.$h; current = current.$p) current.$h = true;
@@ -482,7 +517,7 @@ const _unmount = (vNode) => {
     vNode = vNode;
     if (vNode.$d.remove && !(vNode.is & FLAG_REMOVE_CALLED)) vNode.$d.remove(vNode);
     if (vNode.$d.removed) vNode.$d.removed(vNode);
-    vNode.is &= TYPE_MASK;
+    vNode.is &= VNODE_TYPE_MASK;
   }
   if ((vNode.$h || redrawQueue.size) && vNode.nodes) {
     for (let i = 0; i < vNode.nodes.length; i++) {
@@ -534,16 +569,16 @@ const _remove = (vNode) => {
           vNode.$r = null;
           const parent = vNode.$p;
           if (!parent) {
-            console.warn(
-              "Promise resolved but component was already removed.",
-              "This usually means the component was removed without using $remove attribute."
-            );
+            {
+              console.warn(
+                "Promise resolved but component was already removed.",
+                "This usually means the component was removed without using $remove attribute."
+              );
+            }
             return;
           }
-          if (parent) {
-            const i = parent.nodes.indexOf(vNode);
-            if (i !== -1) parent.nodes.splice(i, 1);
-          }
+          const i = parent.nodes.indexOf(vNode);
+          if (i !== -1) parent.nodes.splice(i, 1);
           _destroy(vNode);
           redraw(parent);
         }
@@ -629,4 +664,4 @@ const bind = (el, vNodeAnyOrArray) => {
   return root;
 };
 
-export { bind, comp, compDef, diff, elem, node, ns, redraw, sync };
+export { VNODE_COMP, VNODE_COMPDEF, VNODE_ELEM, VNODE_NODE, VNODE_TEXT, bind, comp, compDef, diff, elem, node, ns, redraw, sync };
