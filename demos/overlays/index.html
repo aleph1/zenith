@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zenith — Overlay Manager Experiment</title>
+<style>
+  :root { font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#263447; background:#f5f7fa; color-scheme:light; }
+  * { box-sizing:border-box; }
+  body { margin:0; }
+  button,input { font:inherit; }
+  button { cursor:pointer; }
+  button:focus-visible,input:focus-visible { outline:3px solid #80aaf4; outline-offset:2px; }
+  .app { max-width:1080px; margin:0 auto; padding:45px 26px 85px; }
+  .eyebrow { text-transform:uppercase; font-size:11px; font-weight:750; letter-spacing:.14em; color:#406baf; }
+  h1 { font-size:clamp(30px,4vw,44px); letter-spacing:-.045em; margin:9px 0; }
+  .intro { color:#60718a; font-size:14px; line-height:1.65; max-width:760px; margin:0 0 24px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:18px; }
+  .btn { background:#fff; border:1px solid #cdd8e7; border-radius:9px; color:#30435e; padding:9px 13px; font-size:12px; font-weight:650; }
+  .btn:hover { background:#edf3fb; }
+  .btn.primary { background:#2755a0; color:#fff; border-color:#2755a0; }
+  .btn.primary:hover { background:#1f437d; }
+  .btn.danger { color:#ac3545; }
+  .btn.small { font-size:11px; padding:6px 9px; }
+  .search { border:1px solid #cdd8e7; background:#fff; border-radius:9px; padding:10px 12px; font-size:12px; min-width:190px; flex:1; }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:17px; align-items:start; }
+  .panel { background:#fff; border:1px solid #dce5f0; border-radius:14px; box-shadow:0 12px 30px #1b35570b; overflow:hidden; }
+  .panel-header { display:flex; justify-content:space-between; align-items:center; padding:17px 19px; border-bottom:1px solid #e8edf4; }
+  .panel-header h2 { margin:0; font-size:14px; }
+  .muted { font-size:11px; color:#71829a; }
+  .scroller { height:390px; overflow:auto; overscroll-behavior:contain; }
+  .task { min-height:63px; display:flex; align-items:center; gap:11px; padding:10px 15px; border-bottom:1px solid #edf1f6; }
+  .task:last-child { border:0; }
+  .task-info { flex:1; min-width:0; }
+  .task-name { font-size:12px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .task-sub { font-size:11px; color:#78879a; margin-top:4px; }
+  .tag { background:#edf2fa; border-radius:99px; color:#587297; font-size:10px; padding:5px 8px; }
+  .guide { padding:20px; color:#61738c; font-size:12px; line-height:1.65; }
+  .guide h3 { color:#31445e; margin:0 0 12px; font-size:13px; }
+  .guide ol { padding-left:18px; margin:0; }
+  .guide li { margin:0 0 13px; }
+  .footer-note { font-size:11px; line-height:1.7; color:#77869b; margin-top:16px; }
+  .empty { padding:35px; color:#8190a2; font-size:13px; }
+  #overlay-host { position:relative; z-index:100; pointer-events:none; }
+  #overlay-host > * { pointer-events:auto; }
+  .popover { position:fixed; background:#fff; border:1px solid #d7dfeb; border-radius:12px; box-shadow:0 18px 55px #15294138; padding:7px; min-width:205px; pointer-events:auto; }
+  .popover-title { color:#8491a2; font-size:10px; letter-spacing:.09em; text-transform:uppercase; padding:8px 10px; font-weight:750; }
+  .menu-action { display:block; width:100%; text-align:left; border:0; background:none; padding:10px; border-radius:7px; font-size:12px; color:#35465f; }
+  .menu-action:hover,.menu-action:focus-visible { background:#edf3fb; }
+  .menu-action.danger { color:#b04450; }
+  .calendar { width:286px; }
+  .cal-top { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px; font-size:12px; font-weight:750; }
+  .cal-top button { border:0; background:#edf3fa; width:29px; height:29px; border-radius:7px; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cal-weekday { font-size:10px; text-align:center; color:#8490a2; padding:7px 0; }
+  .cal-day { aspect-ratio:1; border:0; border-radius:7px; background:transparent; color:#394b61; font-size:11px; }
+  .cal-day:hover { background:#e7effa; }
+  .cal-day.selected { background:#2858a5; color:#fff; }
+  .cal-day.empty-day { visibility:hidden; }
+  .backdrop { position:fixed; inset:0; background:#14243aa8; display:flex; justify-content:center; align-items:center; padding:18px; pointer-events:auto; }
+  .dialog { width:min(100%,480px); background:#fff; border-radius:16px; padding:24px; box-shadow:0 28px 95px #0a192e45; }
+  .dialog.compact { width:min(100%,380px); }
+  .dialog h2 { font-size:19px; margin:0 0 8px; letter-spacing:-.025em; }
+  .dialog p { color:#687991; font-size:12px; line-height:1.6; margin:0 0 17px; }
+  .field { display:flex; flex-direction:column; gap:7px; margin:14px 0; font-size:12px; font-weight:650; }
+  .field input { padding:10px; border:1px solid #d1dbe9; border-radius:8px; }
+  .field-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:13px 0; border-top:1px solid #edf1f6; font-size:12px; }
+  .actions { display:flex; gap:9px; justify-content:flex-end; flex-wrap:wrap; margin-top:22px; }
+  .toast { position:fixed; right:18px; top:18px; width:min(330px,calc(100vw - 36px)); padding:12px 13px; display:flex; align-items:center; gap:12px; border-radius:10px; background:#23436b; color:#fff; box-shadow:0 14px 38px #0c1c3233; font-size:12px; pointer-events:auto; }
+  .toast span { flex:1; }
+  .toast button { border:0; background:transparent; color:#fff; font-size:20px; }
+  @media(max-width:760px) { .app { padding:25px 15px; } .layout { grid-template-columns:1fr; } .scroller { height:310px; } .task { flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay-root"></div>
+<script type="module">
+  // Swap this import for your local Zenith build when testing unreleased changes.
+  import { bind, comp, compDef, elem, redraw, sync } from '../../dist/zenith.js';
+
+  const tasks = Array.from({length: 28}, (_, i) => ({
+    id: i + 1,
+    name: ['Design review', 'Update documentation', 'Test interactions', 'Review feedback', 'Prepare release', 'Audit accessibility'][i % 6] + ' #' + (i + 1),
+    due: `2026-10-${String(17 + i % 12).padStart(2, '0')}`
+  }));
+  const state = { tasks, filter: '' };
+  const overlays = [];
+  let nextId = 1;
+  let appRoot, overlayRoot;
+  const redrawApp = () => redraw(appRoot);
+  const redrawOverlays = () => redraw(overlayRoot);
+  const taskById = id => state.tasks.find(t => t.id === id);
+
+  // --- The entire generic overlay manager ---
+  const OverlayManager = compDef({
+    draw: () => overlays.length
+      ? elem('div', { id: 'overlay-host' }, overlays.map(entry =>
+          comp(entry.component, { ...entry.options, $key: entry.id, handle: entry })
+        ))
+      : null
+  });
+
+  function showOverlay(component, options = {}) {
+    const { index = overlays.length, ...attrs } = options;
+    const entry = { id: nextId++, component, options: attrs, returnFocus: document.activeElement };
+    overlays.splice(index, 0, entry);
+    redrawOverlays();
+    sync();
+    return entry;
+  }
+
+  function hideOverlay(overlayOrIndex) {
+    const index = typeof overlayOrIndex === 'number' ? overlayOrIndex : overlays.indexOf(overlayOrIndex);
+    if (index < 0 || index >= overlays.length) return;
+    const entry = overlays[index];
+    // Removing an owner also removes nested overlays, regardless of their positions.
+    const removed = new Set([entry]);
+    for (let i = 0; i < overlays.length; i++) {
+      if (removed.has(overlays[i].options.parent)) removed.add(overlays[i]);
+    }
+    for (let i = overlays.length - 1; i >= 0; i--) {
+      if (removed.has(overlays[i])) overlays.splice(i, 1);
+    }
+    redrawOverlays();
+    sync();
+    if (entry.returnFocus?.isConnected) entry.returnFocus.focus();
+  }
+
+  // Application helpers, not renderer or overlay-manager responsibilities.
+  function toast(message) {
+    const top = 18 + overlays.filter(entry => entry.options.kind === 'toast').length * 65;
+    const entry = showOverlay(Toast, { message, kind: 'toast', top });
+    setTimeout(() => hideOverlay(entry), 4000);
+    return entry;
+  }
+
+  function anchorPosition(anchor, width = 286, height = 310) {
+    const r = anchor.getBoundingClientRect();
+    const below = r.bottom + height + 8 < innerHeight;
+    return {
+      x: Math.max(8, Math.min(r.left, innerWidth - width - 8)),
+      y: Math.max(8, Math.min(below ? r.bottom + 5 : r.top - height - 5, innerHeight - height - 8))
+    };
+  }
+
+  function openAnchored(component, anchor, options = {}) {
+    const { width = 286, height = 310, ...attrs } = options;
+    return showOverlay(component, { ...attrs, anchor, width, height, ...anchorPosition(anchor, width, height) });
+  }
+
+  function refreshAnchors() {
+    let changed = false;
+    for (const entry of [...overlays]) {
+      const { anchor, width, height } = entry.options;
+      if (!anchor) continue;
+      if (!anchor.isConnected) { hideOverlay(entry); continue; }
+      const pos = anchorPosition(anchor, width, height);
+      if (pos.x !== entry.options.x || pos.y !== entry.options.y) {
+        Object.assign(entry.options, pos);
+        changed = true;
+      }
+    }
+    if (changed) redrawOverlays();
+  }
+
+  function closeFloating() {
+    for (const entry of [...overlays]) {
+      if (entry.options.anchor) hideOverlay(entry);
+    }
+  }
+
+  function openEditor(taskId, parent = null) {
+    if (!taskById(taskId)) return null;
+    closeFloating();
+    return showOverlay(EditDialog, { taskId, parent, modal: true, title: 'Edit task', closable: true });
+  }
+
+  // --- Reusable components: calendar does not know where it is rendered ---
+  const Calendar = compDef({
+    init: v => {
+      const task = taskById(v.attrs.taskId);
+      v.month = new Date((task?.due || '2026-10-17') + 'T12:00:00');
+      v.month.setDate(1);
+    },
+    draw: v => {
+      const task = taskById(v.attrs.taskId);
+      if (!task) return null;
+      const year = v.month.getFullYear();
+      const month = v.month.getMonth();
+      const count = new Date(year, month + 1, 0).getDate();
+      const offset = new Date(year, month, 1).getDay();
+      const days = [ ...Array.from({length: offset}, (_, i) => elem('span', {class:'cal-day empty-day', 'aria-hidden':'true'}, '')),
+        ...Array.from({length: count}, (_, i) => {
+          const date = `${year}-${String(month + 1).padStart(2,'0')}-${String(i + 1).padStart(2,'0')}`;
+          return elem('button', {
+            class: 'cal-day' + (date === task.due ? ' selected' : ''),
+            'aria-label': date,
+            'aria-pressed': date === task.due ? 'true' : 'false',
+            onclick: () => {
+              task.due = date;
+              hideOverlay(v.attrs.handle);
+              redrawApp();
+              toast(`Due date updated: ${task.name}`);
+            }
+          }, String(i + 1));
+        }) ];
+      return elem('section', {
+        class: 'popover calendar', role:'dialog', 'aria-label':`Due date for ${task.name}`,
+        style:{left:v.attrs.x + 'px', top:v.attrs.y + 'px'}, 'data-floating':String(v.attrs.handle.id)
+      },
+        elem('div', {class:'cal-top'},
+          elem('button', {'aria-label':'Previous month', onclick:() => { v.month.setMonth(month - 1); redraw(v); }}, '‹'),
+          elem('span', {}, v.month.toLocaleDateString(undefined,{month:'long',year:'numeric'})),
+          elem('button', {'aria-label':'Next month', onclick:() => { v.month.setMonth(month + 1); redraw(v); }}, '›')
+        ),
+        elem('div', {class:'cal-grid'},
+          ...['Su','Mo','Tu','We','Th','Fr','Sa'].map(day => elem('span', {class:'cal-weekday'}, day)),
+          ...days
+        )
+      );
+    },
+    drawn: (v, first) => { if (first) v.el?.querySelector('button')?.focus(); }
+  });
+
+  const ActionMenu = compDef({
+    draw: v => {
+      const task = taskById(v.attrs.taskId);
+      if (!task) return null;
+      const action = (name, fn, danger = false) => elem('button', {
+        class:'menu-action' + (danger ? ' danger' : ''), onclick:fn
+      }, name);
+      return elem('div', {class:'popover', style:{left:v.attrs.x+'px',top:v.attrs.y+'px'}, 'data-floating':String(v.attrs.handle.id), role:'menu'},
+        elem('div', {class:'popover-title'}, `Task ${task.id}`),
+        action('Edit task', () => { hideOverlay(v.attrs.handle); openEditor(task.id); }),
+        action('Change due date', () => {
+          const anchor = v.attrs.anchor;
+          hideOverlay(v.attrs.handle);
+          openAnchored(Calendar, anchor, {taskId:task.id});
+        }),
+        action('Duplicate task', () => {
+          hideOverlay(v.attrs.handle);
+          state.tasks.unshift({...task, id:nextId++, name:task.name+' copy'});
+          redrawApp();
+          toast('Task duplicated');
+        }),
+        action('Archive task…', () => {
+          hideOverlay(v.attrs.handle);
+          showOverlay(ConfirmDialog, {taskId:task.id, modal:true, title:'Archive task?', closable:true});
+        }, true)
+      );
+    }
+  });
+
+  const TaskRow = compDef({
+    draw: v => {
+      const task = taskById(v.attrs.taskId);
+      if (!task) return null;
+      const toggle = (kind, e) => {
+        const existing = v[kind];
+        if (existing && overlays.includes(existing)) { hideOverlay(existing); v[kind] = null; return; }
+        if (kind === 'calendar') v[kind] = openAnchored(Calendar, e.currentTarget, {taskId:task.id});
+        else v[kind] = openAnchored(ActionMenu, e.currentTarget, {taskId:task.id, width:215, height:220});
+      };
+      return elem('div', {class:'task'},
+        elem('div', {class:'task-info'},
+          elem('div', {class:'task-name'}, task.name),
+          elem('div', {class:'task-sub'}, `Task ${task.id} · Due ${task.due}`)
+        ),
+        elem('button', {class:'btn small', 'aria-label':`Pick date for ${task.name}`, onclick:e => toggle('calendar',e)}, 'Date ▾'),
+        elem('button', {class:'btn small', 'aria-label':`Actions for ${task.name}`, onclick:e => toggle('menu',e)}, '•••')
+      );
+    },
+    // This is the real portal-replacement stress test: owner teardown.
+    removed: v => {
+      if (v.calendar) hideOverlay(v.calendar);
+      if (v.menu) hideOverlay(v.menu);
+    }
+  });
+
+  const EditDialog = compDef({
+    draw: v => {
+      const task = taskById(v.attrs.taskId);
+      if (!task) return null;
+      const entry = v.attrs.handle;
+      return elem('div', {class:'backdrop', onclick:e => {
+        if (e.target === e.currentTarget && topModal() === entry && v.attrs.closable !== false) hideOverlay(entry);
+      }},
+        elem('section', {class:'dialog', role:'dialog', 'aria-modal':'true', 'aria-label':v.attrs.title},
+          elem('h2', {}, v.attrs.title),
+          elem('p', {}, 'This dialog can open a calendar outside itself and a nested confirmation above itself.'),
+          elem('label', {class:'field'}, 'Task name',
+            elem('input', {value:task.name, 'data-initial-focus':'', oninput:e => {
+              task.name = e.currentTarget.value;
+              redrawApp();
+            }})
+          ),
+          elem('div', {class:'field-row'},
+            elem('span', {}, 'Due date: ' + task.due),
+            elem('button', {class:'btn small', onclick:e => openAnchored(Calendar, e.currentTarget, {
+              taskId:task.id, parent:entry
+            })}, 'Choose date ▾')
+          ),
+          elem('div', {class:'actions'},
+            elem('button', {class:'btn danger', onclick:() => showOverlay(ConfirmDialog, {
+              taskId:task.id, parent:entry, modal:true, title:'Archive task?', closable:true
+            })}, 'Archive…'),
+            elem('button', {class:'btn primary', onclick:() => hideOverlay(entry)}, 'Done')
+          )
+        )
+      );
+    },
+    drawn: (v, first) => { if (first) v.el?.querySelector('[data-initial-focus]')?.focus(); }
+  });
+
+  const ConfirmDialog = compDef({
+    draw: v => {
+      const task = taskById(v.attrs.taskId);
+      const entry = v.attrs.handle;
+      return elem('div', {class:'backdrop', onclick:e => {
+        if (e.target === e.currentTarget && topModal() === entry) hideOverlay(entry);
+      }},
+        elem('section', {class:'dialog compact', role:'alertdialog', 'aria-modal':'true', 'aria-label':v.attrs.title},
+          elem('h2', {}, v.attrs.title),
+          elem('p', {}, `Archive “${task?.name || 'this task'}”? The underlying dialog stays mounted until you confirm.`),
+          elem('div', {class:'actions'},
+            elem('button', {class:'btn', 'data-initial-focus':'', onclick:() => hideOverlay(entry)}, 'Cancel'),
+            elem('button', {class:'btn danger', onclick:() => {
+              const name = task?.name;
+              if (task) state.tasks = state.tasks.filter(t => t.id !== task.id);
+              hideOverlay(v.attrs.parent || entry);
+              redrawApp();
+              if (name) toast(`Archived “${name}”`);
+            }}, 'Archive')
+          )
+        )
+      );
+    },
+    drawn: (v, first) => { if (first) v.el?.querySelector('[data-initial-focus]')?.focus(); }
+  });
+
+  const Toast = compDef({
+    draw: v => elem('div', {class:'toast', role:'status', style:{top:v.attrs.top + 'px'}},
+      elem('span', {}, v.attrs.message),
+      elem('button', {'aria-label':'Dismiss notification', onclick:() => hideOverlay(v.attrs.handle)}, '×')
+    )
+  });
+
+  const topModal = () => [...overlays].reverse().find(entry => entry.options.modal);
+
+  const App = compDef({
+    draw: () => {
+      const visible = state.tasks.filter(t => t.name.toLowerCase().includes(state.filter.toLowerCase()));
+      return elem('main', {class:'app'},
+        elem('div', {class:'eyebrow'}, 'Zenith · architecture experiment'),
+        elem('h1', {}, 'Overlays without portals'),
+        elem('p', {class:'intro'}, 'A reusable calendar escapes a clipped scrolling table. A dialog can open another dialog or a calendar. Menus and notifications share one ordered overlay collection. No portal support is used.'),
+        elem('div', {class:'toolbar'},
+          elem('input', {class:'search', placeholder:'Filter tasks (hide a row with an open calendar)…',
+            value:state.filter, oninput:e => {
+              state.filter = e.currentTarget.value;
+              redrawApp();
+              sync();
+              refreshAnchors();
+            }
+          }),
+          elem('button', {class:'btn primary', onclick:() => openEditor(state.tasks[0]?.id)}, 'Open edit dialog'),
+          elem('button', {class:'btn', onclick:() => toast('Created from outside the overlay tree')}, 'Show notification'),
+          elem('button', {class:'btn', onclick:() => {
+            state.tasks.reverse(); redrawApp(); sync(); refreshAnchors();
+          }}, 'Reverse rows')
+        ),
+        elem('div', {class:'layout'},
+          elem('section', {class:'panel'},
+            elem('div', {class:'panel-header'},
+              elem('h2', {}, 'Tasks inside a clipped scroller'),
+              elem('span', {class:'muted'}, `${visible.length} tasks`)
+            ),
+            elem('div', {class:'scroller'},
+              visible.length ? visible.map(task => comp(TaskRow, {$key:task.id, taskId:task.id}))
+                : elem('div', {class:'empty'}, 'No matching tasks')
+            )
+          ),
+          elem('aside', {class:'panel guide'},
+            elem('h3', {}, 'Try to break it'),
+            elem('ol', {},
+              elem('li', {}, 'Open a date picker near the bottom of the clipped list. Scroll while it is open.'),
+              elem('li', {}, 'Filter away its owning row or reverse the row order. Watch whether it follows or closes.'),
+              elem('li', {}, 'Open a dialog, then its calendar, then a nested archive confirmation.'),
+              elem('li', {}, 'Open notifications while dialogs are visible. Use Escape and outside clicks.'),
+              elem('li', {}, 'Try the same controls from the menu of a deeply nested task row.')
+            )
+          )
+        ),
+        elem('p', {class:'footer-note'}, 'Two ordinary Zenith roots, one tiny overlay manager. Component ownership and cleanup are explicit. The demo deliberately uses no “to” attribute.')
+      );
+    }
+  });
+
+  appRoot = bind(document.getElementById('app'), comp(App));
+  overlayRoot = bind(document.getElementById('overlay-root'), comp(OverlayManager));
+
+  document.addEventListener('pointerdown', e => {
+    if (e.target.closest('[data-floating]')) return;
+    // Don't immediately dismiss a floating overlay when its trigger was clicked.
+    if (e.target.closest('.task button, .field-row button')) return;
+    closeFloating();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const entry = [...overlays].reverse().find(item => item.options.kind !== 'toast' && item.options.closable !== false);
+      if (entry) { e.preventDefault(); hideOverlay(entry); }
+    }
+    if (e.key === 'Tab' && topModal()) {
+      const modal = [...document.querySelectorAll('[aria-modal="true"]')].at(-1);
+      if (!modal) return;
+      const modalEntry = topModal();
+      const floaters = overlays.filter(entry => entry.options.anchor && entry.options.parent === modalEntry)
+        .map(entry => document.querySelector(`[data-floating="${entry.id}"]`)).filter(Boolean);
+      const selector = 'button:not([disabled]), input:not([disabled])';
+      const items = [...modal.querySelectorAll(selector), ...floaters.flatMap(el => [...el.querySelectorAll(selector)])];
+      if (!items.length) return;
+      const first = items[0], last = items.at(-1);
+      if (e.shiftKey && (document.activeElement === first || !items.includes(document.activeElement))) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !items.includes(document.activeElement))) {
+        e.preventDefault(); first.focus();
+      }
+    }
+  });
+  document.addEventListener('scroll', refreshAnchors, true);
+  window.addEventListener('resize', refreshAnchors);
+</script>
+</body>
+</html>

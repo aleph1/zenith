@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Zenith Reconciliation Stress Test</title>
+    <meta name="description" content="Keyed reconciliation stress test for Zenith.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../css/demos.css">
+    <style>
+        .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
+        .stats { display: flex; gap: 20px; margin: 12px 0; font-variant-numeric: tabular-nums; }
+        #item-limit { width: 90px; }
+    </style>
+</head>
+<body>
+    <h1>Zenith Reconciliation Stress Test</h1>
+    <p>Shuffles keyed elements every animation frame. Growing mode adds one item per frame; fixed mode repeatedly reorders a constant number of items. New items fade in.</p>
+
+    <div class="controls">
+        <label for="mode">Mode</label>
+        <select id="mode">
+            <option value="growing">Growing</option>
+            <option value="fixed">Fixed count</option>
+        </select>
+        <label for="item-limit">Fixed item count</label>
+        <input id="item-limit" type="number" min="1" max="10000" step="1" value="500" disabled>
+        <button id="pause" type="button">Pause</button>
+    </div>
+
+    <div class="stats" aria-live="off">
+        <span>Items: <strong id="item-count">0</strong></span>
+        <span>FPS: <strong id="fps">—</strong></span>
+        <span>Reconciliation: <strong id="reconcile-ms">—</strong> ms avg</span>
+    </div>
+
+    <div id="app"></div>
+    <script type="module">
+        import { bind, comp, compDef, elem, redraw, sync } from '../../dist/zenith.js';
+
+        let id = 1;
+        const items = [];
+        const modeEl = document.querySelector('#mode');
+        const limitEl = document.querySelector('#item-limit');
+        const pauseEl = document.querySelector('#pause');
+        const countEl = document.querySelector('#item-count');
+        const fpsEl = document.querySelector('#fps');
+        const reconcileEl = document.querySelector('#reconcile-ms');
+
+        let paused = false;
+        let frames = 0;
+        let sampleStart = null;
+        let reconcileTotal = 0;
+
+        const shuffle = arr => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        };
+
+        const Item = compDef({
+            draw: vNode => elem('li', 'Item ' + vNode.attrs.id),
+            drawn: (vNode, firstDraw) => {
+                if (firstDraw) {
+                    vNode.el.animate(
+                        [{ opacity: 0 }, { opacity: 1 }],
+                        { duration: 2000 }
+                    );
+                }
+            }
+        });
+
+        const ListDef = compDef({
+            draw: () => elem('ul',
+                items.map(itemId => comp(Item, { $key: itemId, id: itemId }))
+            )
+        });
+
+        const app = bind(document.querySelector('#app'), comp(ListDef));
+
+        const fixedCount = () => Math.min(10000, Math.max(1, Math.floor(Number(limitEl.value) || 500)));
+
+        const reset = () => {
+            items.length = 0;
+            if (modeEl.value === 'fixed') {
+                const count = fixedCount();
+                limitEl.value = count;
+                for (let i = 0; i < count; i++) items.push(id++);
+            }
+            countEl.textContent = items.length;
+            frames = 0;
+            sampleStart = null;
+            reconcileTotal = 0;
+            fpsEl.textContent = '—';
+            reconcileEl.textContent = '—';
+            redraw(app);
+        };
+
+        modeEl.addEventListener('change', () => {
+            limitEl.disabled = modeEl.value !== 'fixed';
+            reset();
+        });
+        limitEl.addEventListener('change', reset);
+        pauseEl.addEventListener('click', () => {
+            paused = !paused;
+            pauseEl.textContent = paused ? 'Resume' : 'Pause';
+            frames = 0;
+            sampleStart = null;
+            reconcileTotal = 0;
+            if (paused) fpsEl.textContent = '0';
+        });
+
+        const tick = now => {
+            if (!paused) {
+                // Start the sampling window on an actual animation frame.
+                if (sampleStart === null) sampleStart = now;
+
+                shuffle(items);
+                if (modeEl.value === 'growing') items.push(id++);
+
+                // Force Zenith's pending reconciliation so we can time it.
+                const start = performance.now();
+                redraw(app);
+                sync();
+                reconcileTotal += performance.now() - start;
+
+                countEl.textContent = items.length;
+                frames++;
+
+                const elapsed = now - sampleStart;
+                if (elapsed >= 1000) {
+                    fpsEl.textContent = (frames * 1000 / elapsed).toFixed(1);
+                    reconcileEl.textContent = (reconcileTotal / frames).toFixed(2);
+                    frames = 0;
+                    reconcileTotal = 0;
+                    sampleStart = now;
+                }
+            }
+            requestAnimationFrame(tick);
+        };
+
+        requestAnimationFrame(tick);
+    </script>
+</body>
+</html>

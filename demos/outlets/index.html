@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenith · Contextual Outlets Experiment</title>
+<style>
+:root {font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e6eaf1;background:#10151e;color-scheme:dark}
+*{box-sizing:border-box} body{margin:0;min-width:320px} button,input,select{font:inherit} button{cursor:pointer} button:focus-visible,input:focus-visible{outline:2px solid #8ac6ff;outline-offset:2px} button:disabled{opacity:.35;cursor:default}
+.topbar{height:59px;display:flex;align-items:center;gap:20px;padding:0 23px;border-bottom:1px solid #293242;background:#151c27}
+.brand{display:flex;align-items:center;gap:10px;font-weight:780;font-size:14px;letter-spacing:-.035em;white-space:nowrap}.brand-mark{display:grid;place-items:center;width:27px;height:27px;border-radius:7px;background:#92e1c4;color:#153c38;font-size:17px;font-weight:900}.brand small{font-size:10px;color:#8b9db6;font-weight:500;margin-left:5px;letter-spacing:0}
+.top-desc{font-size:12px;color:#8393ab;flex:1}.top-right{font-size:11px;color:#96a6bb;display:flex;align-items:center;gap:10px}.dot{width:7px;height:7px;border-radius:50%;background:#80dcb4}
+.workspace{display:grid;grid-template-columns:72px minmax(0,1fr) 292px;min-height:640px;height:calc(100vh - 91px);max-height:900px}
+.tool-rail{background:#19212d;border-right:1px solid #2c3645;display:flex;flex-direction:column;align-items:center;gap:7px;padding:17px 8px}.rail-caption{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#74849b;margin:1px 0 10px}.tool-button{width:48px;min-height:53px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;border:1px solid transparent;border-radius:9px;background:transparent;color:#a5b1c4}.tool-button:hover{background:#273447}.tool-button.active{background:#284b51;border-color:#3c7776;color:#b5f3dd}.tool-icon{font-size:20px;line-height:1}.tool-name{font-size:9px;font-weight:650}.rail-rule{height:1px;width:38px;background:#334053;margin:8px 0}
+.center{min-width:0;display:flex;flex-direction:column;background:#121923}.context{min-height:65px;display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #2a3545;background:#1b2531;flex-wrap:wrap}.context-label{display:flex;flex-direction:column;gap:3px;min-width:80px;padding-right:13px;border-right:1px solid #384354}.context-label strong{font-size:11px}.context-label span{font-size:9px;color:#8698ae}.outlet-strip{display:flex;align-items:center;gap:9px;flex:1;flex-wrap:wrap;min-width:0}.outlet-section{display:flex;align-items:center;gap:9px;padding:0 12px 0 2px;border-right:1px solid #384354;min-height:34px;flex-wrap:wrap}.outlet-section:last-child{border-right:0}.micro-label{font-size:10px;color:#a0afc2;white-space:nowrap}.inline-control{display:flex;align-items:center;gap:7px;font-size:11px;color:#b4c2d2;white-space:nowrap}.inline-control input[type=range]{width:76px;accent-color:#9ce3ca}.inline-control input[type=color]{width:30px;height:27px;padding:2px;background:#263444;border:1px solid #465368;border-radius:5px}.inline-control select{background:#263444;color:#dce5f1;border:1px solid #435269;border-radius:6px;padding:5px 7px;font-size:11px}.mini-btn{border:1px solid #46536a;background:#2b384a;color:#e0e7f1;border-radius:6px;padding:7px 10px;font-size:11px;white-space:nowrap}.mini-btn:hover{background:#40516a}.mini-btn.primary{background:#366a62;border-color:#4d9788;color:#d8fff0}.mini-btn.danger{color:#f6a3a3}
+.stage{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto;align-items:center;justify-content:center;padding:32px 28px 22px;gap:15px;background:radial-gradient(ellipse at 50% 42%,#233047 0%,#141b28 64%,#111824 100%)}.stage-heading{display:flex;justify-content:space-between;width:min(100%,660px);font-size:10px;color:#93a3b7;letter-spacing:.02em}.stage-heading strong{color:#d8e3f1;font-weight:650}.artboard{position:relative;width:min(100%,660px);aspect-ratio:1.5;min-height:280px;background:#f4efe6;border-radius:3px;box-shadow:0 28px 70px #0008;overflow:hidden;isolation:isolate}.artboard.grid{background-image:linear-gradient(#8898a31a 1px,transparent 1px),linear-gradient(90deg,#8898a31a 1px,transparent 1px);background-size:22px 22px;background-color:#f4efe6}.artboard:after{content:"";position:absolute;inset:0;pointer-events:none;border:1px solid #fff8}.shape-layer{position:absolute;inset:0}.shape{position:absolute;display:grid;place-items:center;cursor:pointer;user-select:none;touch-action:none;transition:box-shadow .12s}.shape.rect{border-radius:15px;box-shadow:0 10px 30px #102d3430}.shape.circle{border-radius:50%;box-shadow:0 10px 25px #142c3926}.shape.text{font-weight:800;font-size:clamp(18px,3vw,33px);letter-spacing:-.05em;color:#27344a}.shape.selected{outline:2px solid #399ed9;outline-offset:5px}.shape.selected:before{content:"";position:absolute;inset:-8px;border:1px dashed #319ad9;pointer-events:none}.shape .shape-label{font-size:clamp(12px,2.5vw,24px);font-weight:800;color:#fff9;letter-spacing:-.04em}.brush-mark{position:absolute;border-radius:50%;pointer-events:none;opacity:.65}.stage-tip{font-size:11px;color:#9aa9bb;text-align:center;line-height:1.5}.stage-tip b{color:#d5e4ef}
+.inspector{background:#1b2430;border-left:1px solid #2c3645;display:flex;flex-direction:column;min-width:0;overflow:auto}.panel-title{font-size:10px;font-weight:780;letter-spacing:.14em;text-transform:uppercase;color:#879ab3;padding:20px 19px 14px;border-bottom:1px solid #2e394a}.inspector-body{padding:8px 0;display:flex;flex-direction:column}.inspector-section{padding:16px 19px;border-bottom:1px solid #2d3849;display:flex;flex-direction:column;gap:12px}.section-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.section-head strong{font-size:12px}.section-tag{font-size:9px;color:#9ce2cb;border:1px solid #40746c;border-radius:4px;padding:3px 5px}.inspector-section p{margin:0;font-size:11px;color:#98a9bd;line-height:1.65}.field{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:#aab9ca}.field input[type=range]{width:110px;accent-color:#91dfc4}.field input[type=color]{width:39px;height:30px;padding:3px;background:#283747;border:1px solid #40536a;border-radius:6px}.field .value{font-variant-numeric:tabular-nums;color:#e4ebf5;min-width:30px;text-align:right}.section-actions{display:flex;gap:7px;flex-wrap:wrap}.inspector-empty{font-size:12px;color:#7e8fa6;padding:20px}
+.status{height:32px;display:flex;align-items:center;gap:14px;padding:0 15px;background:#131b25;border-top:1px solid #2c3748;font-size:10px;color:#8c9db4;overflow:hidden;white-space:nowrap}.status .outlet-strip{gap:13px}.status-item{display:flex;align-items:center;gap:6px}.status-item b{color:#b5e9d7;font-weight:600}
+.below{max-width:1200px;margin:0 auto;padding:25px 25px 50px;display:grid;grid-template-columns:1fr 1fr;gap:22px}.info-card{background:#18212d;border:1px solid #2e3a4c;border-radius:12px;padding:20px}.info-card h2{font-size:14px;margin:0 0 10px;letter-spacing:-.02em}.info-card p{font-size:12px;line-height:1.75;color:#a1b1c5;margin:0 0 12px}.info-card pre{overflow:auto;padding:15px;background:#101823;border:1px solid #2a3647;border-radius:8px;color:#b5ead5;font-size:11px;line-height:1.6;margin:0}.event-log{display:flex;flex-direction:column;gap:7px;max-height:174px;overflow:auto}.event{display:flex;align-items:baseline;gap:9px;font-size:11px;color:#a9b9cc}.event span{font-variant-numeric:tabular-nums;color:#6d819b;font-size:10px}.event b{color:#d3e2f0;font-weight:500}.event em{color:#9fe0c6;font-style:normal}.hint{font-size:10px;color:#8296ad;margin-top:10px}
+@media(max-width:960px){.workspace{grid-template-columns:60px minmax(0,1fr) 225px}.inspector-section{padding:14px}.context{padding:10px}.top-desc{display:none}}
+@media(max-width:680px){.workspace{grid-template-columns:54px minmax(0,1fr);height:auto;min-height:620px}.inspector{grid-column:1/-1;max-height:350px;border-top:1px solid #334054;border-left:0}.center{min-height:540px}.tool-button{width:43px}.stage{padding:16px 12px}.artboard{min-height:210px}.below{grid-template-columns:1fr;padding:16px}.topbar{padding:0 12px}.brand small{display:none}}
+.diagnostics{max-width:1150px;margin:0 auto 40px}.diagnostic-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.diagnostic-report{white-space:pre-wrap;max-height:350px;overflow:auto;color:#c4d5e8!important}.diagnostic-actions .hint{margin:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<section class="below">
+  <article class="info-card">
+    <h2>How this works — no portals</h2>
+    <p>The tool component lives inside the canvas. When mounted, it contributes ordinary Zenith components to the toolbar, inspector, and status bar. Those outlets live elsewhere in the same application tree. When the tool unmounts, its contributions disappear automatically.</p>
+    <pre>const Outlet = compDef({
+  draw: vNode => contributions(vNode.attrs.name)
+    .map(item => comp(item.component, {
+      ...item.attrs, $key: item.id
+    }))
+});
+
+// A tool's init() registers its UI.
+// Its removed() unregisters it.
+// Outlets redraw independently.</pre>
+    <div class="hint">Experiment: change tools, select a shape, delete it, then add a new one. Watch the contextual UI and lifecycle log.</div>
+  </article>
+  <article class="info-card">
+    <h2>Lifecycle events</h2>
+    <p>Tool and selection components are the owners of their contributions. Registration and cleanup are automatic; the toolbar itself knows nothing about the tools.</p>
+    <div id="events" class="event-log" aria-live="polite"></div>
+    <div class="hint" id="stats">Waiting for Zenith…</div>
+  </article>
+</section>
+<section class="diagnostics info-card">
+  <h2>Outlet regression diagnostics</h2>
+  <p>Runs a repeatable sequence of tool changes, selection changes, updates, and cleanup checks. Prints one complete report to the browser console so you can paste it back for review.</p>
+  <div class="diagnostic-actions">
+    <button id="run-diagnostics" type="button" class="mini-btn primary">Run diagnostics</button>
+    <button id="copy-diagnostics" type="button" class="mini-btn">Copy report</button>
+    <span id="diagnostic-summary" class="hint">Not run yet</span>
+  </div>
+  <pre id="diagnostic-report" class="diagnostic-report">Click “Run diagnostics” to start.</pre>
+</section>
+<script type="module">
+import { bind, comp, compDef, elem, redraw, sync } from '../../dist/zenith.js';
+
+// --- Application state ---
+const tools = [
+  { id: 'move', icon: '↖', name: 'Move', description: 'Select and edit objects' },
+  { id: 'brush', icon: '✎', name: 'Brush', description: 'Paint directly on the canvas' },
+  { id: 'crop', icon: '▣', name: 'Crop', description: 'Adjust canvas guides' },
+  { id: 'type', icon: 'T', name: 'Type', description: 'Add a text object' },
+];
+let nextShape = 4;
+const state = {
+  tool: 'move', selected: 2, brushSize: 28, brushOpacity: 65, zoom: 100,
+  grid: false, cropGuides: true, brushMarks: [],
+  shapes: [
+    {id:1,type:'rect',name:'Background card',x:13,y:20,w:43,h:51,fill:'#334f67'},
+    {id:2,type:'circle',name:'Accent circle',x:52,y:29,w:27,h:40,fill:'#e8a66b'},
+    {id:3,type:'text',name:'STUDIO',x:20,y:57,w:34,h:16,fill:'#24374c'}
+  ]
+};
+let appRoot;
+const redrawApp = () => redraw(appRoot);
+const getShape = id => state.shapes.find(s => s.id === id);
+
+// --- General-purpose outlet registry (not a renderer feature) ---
+const slots = new Map();     // slot name -> Map(owner, contribution)
+const outlets = new Map();   // slot name -> mounted Outlet vnode
+let ownerSequence = 0;
+const logs = [];
+function log(action, detail) {
+  logs.unshift({time:new Date().toLocaleTimeString(),action,detail});
+  logs.length = Math.min(logs.length, 8);
+  const host = document.getElementById('events');
+  host.replaceChildren(...logs.map(x => {
+    const row = document.createElement('div'); row.className = 'event';
+    const time = document.createElement('span'); time.textContent = x.time;
+    const label = document.createElement('b'); label.textContent = x.action;
+    const detail = document.createElement('em'); detail.textContent = x.detail;
+    row.append(time,label,detail); return row;
+  }));
+  const count = [...slots.values()].reduce((n, slot) => n + slot.size, 0);
+  document.getElementById('stats').textContent = `${count} active contributions across ${slots.size} outlets · ${state.shapes.length} canvas objects`;
+}
+function refresh(slot) {
+  const outlet = outlets.get(slot);
+  if (outlet) redraw(outlet, true); // Surgical redraw: no need to redraw the canvas
+}
+function contribute(owner, slot, component, attrs = {}, order = 0) {
+  let entries = slots.get(slot);
+  if (!entries) slots.set(slot, entries = new Map());
+  entries.set(owner, {id:owner.id + ':' + slot, component, attrs, order});
+  refresh(slot);
+}
+function withdraw(owner) {
+  for (const [slot, entries] of slots) {
+    if (entries.delete(owner)) refresh(slot);
+  }
+}
+const Outlet = compDef({
+  init(vNode) { outlets.set(vNode.attrs.name, vNode); },
+  draw(vNode) {
+    const entries = [...(slots.get(vNode.attrs.name)?.values() || [])];
+    entries.sort((a,b) => a.order - b.order);
+    return entries.map(entry => comp(entry.component, {...entry.attrs, $key:entry.id}));
+  },
+  removed(vNode) {
+    if (outlets.get(vNode.attrs.name) === vNode) outlets.delete(vNode.attrs.name);
+  }
+});
+
+const button = (label, onClick, cls = '') => elem('button', {type:'button',class:'mini-btn '+cls,onclick:onClick},label);
+const range = (label, value, min, max, change) => elem('label',{class:'inline-control'},
+  label,elem('input',{type:'range',min,max,value,oninput:e=>change(+e.currentTarget.value)}),
+  elem('span',{},String(value))
+);
+const field = (name, control) => elem('label',{class:'field'},elem('span',{},name),control);
+const section = (name, tag, ...children) => elem('div',{class:'inspector-section'},
+  elem('div',{class:'section-head'},elem('strong',{},name),elem('span',{class:'section-tag'},tag)),...children
+);
+const status = text => elem('span',{class:'status-item'},text);
+const colorInput = (value, change) => elem('input',{type:'color',value,oninput:e=>change(e.currentTarget.value)});
+function mutate(fn) { fn(); redrawApp(); }
+function selectTool(id) { if(state.tool !== id) mutate(()=>state.tool=id); }
+function selectShape(id) { if(state.selected !== id) mutate(()=>state.selected=id); }
+function addShape(type='rect') {
+  const id=nextShape++;
+  mutate(()=>{
+    state.shapes.push({id,type,name:type==='text'?'NEW TEXT':`Layer ${id}`,x:22+(id*7)%35,y:19+(id*9)%34,w:type==='text'?34:23,h:type==='text'?15:32,fill:type==='circle'?'#db9c73':'#4e8b8b'});
+    state.selected=id;
+  });
+  log('Canvas',`Created layer ${id}`);
+}
+function deleteShape() {
+  if(state.selected == null) return;
+  const id=state.selected;
+  mutate(()=>{state.shapes=state.shapes.filter(s=>s.id!==id);state.selected=null;});
+  log('Canvas',`Deleted layer ${id}`);
+}
+function duplicateShape() {
+  const s=getShape(state.selected); if(!s)return;
+  const id=nextShape++;
+  mutate(()=>{state.shapes.push({...s,id,name:s.name+' copy',x:Math.min(75,s.x+7),y:Math.min(70,s.y+7)});state.selected=id;});
+  log('Canvas',`Duplicated layer ${s.id}`);
+}
+
+// --- Contextual components rendered by outlets ---
+const ToolToolbar = compDef({
+  draw(v) {
+    const tool=v.attrs.tool;
+    return elem('div',{class:'outlet-section'},
+      tool==='move' ? [button('Add shape',()=>addShape()),button('Add circle',()=>addShape('circle'))] :
+      tool==='brush' ? [range('Size',state.brushSize,5,80,n=>mutate(()=>state.brushSize=n)),range('Opacity',state.brushOpacity,10,100,n=>mutate(()=>state.brushOpacity=n))] :
+      tool==='crop' ? [button(state.cropGuides?'Hide guides':'Show guides',()=>mutate(()=>state.cropGuides=!state.cropGuides)),button('Reset zoom',()=>mutate(()=>state.zoom=100))] :
+      [button('Add text layer',()=>addShape('text')),elem('span',{class:'micro-label'},'Click the canvas to place text')]
+    );
+  }
+});
+const ToolInspector = compDef({
+  draw(v) {
+    const tool=v.attrs.tool;
+    return section(tools.find(t=>t.id===tool).name+' tool','TOOL',
+      elem('p',{},tools.find(t=>t.id===tool).description),
+      tool==='brush' ? [field('Brush size',range('',state.brushSize,5,80,n=>mutate(()=>state.brushSize=n))),field('Opacity',range('',state.brushOpacity,10,100,n=>mutate(()=>state.brushOpacity=n)))] :
+      tool==='crop' ? field('Guides',elem('input',{type:'checkbox',checked:state.cropGuides,onchange:e=>mutate(()=>state.cropGuides=e.currentTarget.checked)})) :
+      tool==='move' ? elem('div',{class:'section-actions'},button('New rectangle',()=>addShape()),button('New circle',()=>addShape('circle'))) :
+      elem('div',{class:'section-actions'},button('Insert text',()=>addShape('text')))
+    );
+  }
+});
+const ToolStatus = compDef({draw:v=>status('Tool: '+tools.find(t=>t.id===v.attrs.tool).name)});
+const SelectionToolbar = compDef({
+  draw(v) {
+    const s=getShape(v.attrs.id); if(!s)return null;
+    return elem('div',{class:'outlet-section'},
+      elem('span',{class:'micro-label'},'Selected: '+s.name),
+      colorInput(s.fill,value=>mutate(()=>s.fill=value)),
+      button('Duplicate',duplicateShape),button('Delete',deleteShape,'danger'));
+  }
+});
+const SelectionInspector = compDef({
+  draw(v) {
+    const s=getShape(v.attrs.id); if(!s)return null;
+    return section('Selection','LAYER',
+      elem('p',{},s.name+' · '+s.type),
+      field('Fill',colorInput(s.fill,value=>mutate(()=>s.fill=value))),
+      field('X position',range('',s.x,0,75,n=>mutate(()=>s.x=n))),
+      field('Y position',range('',s.y,0,75,n=>mutate(()=>s.y=n))),
+      elem('div',{class:'section-actions'},button('Duplicate',duplicateShape),button('Delete',deleteShape,'danger')));
+  }
+});
+const SelectionStatus = compDef({draw:v=>status('Layer: '+(getShape(v.attrs.id)?.name || 'None'))});
+
+// These two components own UI displayed elsewhere. They render NO DOM.
+const ToolContribution = compDef({
+  init(v) {
+    v.owner={id:'tool-'+(++ownerSequence)};
+    const attrs={tool:v.attrs.tool};
+    contribute(v.owner,'toolbar',ToolToolbar,attrs,0);
+    contribute(v.owner,'inspector',ToolInspector,attrs,0);
+    contribute(v.owner,'status',ToolStatus,attrs,0);
+    log('Mounted tool',v.attrs.tool);
+  },
+  draw:()=>null,
+  removed(v) {withdraw(v.owner);log('Unmounted tool',v.attrs.tool);}
+});
+const SelectionContribution = compDef({
+  init(v) {
+    v.owner={id:'selection-'+(++ownerSequence)};
+    const attrs={id:v.attrs.id};
+    contribute(v.owner,'toolbar',SelectionToolbar,attrs,10);
+    contribute(v.owner,'inspector',SelectionInspector,attrs,10);
+    contribute(v.owner,'status',SelectionStatus,attrs,10);
+    log('Mounted selection','layer '+v.attrs.id);
+  },
+  draw:()=>null,
+  removed(v) {withdraw(v.owner);log('Unmounted selection','layer '+v.attrs.id);}
+});
+
+function paint(e) {
+  if(e.target.closest('.shape'))return;
+  if(state.tool==='type'){addShape('text');return;}
+  if(state.tool!=='brush') {selectShape(null);return;}
+  const r=e.currentTarget.getBoundingClientRect();
+  const x=100*(e.clientX-r.left)/r.width, y=100*(e.clientY-r.top)/r.height;
+  mutate(()=>state.brushMarks.push({x,y,size:state.brushSize,opacity:state.brushOpacity}));
+}
+const Canvas = compDef({
+  draw:()=>elem('div',{class:'artboard'+(state.grid?' grid':''),style:{transform:`scale(${state.zoom/100})`},onclick:paint},
+    elem('div',{class:'shape-layer'},state.shapes.map(s=>
+      elem('div',{
+        $key:s.id,
+        class:'shape '+s.type+(state.selected===s.id?' selected':''),
+        style:{left:s.x+'%',top:s.y+'%',width:s.w+'%',height:s.h+'%',background:s.type==='text'?'transparent':s.fill,color:s.type==='text'?s.fill:undefined},
+        onclick:e=>{e.stopPropagation();selectShape(s.id);},
+        title:s.name,
+      },s.type==='text'?s.name:s.type==='rect'?elem('span',{class:'shape-label'},'CREATE'):null)
+    )),
+    ...state.brushMarks.map(mark=>elem('div',{class:'brush-mark',style:{left:`calc(${mark.x}% - ${mark.size/2}px)`,top:`calc(${mark.y}% - ${mark.size/2}px)`,width:mark.size+'px',height:mark.size+'px',background:'#2f6575',opacity:mark.opacity/100}})),
+    // The source components live here, inside the clipped canvas.
+    // Their contributions appear in the toolbar, inspector and status bar.
+    elem('div',{style:{display:'none'}},
+      comp(ToolContribution,{$key:'tool:'+state.tool,tool:state.tool}),
+      state.selected!=null?comp(SelectionContribution,{$key:'selection:'+state.selected,id:state.selected}):null
+    )
+  )
+});
+const App = compDef({
+  draw:()=>[
+    elem('header',{class:'topbar'},
+      elem('div',{class:'brand'},elem('span',{class:'brand-mark'},'Z'),'Zenith',elem('small',{},'Outlet experiment')),
+      elem('span',{class:'top-desc'},'Contextual UI contributed by components elsewhere in the tree'),
+      elem('div',{class:'top-right'},elem('span',{class:'dot'}),'No portals · No renderer changes')
+    ),
+    elem('main',{class:'workspace'},
+      elem('nav',{class:'tool-rail','aria-label':'Tools'},
+        elem('div',{class:'rail-caption'},'TOOLS'),
+        tools.map(t=>elem('button',{type:'button',class:'tool-button'+(state.tool===t.id?' active':''),onclick:()=>selectTool(t.id),title:t.description,'aria-pressed':state.tool===t.id},
+          elem('span',{class:'tool-icon'},t.icon),elem('span',{class:'tool-name'},t.name))),
+        elem('div',{class:'rail-rule'}),
+        elem('button',{type:'button',class:'tool-button',onclick:()=>mutate(()=>state.grid=!state.grid),title:'Toggle grid'},elem('span',{class:'tool-icon'},'▦'),elem('span',{class:'tool-name'},'Grid'))
+      ),
+      elem('section',{class:'center'},
+        elem('div',{class:'context'},
+          elem('div',{class:'context-label'},elem('strong',{},'Options'),elem('span',{},'Contextual toolbar')),
+          elem('div',{class:'outlet-strip'},comp(Outlet,{name:'toolbar'}))
+        ),
+        elem('div',{class:'stage'},
+          elem('div',{class:'stage-heading'},elem('strong',{},'Untitled artwork'),elem('span',{},'660 × 440 px · RGB')),
+          comp(Canvas),
+          elem('div',{class:'stage-tip'},elem('b',{},'Try:'),' Switch tools · Select a layer · Delete it · Paint on the canvas')
+        )
+      ),
+      elem('aside',{class:'inspector'},
+        elem('div',{class:'panel-title'},'Properties'),
+        elem('div',{class:'inspector-body'},comp(Outlet,{name:'inspector'})),
+        elem('div',{class:'inspector-section'},
+          elem('div',{class:'section-head'},elem('strong',{},'Document'),elem('span',{class:'section-tag'},'GLOBAL')),
+          field('Grid',elem('input',{type:'checkbox',checked:state.grid,onchange:e=>mutate(()=>state.grid=e.currentTarget.checked)})),
+          field('Zoom',range('',state.zoom,50,150,n=>mutate(()=>state.zoom=n))),
+          elem('p',{},'These controls belong to the inspector itself, not a tool contribution.')
+        )
+      )
+    ),
+    elem('footer',{class:'status'},
+      elem('span',{},'Zenith'),elem('div',{class:'outlet-strip'},comp(Outlet,{name:'status'})),
+      elem('span',{},state.shapes.length+' layers')
+    )
+  ]
+});
+appRoot=bind(document.getElementById('app'),comp(App));
+log('Ready','Outlets mounted');
+
+// --- Regression diagnostics: no portals, no changes to Zenith internals ---
+let diagnosticReport = '';
+const settle = async () => {
+  // Flush redraws queued by components mounting or unmounting during a redraw.
+  for (let i = 0; i < 4; i++) {
+    await Promise.resolve();
+    sync();
+  }
+};
+const slotEntries = name =>
+  [...(slots.get(name)?.values() || [])].sort((a, b) => a.order - b.order);
+const describeSlots = () => Object.fromEntries(
+  ['toolbar', 'inspector', 'status'].map(name =>
+    [name, slotEntries(name).map(e => `${e.id} (${e.order})`)]
+  )
+);
+const toolContributions = () => [...(slots.get('toolbar')?.values() || [])]
+  .filter(e => e.id.startsWith('tool-'));
+const selectionContributions = () => [...(slots.get('toolbar')?.values() || [])]
+  .filter(e => e.id.startsWith('selection-'));
+const getSections = () => ({
+  toolbar: document.querySelectorAll('.context .outlet-section').length,
+  inspector: document.querySelectorAll('.inspector-body .inspector-section').length,
+  status: document.querySelectorAll('.status .status-item').length
+});
+async function runDiagnostics() {
+  const button = document.getElementById('run-diagnostics');
+  button.disabled = true;
+  const saved = {
+    tool: state.tool, selected: state.selected,
+    brushSize: state.brushSize, shapes: state.shapes.map(s => ({...s})),
+    nextShape
+  };
+  const lines = [];
+  let passes = 0, failures = 0;
+  const note = message => lines.push(message);
+  const assert = (name, condition, detail = '') => {
+    const ok = !!condition;
+    ok ? passes++ : failures++;
+    note(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ' — ' + detail : ''}`);
+  };
+  const snapshot = name => {
+    note(`\n[${name}] tool=${state.tool}, selected=${state.selected}, shapes=${state.shapes.length}`);
+    note(`  registry=${JSON.stringify(describeSlots())}`);
+    note(`  DOM=${JSON.stringify(getSections())}`);
+  };
+  const expectCounts = (name, selection) => {
+    const expected = selection ? 2 : 1;
+    const counts = getSections();
+    assert(name + ': one tool contribution', toolContributions().length === 1);
+    assert(name + ': selection contribution', selectionContributions().length === (selection ? 1 : 0));
+    assert(name + ': three outlet DOM counts',
+      counts.toolbar === expected && counts.inspector === expected && counts.status === expected,
+      JSON.stringify(counts));
+    assert(name + ': registry counts match',
+      ['toolbar', 'inspector', 'status'].every(slot => slotEntries(slot).length === expected));
+  };
+  try {
+    note('ZENITH OUTLET REGRESSION REPORT');
+    note(`Browser: ${navigator.userAgent}`);
+    note(`Started: ${new Date().toISOString()}`);
+    await settle();
+    snapshot('initial');
+    assert('three mounted outlets', outlets.size === 3);
+    expectCounts('initial', state.selected != null);
+
+    // Exercise mount/unmount of tool-owned contributions.
+    mutate(() => { state.tool = 'brush'; state.selected = null; });
+    await settle();
+    snapshot('brush with no selection');
+    expectCounts('brush', false);
+    assert('brush size input appears',
+      !!document.querySelector('.context input[type="range"]'));
+
+    // Updating state should reuse the same component/DOM rather than remount it.
+    const ownerBefore = toolContributions()[0];
+    const rangeBefore = document.querySelector('.context input[type="range"]');
+    rangeBefore?.focus();
+    mutate(() => { state.brushSize = 43; });
+    await settle();
+    const rangeAfter = document.querySelector('.context input[type="range"]');
+    assert('tool contribution owner survives state update', toolContributions()[0] === ownerBefore);
+    assert('range DOM node reused', rangeBefore === rangeAfter);
+    assert('range value updated', rangeAfter?.value === '43',
+      `value=${rangeAfter?.value}`);
+    assert('focused range retains focus', document.activeElement === rangeAfter,
+      `active=${document.activeElement?.tagName}`);
+    snapshot('brush size updated');
+
+    // Selection adds controls after the tool's controls in all three outlets.
+    const first = state.shapes[0]?.id;
+    const second = state.shapes[1]?.id;
+    if (first == null || second == null) throw new Error('Need two shapes for test');
+    mutate(() => { state.selected = first; });
+    await settle();
+    snapshot('selected first shape');
+    expectCounts('selection added', true);
+    assert('tool precedes selection by order',
+      ['toolbar', 'inspector', 'status'].every(slot => {
+        const entries = slotEntries(slot);
+        return entries[0]?.order === 0 && entries[1]?.order === 10;
+      }));
+
+    const previousSelection = selectionContributions()[0];
+    mutate(() => { state.selected = second; });
+    await settle();
+    snapshot('switched selection');
+    expectCounts('selection switched', true);
+    assert('old selection contribution absent from all slots',
+      [...slots.values()].every(entries =>
+        ![...entries.values()].includes(previousSelection)));
+    assert('selection owner replaced', selectionContributions()[0] !== previousSelection);
+
+    // Removing the selected shape should clean up every outlet contribution.
+    deleteShape();
+    await settle();
+    snapshot('deleted selected shape');
+    expectCounts('deleted selection', false);
+    assert('no orphaned selection contributions',
+      [...slots.values()].every(entries =>
+        [...entries.values()].every(e => !e.id.startsWith('selection-'))));
+
+    // Switch to another tool, then back; old tool contributions must be gone.
+    mutate(() => { state.tool = 'crop'; });
+    await settle();
+    snapshot('crop tool');
+    expectCounts('crop', false);
+    assert('crop controls rendered',
+      !!document.querySelector('.context .mini-btn'));
+    assert('brush controls removed',
+      !document.querySelector('.context input[type="range"]'));
+
+    mutate(() => { state.tool = 'move'; });
+    await settle();
+    snapshot('move tool');
+    expectCounts('move', false);
+
+  } catch (error) {
+    failures++;
+    note(`ERROR ${error?.stack || String(error)}`);
+  } finally {
+    // Restore the demo to the exact prior application state.
+    state.tool = saved.tool;
+    state.selected = saved.selected;
+    state.brushSize = saved.brushSize;
+    state.shapes = saved.shapes;
+    nextShape = saved.nextShape;
+    redrawApp();
+    await settle();
+    snapshot('restored');
+    assert('original state restored',
+      state.tool === saved.tool &&
+      state.selected === saved.selected &&
+      state.shapes.length === saved.shapes.length);
+    note(`\nRESULT: ${passes} passed, ${failures} failed`);
+    diagnosticReport = lines.join('\n');
+    document.getElementById('diagnostic-report').textContent = diagnosticReport;
+    document.getElementById('diagnostic-summary').textContent =
+      `${passes} passed · ${failures} failed`;
+    console.log(diagnosticReport);
+    button.disabled = false;
+  }
+}
+document.getElementById('run-diagnostics').addEventListener('click', runDiagnostics);
+document.getElementById('copy-diagnostics').addEventListener('click', async () => {
+  if (!diagnosticReport) return;
+  try {
+    await navigator.clipboard.writeText(diagnosticReport);
+    document.getElementById('diagnostic-summary').textContent += ' · Copied';
+  } catch {
+    // Clipboard permissions may be unavailable for a locally opened HTML file.
+    console.log(diagnosticReport);
+    alert('Clipboard unavailable. Copy the report from the console or panel.');
+  }
+});
+</script>
+</body>
+</html>
