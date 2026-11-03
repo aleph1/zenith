@@ -6,7 +6,7 @@ const Counter = compDef({
     const count: number = vNode.state.count;
 
     // @ts-expect-error Invalid state property
-    vNode.state.coutn;
+    const _invalid = vNode.state.coutn;
 
     return elem('button', {
       onclick: () => vNode.state.count++
@@ -20,7 +20,7 @@ const Toggle = compDef({
     const enabled: boolean = vNode.state;
 
     // @ts-expect-error Boolean state is not a number
-    const count: number = vNode.state;
+    const _count: number = vNode.state;
 
     return elem('button', {
       onclick: () => vNode.state = !vNode.state
