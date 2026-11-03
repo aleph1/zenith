@@ -360,7 +360,7 @@ const _checkDuplicateExternalNodes = (root: VNodeContainer): void => {
     if (vNode.is & VNODE_NODE) {
       const el = (vNode as VNodeNode).el;
       if (seen.has(el)) {
-        console.warn('Zenith: Duplicate external DOM node.', el);
+        if(DEBUG) console.warn('Zenith: Duplicate external DOM node.', el);
         return;
       }
       seen.add(el);
