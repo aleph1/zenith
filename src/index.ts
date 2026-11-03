@@ -808,7 +808,7 @@ export const elem: {
 
 export const compDef = <
   A extends VNodeCompAttributes = VNodeCompAttributes,
-  S = Record<string, any>
+  S = Record<string, unknown>
 >(
   componentDefinition: VNodeCompDefinition<A, S>
 ): VNodeCompDefinition<A, S> => {
