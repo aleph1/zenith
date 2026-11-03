@@ -115,6 +115,74 @@ describe('Regression: keyed reconciliation and DOM order', () => {
     sync();
     expect(elementText(app.querySelector('section')!)).toEqual(['b1', 'b2', 'a1', 'a2']);
   });
+  
+  test('preserves keyed DOM order and identity across randomized updates', () => {
+    const container = document.createElement('div');
+    const keys = Array.from({ length: 12 }, (_, i) => `k${i}`);
+    const previous = new Map<string, Element>();
+
+    // Deterministic pseudo-random generator.
+    let seed = 12345;
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+
+    const shuffle = (items: string[]) => {
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      return items;
+    };
+
+    const render = (ids: string[]) =>
+      elem('ul', ids.map(id =>
+        elem('li', { $key: id, 'data-key': id }, id)
+      ));
+
+    try {
+      for (let step = 0; step < 200; step++) {
+        // Randomize ordering and select a subset of the key pool.
+        const shuffled = shuffle([...keys]);
+        const ids = shuffled.slice(0, Math.floor(random() * (keys.length + 1)));
+
+        bind(container, render(ids));
+
+        const elements = [...container.querySelectorAll('li')];
+        const actual = elements.map(el => el.getAttribute('data-key'));
+
+        // The DOM must match the requested order exactly.
+        expect(actual).toEqual(ids);
+        expect(elements).toHaveLength(ids.length);
+
+        const current = new Map<string, Element>();
+
+        for (let i = 0; i < ids.length; i++) {
+          const id = ids[i];
+          const el = elements[i];
+
+          expect(el.textContent).toBe(id);
+
+          // A key surviving the immediately preceding update
+          // must retain its original DOM element.
+          if (previous.has(id)) {
+            expect(el).toBe(previous.get(id));
+          }
+
+          current.set(id, el);
+        }
+
+        previous.clear();
+        for (const [key, el] of current) {
+          previous.set(key, el);
+        }
+      }
+    } finally {
+      bind(container, null);
+    }
+  });
+
 });
 
 describe('Regression: component DOM ownership', () => {
