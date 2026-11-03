@@ -104,7 +104,6 @@ export const router = (
 
     draw: (vNode: VNodeComp) => {
       const node = vNode as RouterVNode;
-      console.log('Router draw:', node.route, node.params);
       return node.route ? node.route(node.params || {}) : null;
     },
 
